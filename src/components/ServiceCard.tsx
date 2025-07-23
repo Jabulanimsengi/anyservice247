@@ -31,9 +31,9 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
   const { likedServiceIds, addLike, removeLike, addToast } = useStore();
   const [user, setUser] = useState<User | null>(null);
   const [guestId, setGuestId] = useState<string | null>(null);
+  const [isLiking, setIsLiking] = useState(false); // State to prevent double-clicks
 
   useEffect(() => {
-    // Correctly set up the auth listener
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
@@ -45,7 +45,6 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
     }
     setGuestId(currentGuestId);
 
-    // Correctly clean up the listener
     return () => {
       authListener.subscription.unsubscribe();
     };
@@ -57,28 +56,37 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
     e.stopPropagation();
     e.preventDefault();
 
-    const likeData = {
-      service_id: id,
-      user_id: user?.id,
-      guest_id: user ? null : guestId,
-    };
+    if (isLiking) return; // Prevent action if already processing
+    setIsLiking(true);
 
-    if (isLiked) {
-      const { error } = await supabase.from('likes').delete().match({
+    try {
+      if (isLiked) {
+        const query = supabase.from('likes').delete().eq('service_id', id);
+        if (user) {
+          query.eq('user_id', user.id);
+        } else {
+          query.eq('guest_id', guestId);
+        }
+        const { error } = await query;
+        
+        if (!error) {
+          removeLike(id);
+          addToast('Removed from your Likes', 'error');
+        }
+      } else {
+        const likeData = {
           service_id: id,
           user_id: user?.id,
-          guest_id: user ? undefined : guestId,
-      });
-      if (!error) {
-        removeLike(id);
-        addToast('Removed from your Likes', 'error');
+          guest_id: user ? null : guestId,
+        };
+        const { error } = await supabase.from('likes').insert(likeData);
+        if (!error) {
+          addLike(id);
+          addToast('Added to your Likes!');
+        }
       }
-    } else {
-      const { error } = await supabase.from('likes').insert(likeData);
-      if (!error) {
-        addLike(id);
-        addToast('Added to your Likes!');
-      }
+    } finally {
+      setIsLiking(false); // Re-enable the button after the operation is complete
     }
   };
 
@@ -92,7 +100,8 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
       <div className="absolute top-2 left-2 z-10">
         <button
           onClick={handleLike}
-          className="rounded-full bg-white/70 p-2 text-gray-600 backdrop-blur-sm transition-colors hover:text-red-500"
+          disabled={isLiking} // Disable button while processing
+          className="rounded-full bg-white/70 p-2 text-gray-600 backdrop-blur-sm transition-colors hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Heart size={20} fill={isLiked ? '#ef4444' : 'none'} className={isLiked ? 'text-red-500' : ''} />
         </button>
