@@ -56,6 +56,7 @@ const Header = () => {
   const closeModal = () => setIsModalOpen(false);
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    // No need to reload, the auth listener will handle the state update
   };
 
   return (
@@ -65,7 +66,12 @@ const Header = () => {
           <div className="text-2xl font-bold">
             <a href="/">anyservice<span className="text-brand-teal">24/7</span></a>
           </div>
-          <div>
+          <div className="flex items-center space-x-4">
+            {/* Likes Icon Link - Always Visible */}
+            <Link href="/likes" className="text-gray-300 hover:text-white">
+              <Heart />
+            </Link>
+
             {loading ? (
               <div className="h-8 w-48 animate-pulse rounded-md bg-gray-700"></div>
             ) : user ? (
@@ -89,11 +95,7 @@ const Header = () => {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center space-x-4">
-                {/* NEW: Likes Icon Link */}
-                <Link href="/likes" className="text-gray-300 hover:text-white">
-                  <Heart />
-                </Link>
+              <div className="flex items-center space-x-2">
                 <button
                   onClick={openModal}
                   className="text-gray-300 hover:text-white"

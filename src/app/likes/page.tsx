@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import ServiceCard from '@/components/ServiceCard';
 import { useStore } from '@/lib/store';
-import { User } from '@supabase/supabase-js';
+import BackButton from '@/components/BackButton'; // Import BackButton
 
 type LikedService = {
   id: number;
@@ -14,6 +14,7 @@ type LikedService = {
   user_id: string;
   image_url: string | null;
   is_approved: boolean;
+  locations: string[] | null;
   profiles: {
     full_name: string;
   }[];
@@ -27,6 +28,7 @@ const LikesPage = () => {
   useEffect(() => {
     const fetchLikedServices = async () => {
       if (likedServiceIds.size === 0) {
+        setLikedServices([]);
         setLoading(false);
         return;
       }
@@ -34,7 +36,7 @@ const LikesPage = () => {
       const { data, error } = await supabase
         .from('services')
         .select(`
-          id, title, price, user_id, image_url, is_approved,
+          id, title, price, user_id, image_url, is_approved, locations,
           profiles (full_name)
         `)
         .in('id', Array.from(likedServiceIds))
@@ -53,6 +55,7 @@ const LikesPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <BackButton />
       <h1 className="mb-6 text-3xl font-bold">Your Liked Services</h1>
       {loading ? (
         <p>Loading your liked items...</p>
@@ -70,12 +73,12 @@ const LikesPage = () => {
               price={service.price}
               imageUrl={service.image_url}
               is_approved={service.is_approved}
-              locations={null} // You can add locations here if needed
+              locations={service.locations}
             />
           ))}
         </div>
       ) : (
-        <p>You haven't liked any services yet. Start browsing to find services you love!</p>
+        <p>You haven't liked any services yet. Start Browse to find services you love!</p>
       )}
     </div>
   );

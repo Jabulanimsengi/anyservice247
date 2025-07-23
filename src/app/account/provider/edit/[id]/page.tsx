@@ -1,26 +1,31 @@
 // src/app/account/provider/edit/[id]/page.tsx
 'use client';
 
-import { useState, useEffect, use } from 'react'; // Import 'use'
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import BackButton from '@/components/BackButton';
 
 interface EditServicePageProps {
-  params: Promise<{ // Props are now a Promise
+  params: Promise<{
     id: string;
   }>;
 }
 
-const EditServicePage = ({ params }: EditServicePageProps) => {
-  // Use React.use() to unwrap the params promise
-  const { id } = use(params);
+const provinces = [
+  "Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal", 
+  "Limpopo", "Mpumalanga", "North West", "Northern Cape", "Western Cape"
+];
 
+const EditServicePage = ({ params }: EditServicePageProps) => {
+  const { id } = use(params);
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [locations, setLocations] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -29,7 +34,7 @@ const EditServicePage = ({ params }: EditServicePageProps) => {
       const { data, error } = await supabase
         .from('services')
         .select('*')
-        .eq('id', id) // Use the unwrapped id
+        .eq('id', id)
         .single();
 
       if (error || !data) {
@@ -39,6 +44,7 @@ const EditServicePage = ({ params }: EditServicePageProps) => {
         setTitle(data.title);
         setDescription(data.description || '');
         setPrice(String(data.price));
+        setLocations(data.locations || []);
       }
       setLoading(false);
     };
@@ -46,7 +52,12 @@ const EditServicePage = ({ params }: EditServicePageProps) => {
     if (id) {
       fetchServiceData();
     }
-  }, [id]); // Depend on the unwrapped id
+  }, [id]);
+
+  const handleLocationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+    setLocations(selectedOptions);
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -59,8 +70,9 @@ const EditServicePage = ({ params }: EditServicePageProps) => {
         title,
         description,
         price: parseFloat(price),
+        locations: locations,
       })
-      .eq('id', id); // Use the unwrapped id
+      .eq('id', id);
 
     if (updateError) {
       setError(updateError.message);
@@ -76,6 +88,7 @@ const EditServicePage = ({ params }: EditServicePageProps) => {
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
+      <BackButton />
       <h1 className="mb-6 text-3xl font-bold">Edit Service</h1>
       <form
         onSubmit={handleSubmit}
@@ -98,6 +111,21 @@ const EditServicePage = ({ params }: EditServicePageProps) => {
             Price (R)
           </label>
           <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} required step="0.01" />
+        </div>
+        <div>
+          <label htmlFor="locations" className="mb-2 block text-sm font-medium text-gray-700">Service Locations (Provinces)</label>
+           <p className="text-xs text-gray-500 mb-2">Select one or more provinces where you offer this service. (Hold Ctrl/Cmd to select multiple)</p>
+          <select 
+            id="locations"
+            multiple 
+            value={locations}
+            onChange={handleLocationChange}
+            className="block w-full rounded-md border border-gray-300 bg-background p-3 text-sm ring-offset-background h-48"
+          >
+            {provinces.map(province => (
+              <option key={province} value={province}>{province}</option>
+            ))}
+          </select>
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
         <Button type="submit" disabled={loading} className="w-full">

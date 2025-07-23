@@ -1,5 +1,5 @@
 // src/app/page.tsx
-'use client'; 
+'use client';
 
 import { useState, useEffect } from 'react';
 import HeroSection from '@/components/HeroSection';
@@ -12,10 +12,11 @@ type ServiceWithProvider = {
   price: number;
   user_id: string;
   image_url: string | null;
-  is_approved: boolean; // Add is_approved to the type
+  is_approved: boolean;
+  locations: string[] | null; // Added locations to the type
   profiles: {
     full_name: string;
-  }[]; 
+  }[];
 };
 
 export default function Home() {
@@ -32,14 +33,15 @@ export default function Home() {
           price,
           user_id,
           image_url,
-          is_approved, 
+          is_approved,
+          locations,
           profiles (
             full_name
           )
         `)
         .eq('is_approved', true);
 
-      if (error && error.message) { 
+      if (error && error.message) {
         console.error("Error fetching services:", error.message);
       } else if (data) {
         setServices(data);
@@ -61,7 +63,7 @@ export default function Home() {
           {loading ? (
             <p className="text-center text-gray-500">Loading services...</p>
           ) : services.length > 0 ? (
-            <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {services.map((service) => (
                 <ServiceCard
                   key={service.id}
@@ -69,11 +71,12 @@ export default function Home() {
                   providerId={service.user_id}
                   title={service.title}
                   providerName={service.profiles[0]?.full_name ?? 'Anonymous'}
-                  rating={5.0}
-                  reviewCount={0}
+                  rating={5.0} // These would typically come from an aggregate query
+                  reviewCount={0} // These would typically come from an aggregate query
                   price={service.price}
                   imageUrl={service.image_url}
-                  is_approved={service.is_approved} // Pass the prop
+                  is_approved={service.is_approved}
+                  locations={service.locations} // Pass locations to the card
                 />
               ))}
             </div>

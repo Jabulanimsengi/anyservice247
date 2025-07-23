@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import ServiceCard from '@/components/ServiceCard';
+import BackButton from '@/components/BackButton';
 
 type ServiceWithProvider = {
   id: number;
@@ -12,7 +13,8 @@ type ServiceWithProvider = {
   price: number;
   user_id: string;
   image_url: string | null;
-  is_approved: boolean; // Add is_approved
+  is_approved: boolean;
+  locations: string[] | null; // Add locations
   profiles: {
     full_name: string;
   }[];
@@ -41,6 +43,7 @@ const SearchPage = () => {
           user_id,
           image_url,
           is_approved,
+          locations,
           profiles (
             full_name
           )
@@ -62,6 +65,7 @@ const SearchPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <BackButton />
       <h1 className="mb-6 text-3xl font-bold">
         Search Results for "{query}"
       </h1>
@@ -69,7 +73,7 @@ const SearchPage = () => {
       {loading ? (
         <p>Searching...</p>
       ) : services.length > 0 ? (
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {services.map((service) => (
             <ServiceCard
               key={service.id}
@@ -81,7 +85,8 @@ const SearchPage = () => {
               reviewCount={0}
               price={service.price}
               imageUrl={service.image_url}
-              is_approved={service.is_approved} // Pass the prop
+              is_approved={service.is_approved}
+              locations={service.locations}
             />
           ))}
         </div>

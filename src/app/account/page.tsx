@@ -5,8 +5,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link'; // Import Link
-import { Button } from '@/components/ui/Button'; // Import Button
+import Link from 'next/link';
+import { Button } from '@/components/ui/Button';
+import BackButton from '@/components/BackButton'; // Import BackButton
 
 const AccountPage = () => {
   const router = useRouter();
@@ -38,6 +39,7 @@ const AccountPage = () => {
   if (user) {
     return (
       <div className="container mx-auto px-4 py-8">
+        <BackButton />
         <h1 className="mb-6 text-3xl font-bold">Your Account</h1>
 
         {/* User Profile Section */}
