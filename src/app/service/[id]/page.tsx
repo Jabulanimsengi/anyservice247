@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import LeaveReview from '@/components/LeaveReview';
 import { User } from '@supabase/supabase-js';
 import { Star } from 'lucide-react';
+import BackButton from '@/components/BackButton'; // Import the BackButton
 
 // --- Type Definitions ---
 type Service = {
@@ -44,7 +45,7 @@ const ServiceDetailPage = ({ params }: ServiceDetailPageProps) => {
       .from('reviews')
       .select(`*, profiles(full_name)`)
       .eq('service_id', id)
-      .eq('is_approved', true) // <-- Only fetch approved reviews
+      .eq('is_approved', true)
       .order('created_at', { ascending: false });
 
     if (error) console.error('Error fetching reviews:', error);
@@ -131,7 +132,9 @@ const ServiceDetailPage = ({ params }: ServiceDetailPageProps) => {
   if (!service) return <div className="text-center py-12">Service not found.</div>;
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-12">
+    <div className="container mx-auto max-w-4xl px-4 py-8">
+      <BackButton /> {/* Add the button here */}
+      {/* Service Details */}
       <div className="rounded-lg border bg-white p-8 shadow-sm">
         <h1 className="text-4xl font-bold">{service.title}</h1>
         <p className="mt-2 text-lg text-gray-500">
@@ -152,6 +155,7 @@ const ServiceDetailPage = ({ params }: ServiceDetailPageProps) => {
         </div>
       </div>
 
+      {/* Reviews Section */}
       <div className="mt-12">
         <h2 className="text-2xl font-bold">Reviews</h2>
         

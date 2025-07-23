@@ -6,15 +6,15 @@ import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 import AuthModal from './AuthModal';
 import Link from 'next/link';
+import { Heart } from 'lucide-react'; // Import the Heart icon
 
-// We need to fetch the user's profile to check their role
 type Profile = {
   role: string;
 }
 
 const Header = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null); // State for the user's profile
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -23,7 +23,6 @@ const Header = () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
 
-      // If there's a user, fetch their profile
       if (session?.user) {
         const { data: userProfile } = await supabase
           .from('profiles')
@@ -41,7 +40,6 @@ const Header = () => {
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-         // Re-fetch profile on auth change
          getSessionAndProfile();
       } else {
          setProfile(null);
@@ -72,14 +70,11 @@ const Header = () => {
               <div className="h-8 w-48 animate-pulse rounded-md bg-gray-700"></div>
             ) : user ? (
               <div className="flex items-center space-x-4">
-                {/* START: Admin Dashboard Link */}
                 {profile?.role === 'admin' && (
                   <Link href="/admin" className="rounded-md bg-yellow-500 px-4 py-2 text-sm font-bold text-black hover:bg-yellow-400">
                     Admin Panel
                   </Link>
                 )}
-                {/* END: Admin Dashboard Link */}
-
                 <span className="hidden sm:inline">
                   Hello, {user.user_metadata?.full_name || user.email}
                 </span>
@@ -95,9 +90,10 @@ const Header = () => {
               </div>
             ) : (
               <div className="flex items-center space-x-4">
-                <a href="#" className="hidden text-gray-300 hover:text-white sm:inline">
-                  For Providers
-                </a>
+                {/* NEW: Likes Icon Link */}
+                <Link href="/likes" className="text-gray-300 hover:text-white">
+                  <Heart />
+                </Link>
                 <button
                   onClick={openModal}
                   className="text-gray-300 hover:text-white"

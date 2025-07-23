@@ -1,9 +1,16 @@
 // src/components/ServiceCard.tsx
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import { Star } from 'lucide-react';
-import VerifiedBadge from './VerifiedBadge'; // Corrected import path
+import { Star, Heart, MapPin } from 'lucide-react';
+import VerifiedBadge from './VerifiedBadge';
+import { useStore } from '@/lib/store';
+import { supabase } from '@/lib/supabase';
+import { useEffect, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import { User } from '@supabase/supabase-js';
 
 interface ServiceCardProps {
   id: number;
@@ -15,21 +22,81 @@ interface ServiceCardProps {
   reviewCount: number;
   price: number;
   is_approved: boolean;
+  locations: string[] | null;
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({
-  id,
-  providerId,
-  imageUrl,
-  title,
-  providerName,
-  rating,
-  reviewCount,
-  price,
-  is_approved,
+  id, providerId, imageUrl, title, providerName, rating, reviewCount, price, is_approved, locations
 }) => {
+  const { likedServiceIds, addLike, removeLike, addToast } = useStore();
+  const [user, setUser] = useState<User | null>(null);
+  const [guestId, setGuestId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Correctly set up the auth listener
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    
+    let currentGuestId = localStorage.getItem('guestId');
+    if (!currentGuestId) {
+      currentGuestId = uuidv4();
+      localStorage.setItem('guestId', currentGuestId);
+    }
+    setGuestId(currentGuestId);
+
+    // Correctly clean up the listener
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const isLiked = likedServiceIds.has(id);
+
+  const handleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    const likeData = {
+      service_id: id,
+      user_id: user?.id,
+      guest_id: user ? null : guestId,
+    };
+
+    if (isLiked) {
+      const { error } = await supabase.from('likes').delete().match({
+          service_id: id,
+          user_id: user?.id,
+          guest_id: user ? undefined : guestId,
+      });
+      if (!error) {
+        removeLike(id);
+        addToast('Removed from your Likes', 'error');
+      }
+    } else {
+      const { error } = await supabase.from('likes').insert(likeData);
+      if (!error) {
+        addLike(id);
+        addToast('Added to your Likes!');
+      }
+    }
+  };
+
   return (
-    <div className="flex max-w-sm flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md transition-shadow duration-300 hover:shadow-xl">
+    <div className="group relative flex max-w-sm flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md transition-all duration-300 hover:shadow-xl hover:ring-2 hover:ring-brand-teal">
+      {is_approved && (
+        <div className="absolute top-2 right-2 z-10">
+          <VerifiedBadge />
+        </div>
+      )}
+      <div className="absolute top-2 left-2 z-10">
+        <button
+          onClick={handleLike}
+          className="rounded-full bg-white/70 p-2 text-gray-600 backdrop-blur-sm transition-colors hover:text-red-500"
+        >
+          <Heart size={20} fill={isLiked ? '#ef4444' : 'none'} className={isLiked ? 'text-red-500' : ''} />
+        </button>
+      </div>
       <Link href={`/service/${id}`} passHref>
         <div className="relative h-48 w-full cursor-pointer">
           <Image
@@ -37,39 +104,43 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
             alt={`Image for ${title}`}
             layout="fill"
             objectFit="cover"
+            className="transition-transform duration-300 group-hover:scale-105"
           />
         </div>
       </Link>
-      <div className="flex flex-grow flex-col p-5">
-        <div className="flex items-center gap-2">
-          <h3 className="text-lg font-bold tracking-tight text-gray-900">
-            <Link href={`/service/${id}`} className="hover:underline">
-              {title}
-            </Link>
-          </h3>
-          {is_approved && <VerifiedBadge />}
-        </div>
-        
+      <div className="flex flex-grow flex-col p-4">
+        <h3 className="text-md font-bold tracking-tight text-gray-900">
+          <Link href={`/service/${id}`} className="hover:underline">
+            {title}
+          </Link>
+        </h3>
         <Link href={`/provider/${providerId}`} passHref>
           <p className="cursor-pointer text-sm text-blue-500 hover:underline">
             by {providerName}
           </p>
         </Link>
+        
+        {locations && locations.length > 0 && (
+          <div className="mt-2 flex items-center gap-1 text-xs text-gray-500">
+            <MapPin size={14} />
+            <span>{locations.join(', ')}</span>
+          </div>
+        )}
 
-        <div className="mt-2.5 mb-5 flex items-center">
-          <Star className="h-5 w-5 text-yellow-400" fill="currentColor" />
-          <span className="ml-1 mr-2 rounded bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800">
+        <div className="mt-2 flex items-center">
+          <Star className="h-4 w-4 text-yellow-400" fill="currentColor" />
+          <span className="ml-1 mr-2 rounded bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800">
             {rating.toFixed(1)}
           </span>
-          <span className="text-sm text-gray-600">({reviewCount} reviews)</span>
+          <span className="text-xs text-gray-600">({reviewCount} reviews)</span>
         </div>
 
-        <div className="mt-auto flex items-center justify-between">
-          <span className="text-2xl font-bold text-gray-900">
+        <div className="mt-auto pt-4 flex items-center justify-between">
+          <span className="text-xl font-bold text-gray-900">
             R{Number(price).toFixed(2)}
           </span>
           <Link href={`/service/${id}`} passHref>
-            <Button size="sm">View Service</Button>
+            <Button size="sm">View Details</Button>
           </Link>
         </div>
       </div>
