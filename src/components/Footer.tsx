@@ -10,9 +10,9 @@ const Footer = () => {
       <div className="container mx-auto px-6 py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div>
-            <h3 className="text-lg font-bold">anyservice24/7</h3>
+            <h3 className="text-lg font-bold">HomeServices24/7</h3>
             <p className="mt-4 text-sm text-gray-400">
-              Connecting you with trusted local professionals for all your service needs.
+              Connecting you with trusted local professionals for all your home service needs.
             </p>
             <div className="mt-6 flex space-x-4">
               <a href="#" className="text-gray-400 hover:text-white"><Facebook size={20} /></a>
@@ -40,14 +40,14 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-semibold">Contact Us</h3>
             <ul className="mt-4 space-y-2 text-sm text-gray-400">
-              <li>Email: support@anyservice247.com</li>
+              <li>Email: support@homeservices247.com</li>
               <li>Phone: +27 11 123 4567</li>
               <li>Location: Vosloorus, Gauteng</li>
             </ul>
           </div>
         </div>
         <div className="mt-12 border-t border-gray-700 pt-8 text-center text-sm text-gray-400">
-          <p>&copy; {currentYear} anyservice24/7. All Rights Reserved.</p>
+          <p>&copy; {currentYear} HomeServices24/7. All Rights Reserved.</p>
         </div>
       </div>
     </footer>

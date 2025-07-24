@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 import AuthModal from './AuthModal';
 import Link from 'next/link';
-import { Heart } from 'lucide-react'; // Import the Heart icon
+import { Heart } from 'lucide-react';
 
 type Profile = {
   role: string;
@@ -56,7 +56,6 @@ const Header = () => {
   const closeModal = () => setIsModalOpen(false);
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    // No need to reload, the auth listener will handle the state update
   };
 
   return (
@@ -64,10 +63,12 @@ const Header = () => {
       <header className="bg-brand-dark text-white shadow-md">
         <nav className="container mx-auto flex items-center justify-between px-6 py-4">
           <div className="text-2xl font-bold">
-            <a href="/">anyservice<span className="text-brand-teal">24/7</span></a>
+            {/* The <a> tag now has background, padding, and rounded corners */}
+            <a href="/" className="bg-gray-700/50 px-3 py-1 rounded-md transition-colors hover:bg-gray-700">
+              HomeServices<span className="text-brand-teal">24/7</span>
+            </a>
           </div>
           <div className="flex items-center space-x-4">
-            {/* Likes Icon Link - Always Visible */}
             <Link href="/likes" className="text-gray-300 hover:text-white">
               <Heart />
             </Link>
