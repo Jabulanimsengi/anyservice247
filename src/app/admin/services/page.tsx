@@ -4,21 +4,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
-import Link from 'next/link';
+import { useStore } from '@/lib/store'; // Import the store
 
-// CORRECTED: The 'profiles' property is now an array to match the data
 type Service = {
   id: number;
   title: string;
   is_approved: boolean;
   profiles: {
     full_name: string;
-  }[] | null; // Changed to an array of objects
+  }[] | null;
 };
 
 const AdminServicesPage = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
+  const { addToast } = useStore(); // Get the addToast function
 
   const fetchServices = useCallback(async () => {
     setLoading(true);
@@ -51,8 +51,9 @@ const AdminServicesPage = () => {
       .eq('id', serviceId);
 
     if (error) {
-      alert(`Error updating status: ${error.message}`);
+      addToast(`Error updating status: ${error.message}`, 'error');
     } else {
+      addToast('Service status updated successfully!', 'success');
       fetchServices();
     }
   };
@@ -77,7 +78,6 @@ const AdminServicesPage = () => {
               {services.map((service) => (
                 <tr key={service.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{service.title}</td>
-                  {/* CORRECTED: Access the first element of the profiles array */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{service.profiles?.[0]?.full_name ?? 'N/A'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <span className={`rounded-full px-2 py-1 text-xs font-semibold ${

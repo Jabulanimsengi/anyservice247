@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
+import { useStore } from '@/lib/store'; // Import the store
 
 type Profile = {
   id: string;
@@ -14,6 +15,7 @@ type Profile = {
 const AdminUsersPage = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const { addToast } = useStore(); // Get the addToast function
 
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
@@ -34,18 +36,18 @@ const AdminUsersPage = () => {
   const handleRoleChange = async (userId: string, newRole: 'user' | 'admin') => {
     if (window.confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
       const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
-      if (error) alert(`Error updating role: ${error.message}`);
-      else fetchProfiles();
+      if (error) {
+        addToast(`Error updating role: ${error.message}`, 'error');
+      } else {
+        addToast('User role updated successfully!', 'success');
+        fetchProfiles();
+      }
     }
   };
 
-  // --- NEW: Handler for deleting a user ---
   const handleDeleteUser = async (userId: string, fullName: string) => {
     if (window.confirm(`Are you sure you want to PERMANENTLY DELETE the user "${fullName}"? This will also delete all of their services, bookings, and reviews. This action cannot be undone.`)) {
-      // To delete a user, we need to use a special admin client.
-      // This requires calling a server-side function.
-      // For now, we'll log it. In a real app, this would be an API call.
-      alert("User deletion is a sensitive operation and should be handled via a secure server-side API call. This functionality is mocked for now.");
+      addToast("User deletion should be handled via a secure server-side function.", 'error');
       console.log(`Request to delete user: ${userId}`);
     }
   };
@@ -80,7 +82,6 @@ const AdminUsersPage = () => {
                         Make User
                       </Button>
                     )}
-                    {/* NEW: Delete button */}
                     <Button size="sm" variant="destructive" onClick={() => handleDeleteUser(profile.id, profile.full_name)}>
                       Delete
                     </Button>

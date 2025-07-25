@@ -5,8 +5,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { Star } from 'lucide-react';
+import { useStore } from '@/lib/store'; // Import the store
 
-// CORRECTED: profiles and services are now arrays
 type Review = {
   id: number;
   comment: string | null;
@@ -23,6 +23,7 @@ type Review = {
 const AdminReviewsPage = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const { addToast } = useStore(); // Get the addToast function
 
   const fetchReviews = useCallback(async () => {
     setLoading(true);
@@ -57,8 +58,9 @@ const AdminReviewsPage = () => {
       .eq('id', reviewId);
 
     if (error) {
-      alert(`Error updating status: ${error.message}`);
+      addToast(`Error updating status: ${error.message}`, 'error');
     } else {
+      addToast('Review approved successfully!', 'success');
       fetchReviews();
     }
   };
@@ -74,10 +76,8 @@ const AdminReviewsPage = () => {
             <div key={review.id} className="rounded-lg border bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between">
                 <div>
-                  {/* CORRECTED: Access the first element of the array */}
                   <p className="font-semibold">{review.profiles?.[0]?.full_name ?? 'Anonymous'}</p>
                   <p className="text-sm text-gray-500">
-                    {/* CORRECTED: Access the first element of the array */}
                     Review for: <span className="font-medium text-gray-700">{review.services?.[0]?.title ?? 'N/A'}</span>
                   </p>
                   <div className="flex items-center mt-1">

@@ -12,6 +12,12 @@ import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from '@supabase/supabase-js';
 
+// Define the structure for a location object
+type ServiceLocation = {
+  province: string;
+  city: string;
+};
+
 interface ServiceCardProps {
   id: number;
   providerId: string;
@@ -22,7 +28,7 @@ interface ServiceCardProps {
   reviewCount: number;
   price: number;
   is_approved: boolean;
-  locations: string[] | null;
+  locations: ServiceLocation[] | null; // Type is now an array of objects
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({
@@ -31,7 +37,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
   const { likedServiceIds, addLike, removeLike, addToast } = useStore();
   const [user, setUser] = useState<User | null>(null);
   const [guestId, setGuestId] = useState<string | null>(null);
-  const [isLiking, setIsLiking] = useState(false); // State to prevent double-clicks
+  const [isLiking, setIsLiking] = useState(false);
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -56,7 +62,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
     e.stopPropagation();
     e.preventDefault();
 
-    if (isLiking) return; // Prevent action if already processing
+    if (isLiking) return;
     setIsLiking(true);
 
     try {
@@ -86,7 +92,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
         }
       }
     } finally {
-      setIsLiking(false); // Re-enable the button after the operation is complete
+      setIsLiking(false);
     }
   };
 
@@ -100,20 +106,19 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
       <div className="absolute top-2 left-2 z-10">
         <button
           onClick={handleLike}
-          disabled={isLiking} // Disable button while processing
+          disabled={isLiking}
           className="rounded-full bg-white/70 p-2 text-gray-600 backdrop-blur-sm transition-colors hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Heart size={20} fill={isLiked ? '#ef4444' : 'none'} className={isLiked ? 'text-red-500' : ''} />
         </button>
       </div>
       <Link href={`/service/${id}`} passHref>
-        <div className="relative h-48 w-full cursor-pointer">
+        <div className="relative h-48 w-full cursor-pointer overflow-hidden">
           <Image
             src={imageUrl || '/placeholder.png'}
             alt={`Image for ${title}`}
-            layout="fill"
-            objectFit="cover"
-            className="transition-transform duration-300 group-hover:scale-105"
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
         </div>
       </Link>
@@ -129,10 +134,12 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
           </p>
         </Link>
         
+        {/* Updated Location Display */}
         {locations && locations.length > 0 && (
           <div className="mt-2 flex items-center gap-1 text-xs text-gray-500">
             <MapPin size={14} />
-            <span>{locations.join(', ')}</span>
+            {/* Extracts just the city names and joins them for a clean look */}
+            <span>{locations.map(loc => loc.city).join(', ')}</span>
           </div>
         )}
 
