@@ -12,7 +12,6 @@ import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from '@supabase/supabase-js';
 
-// Define the structure for a location object
 type ServiceLocation = {
   province: string;
   city: string;
@@ -21,23 +20,26 @@ type ServiceLocation = {
 interface ServiceCardProps {
   id: number;
   providerId: string;
-  imageUrl: string | null;
+  imageUrls: string[] | null; // Correctly expects an array of URLs
   title: string;
   providerName: string;
   rating: number;
   reviewCount: number;
   price: number;
   is_approved: boolean;
-  locations: ServiceLocation[] | null; // Type is now an array of objects
+  locations: ServiceLocation[] | null;
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({
-  id, providerId, imageUrl, title, providerName, rating, reviewCount, price, is_approved, locations
+  id, providerId, imageUrls, title, providerName, rating, reviewCount, price, is_approved, locations
 }) => {
   const { likedServiceIds, addLike, removeLike, addToast } = useStore();
   const [user, setUser] = useState<User | null>(null);
   const [guestId, setGuestId] = useState<string | null>(null);
   const [isLiking, setIsLiking] = useState(false);
+
+  // Get the first image for the card thumbnail, or a placeholder
+  const displayImage = imageUrls && imageUrls.length > 0 ? imageUrls[0] : '/placeholder.png';
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -115,9 +117,10 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
       <Link href={`/service/${id}`} passHref>
         <div className="relative h-48 w-full cursor-pointer overflow-hidden">
           <Image
-            src={imageUrl || '/placeholder.png'}
+            src={displayImage}
             alt={`Image for ${title}`}
             fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             className="object-cover transition-transform duration-300 group-hover:scale-105"
           />
         </div>
@@ -134,11 +137,9 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
           </p>
         </Link>
         
-        {/* Updated Location Display */}
         {locations && locations.length > 0 && (
           <div className="mt-2 flex items-center gap-1 text-xs text-gray-500">
             <MapPin size={14} />
-            {/* Extracts just the city names and joins them for a clean look */}
             <span>{locations.map(loc => loc.city).join(', ')}</span>
           </div>
         )}

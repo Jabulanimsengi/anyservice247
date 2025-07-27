@@ -7,16 +7,17 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import BackButton from '@/components/BackButton';
-import { locationsData, provinces } from '@/lib/locations'; // Import location data
+import { locationsData, provinces } from '@/lib/locations';
+import { X } from 'lucide-react';
+import Image from 'next/image';
 
-// Define the structure for a location object
 type ServiceLocation = {
   province: string;
   city: string;
 };
 
 const categories = [
-  "Plumbing", "Electrical", "Carpentry", "Painting", "Gardening", 
+  "Plumbing", "Electrical", "Carpentry", "Painting", "Gardening",
   "Cleaning", "Appliance Repair", "Roofing", "Pest Control", "Other"
 ];
 
@@ -34,10 +35,14 @@ const EditServicePage = ({ params }: EditServicePageProps) => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // --- New Location State Management ---
   const [locations, setLocations] = useState<ServiceLocation[]>([]);
   const [currentProvince, setCurrentProvince] = useState('');
   const [currentCity, setCurrentCity] = useState('');
+
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+
 
   useEffect(() => {
     const fetchServiceData = async () => {
@@ -56,8 +61,9 @@ const EditServicePage = ({ params }: EditServicePageProps) => {
         setDescription(data.description || '');
         setPrice(String(data.price));
         setCategory(data.category || '');
-        // Ensure locations is an array, default to empty if null/undefined
-        setLocations(data.locations || []); 
+        setLocations(data.locations || []);
+        setExistingImageUrls(data.image_urls || []);
+        setImagePreviews(data.image_urls || []);
       }
       setLoading(false);
     };
@@ -65,28 +71,64 @@ const EditServicePage = ({ params }: EditServicePageProps) => {
     fetchServiceData();
   }, [id]);
 
-  const handleAddLocation = () => {
-    if (currentProvince && currentCity) {
-      const newLocation = { province: currentProvince, city: currentCity };
-      if (!locations.some(loc => loc.province === newLocation.province && loc.city === newLocation.city)) {
-        setLocations([...locations, newLocation]);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      if (imagePreviews.length + files.length > 6) {
+        setError('You can upload a maximum of 6 images.');
+        return;
       }
-      setCurrentCity('');
+      setImageFiles((prevFiles) => [...prevFiles, ...files]);
+
+      const newPreviews = files.map((file) => URL.createObjectURL(file));
+      setImagePreviews((prevPreviews) => [...prevPreviews, ...newPreviews]);
     }
   };
 
-  const handleRemoveLocation = (index: number) => {
-    setLocations(locations.filter((_, i) => i !== index));
+  const handleRemoveImage = (index: number, previewUrl: string) => {
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+
+    if (existingImageUrls.includes(previewUrl)) {
+      setExistingImageUrls((prev) => prev.filter((url) => url !== previewUrl));
+    } else {
+      const fileIndex = imagePreviews.indexOf(previewUrl) - existingImageUrls.length;
+      if(fileIndex >= 0) {
+        setImageFiles((prev) => prev.filter((_, i) => i !== fileIndex));
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (locations.length === 0) {
-      setError('Please add at least one service location.');
-      return;
-    }
     setLoading(true);
     setError(null);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        setError('You must be logged in to update a service.');
+        setLoading(false);
+        return;
+    }
+
+    const newImageUrls: string[] = [];
+    if (imageFiles.length > 0) {
+        for (const file of imageFiles) {
+            const fileName = `${user.id}/${Date.now()}_${file.name}`;
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('service-images')
+                .upload(fileName, file);
+
+            if (uploadError) {
+                setError(`Image upload failed: ${uploadError.message}`);
+                setLoading(false);
+                return;
+            }
+            const { data: { publicUrl } } = supabase.storage.from('service-images').getPublicUrl(uploadData.path);
+            newImageUrls.push(publicUrl);
+        }
+    }
+
+    const finalImageUrls = [...existingImageUrls, ...newImageUrls];
 
     const { error: updateError } = await supabase
       .from('services')
@@ -94,8 +136,9 @@ const EditServicePage = ({ params }: EditServicePageProps) => {
         title,
         description,
         price: parseFloat(price),
-        locations: locations, // Save the updated array of location objects
+        locations: locations,
         category: category,
+        image_urls: finalImageUrls,
       })
       .eq('id', id);
 
@@ -106,6 +149,20 @@ const EditServicePage = ({ params }: EditServicePageProps) => {
     }
     setLoading(false);
   };
+
+    const handleAddLocation = () => {
+        if (currentProvince && currentCity) {
+        const newLocation = { province: currentProvince, city: currentCity };
+        if (!locations.some(loc => loc.province === newLocation.province && loc.city === newLocation.city)) {
+            setLocations([...locations, newLocation]);
+        }
+        setCurrentCity('');
+        }
+    };
+
+    const handleRemoveLocation = (index: number) => {
+        setLocations(locations.filter((_, i) => i !== index));
+    };
 
   if (loading) {
     return <div className="text-center p-8">Loading service...</div>;
@@ -120,13 +177,32 @@ const EditServicePage = ({ params }: EditServicePageProps) => {
           <label htmlFor="title" className="mb-2 block text-sm font-medium text-gray-700">Service Title</label>
           <Input id="title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} required />
         </div>
-        
+
         <div>
           <label htmlFor="category" className="mb-2 block text-sm font-medium text-gray-700">Category</label>
           <select id="category" value={category} onChange={(e) => setCategory(e.target.value)} required className="block w-full rounded-md border border-gray-300 bg-background p-3 text-sm ring-offset-background">
             <option value="" disabled>Select a category...</option>
             {categories.map(cat => (<option key={cat} value={cat}>{cat}</option>))}
           </select>
+        </div>
+
+        <div>
+          <label htmlFor="image" className="mb-2 block text-sm font-medium text-gray-700">Service Images (up to 6)</label>
+          <Input id="image" type="file" onChange={handleFileChange} accept="image/*" multiple className="pt-2" />
+          <div className="mt-4 grid grid-cols-3 gap-4">
+            {imagePreviews.map((preview, index) => (
+              <div key={preview} className="relative">
+                <Image src={preview} alt={`Preview ${index + 1}`} width={150} height={150} className="w-full h-32 object-cover rounded-md" />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(index, preview)}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div>

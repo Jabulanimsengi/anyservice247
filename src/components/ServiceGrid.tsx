@@ -1,50 +1,56 @@
 // src/components/ServiceGrid.tsx
 import { supabase } from '@/lib/supabase';
-import ServiceCard from '@/components/ServiceCard';
+import CategoryRow from './CategoryRow';
+
+type ServiceLocation = {
+  province: string;
+  city: string;
+};
 
 type ServiceWithProvider = {
   id: number;
   title: string;
   price: number;
   user_id: string;
-  image_url: string | null;
+  image_urls: string[] | null; // Corrected type to string array
   is_approved: boolean;
-  locations: string[] | null;
+  locations: ServiceLocation[] | null;
   provider_name: string;
   average_rating: number;
   review_count: number;
+  category: string;
 };
 
 const ServiceGrid = async () => {
-  // Data is fetched on the server
   const { data: services, error } = await supabase
     .from('service_with_ratings')
     .select('*')
-    .eq('is_approved', true);
+    .eq('is_approved', true)
+    .limit(280); 
 
   if (error) {
     console.error("Error fetching services:", error.message);
     return <p className="text-center text-red-500">Failed to load services.</p>;
   }
 
+  const servicesByCategory: { [key: string]: ServiceWithProvider[] } = {};
+  if (services) {
+    for (const service of services) {
+      if (!servicesByCategory[service.category]) {
+        servicesByCategory[service.category] = [];
+      }
+      if (servicesByCategory[service.category].length < 40) {
+        servicesByCategory[service.category].push(service as ServiceWithProvider);
+      }
+    }
+  }
+
   return (
     <>
-      {services && services.length > 0 ? (
-        <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {services.map((service) => (
-            <ServiceCard
-              key={service.id}
-              id={service.id}
-              providerId={service.user_id}
-              title={service.title}
-              providerName={service.provider_name ?? 'Anonymous'}
-              rating={service.average_rating}
-              reviewCount={service.review_count}
-              price={service.price}
-              imageUrl={service.image_url}
-              is_approved={service.is_approved}
-              locations={service.locations}
-            />
+      {Object.keys(servicesByCategory).length > 0 ? (
+        <div className="space-y-8">
+          {Object.entries(servicesByCategory).map(([category, categoryServices]) => (
+            <CategoryRow key={category} category={category} services={categoryServices} />
           ))}
         </div>
       ) : (

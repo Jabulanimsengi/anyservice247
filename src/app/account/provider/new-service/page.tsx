@@ -7,16 +7,17 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import BackButton from '@/components/BackButton';
-import { locationsData, provinces } from '@/lib/locations'; // Import new location data
+import { locationsData, provinces } from '@/lib/locations';
+import { X } from 'lucide-react';
+import Image from 'next/image';
 
-// Define the structure for a location object
 type ServiceLocation = {
   province: string;
   city: string;
 };
 
 const categories = [
-  "Plumbing", "Electrical", "Carpentry", "Painting", "Gardening", 
+  "Plumbing", "Electrical", "Carpentry", "Painting", "Gardening",
   "Cleaning", "Appliance Repair", "Roofing", "Pest Control", "Other"
 ];
 
@@ -25,12 +26,11 @@ const NewServicePage = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [category, setCategory] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  // --- New Location State Management ---
   const [locations, setLocations] = useState<ServiceLocation[]>([]);
   const [currentProvince, setCurrentProvince] = useState('');
   const [currentCity, setCurrentCity] = useState('');
@@ -38,23 +38,41 @@ const NewServicePage = () => {
   const handleAddLocation = () => {
     if (currentProvince && currentCity) {
       const newLocation = { province: currentProvince, city: currentCity };
-      // Prevent duplicate locations
       if (!locations.some(loc => loc.province === newLocation.province && loc.city === newLocation.city)) {
         setLocations([...locations, newLocation]);
       }
-      setCurrentCity(''); // Reset city selection
+      setCurrentCity('');
     }
   };
 
   const handleRemoveLocation = (index: number) => {
     setLocations(locations.filter((_, i) => i !== index));
   };
-  // --- End of New Location State Management ---
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setImageFile(e.target.files[0]);
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      if (imageFiles.length + files.length > 6) {
+        setError('You can upload a maximum of 6 images.');
+        return;
+      }
+      setImageFiles((prevFiles) => [...prevFiles, ...files]);
+
+      const newPreviews = files.map((file) => URL.createObjectURL(file));
+      setImagePreviews((prevPreviews) => [...prevPreviews, ...newPreviews]);
     }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setImageFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
+    setImagePreviews((prevPreviews) => {
+        const newPreviews = [...prevPreviews];
+        const removedPreview = newPreviews.splice(index, 1);
+        if (removedPreview[0]) {
+            URL.revokeObjectURL(removedPreview[0]);
+        }
+        return newPreviews;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -77,17 +95,25 @@ const NewServicePage = () => {
       return;
     }
 
-    let imageUrl = null;
-    if (imageFile) {
-      const fileName = `${user.id}/${Date.now()}_${imageFile.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage.from('service-images').upload(fileName, imageFile);
-      if (uploadError) {
-        setError(`Image upload failed: ${uploadError.message}`);
-        setLoading(false);
-        return;
+    const imageUrls: string[] = [];
+    if (imageFiles.length > 0) {
+      for (const file of imageFiles) {
+        const fileName = `${user.id}/${Date.now()}_${file.name}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('service-images')
+          .upload(fileName, file);
+
+        if (uploadError) {
+          setError(`Image upload failed: ${uploadError.message}`);
+          setLoading(false);
+          return;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('service-images')
+          .getPublicUrl(uploadData.path);
+        imageUrls.push(publicUrl);
       }
-      const { data: { publicUrl } } = supabase.storage.from('service-images').getPublicUrl(uploadData.path);
-      imageUrl = publicUrl;
     }
 
     const { error: insertError } = await supabase.from('services').insert({
@@ -95,8 +121,8 @@ const NewServicePage = () => {
       title,
       description,
       price: parseFloat(price),
-      image_url: imageUrl,
-      locations: locations, // Save the array of location objects
+      image_urls: imageUrls,
+      locations: locations,
       category: category,
     });
 
@@ -113,12 +139,11 @@ const NewServicePage = () => {
       <BackButton />
       <h1 className="mb-6 text-3xl font-bold">Add a New Service</h1>
       <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border bg-white p-8 shadow-sm">
-        {/* ... (title, category, image, description, price inputs remain the same) ... */}
         <div>
           <label htmlFor="title" className="mb-2 block text-sm font-medium text-gray-700">Service Title</label>
           <Input id="title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Professional Plumbing Services" required />
         </div>
-        
+
         <div>
           <label htmlFor="category" className="mb-2 block text-sm font-medium text-gray-700">Category</label>
           <select id="category" value={category} onChange={(e) => setCategory(e.target.value)} required className="block w-full rounded-md border border-gray-300 bg-background p-3 text-sm ring-offset-background">
@@ -128,8 +153,22 @@ const NewServicePage = () => {
         </div>
 
         <div>
-          <label htmlFor="image" className="mb-2 block text-sm font-medium text-gray-700">Service Image</label>
-          <Input id="image" type="file" onChange={handleFileChange} accept="image/*" className="pt-2" />
+          <label htmlFor="image" className="mb-2 block text-sm font-medium text-gray-700">Service Images (up to 6)</label>
+          <Input id="image" type="file" onChange={handleFileChange} accept="image/*" multiple className="pt-2" />
+          <div className="mt-4 grid grid-cols-3 gap-4">
+            {imagePreviews.map((preview, index) => (
+              <div key={preview} className="relative">
+                <Image src={preview} alt={`Preview ${index + 1}`} width={150} height={150} className="w-full h-32 object-cover rounded-md" />
+                <button
+                  type="button"
+                  onClick={() => handleRemoveImage(index)}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
         <div>
@@ -142,7 +181,6 @@ const NewServicePage = () => {
           <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="e.g., 450.00" required step="0.01" />
         </div>
 
-        {/* --- New Location Input Section --- */}
         <div className="space-y-4 rounded-md border p-4">
           <h3 className="font-medium text-gray-800">Service Locations</h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -173,7 +211,6 @@ const NewServicePage = () => {
             ))}
           </ul>
         </div>
-        {/* --- End of New Location Input Section --- */}
 
         {error && <p className="text-sm text-red-600">{error}</p>}
         <Button type="submit" disabled={loading} className="w-full">{loading ? 'Saving...' : 'Save Service'}</Button>
