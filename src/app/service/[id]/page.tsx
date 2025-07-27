@@ -6,13 +6,11 @@ interface ServiceDetailPageProps {
   params: { id: string };
 }
 
-// This component now just gets the 'id' and passes it to the new component.
+// This component now just passes the entire params object down.
 const ServiceDetailPage = ({ params }: ServiceDetailPageProps) => {
-  const { id } = params;
-
   return (
     <Suspense fallback={<div className="text-center py-12">Loading service...</div>}>
-      <ServicePageContent id={id} />
+      <ServicePageContent params={params} />
     </Suspense>
   );
 };

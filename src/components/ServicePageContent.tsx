@@ -6,11 +6,38 @@ import ServiceInteraction from '@/components/ServiceInteraction';
 import { revalidatePath } from 'next/cache';
 import Image from 'next/image';
 
+// --- Type Definitions ---
+type Service = {
+  title: string;
+  price: number;
+  description: string;
+  user_id: string;
+  provider_name: string | null;
+  image_urls: string[] | null;
+  provider_email: string | null;
+  provider_website: string | null;
+  provider_whatsapp: string | null;
+  provider_office_number: string | null;
+};
+
+type Review = {
+  id: number;
+  rating: number;
+  comment: string;
+  created_at: string;
+  profiles: { full_name: string; } | null;
+};
+
+// This component now receives the entire params object
 interface ServicePageContentProps {
-  id: string;
+  params: { id: string };
 }
 
-const ServicePageContent = async ({ id }: ServicePageContentProps) => {
+const ServicePageContent = async ({ params }: ServicePageContentProps) => {
+  // The 'id' is now destructured here
+  const { id } = params;
+
+  // --- Data Fetching on the Server ---
   const { data: service, error: serviceError } = await supabase
     .from('service_with_ratings')
     .select(`
@@ -23,7 +50,7 @@ const ServicePageContent = async ({ id }: ServicePageContentProps) => {
   if (serviceError || !service) {
     return <div className="text-center py-12">Service not found.</div>;
   }
-
+  
   const { data: reviews } = await supabase
     .from('reviews')
     .select(`*, profiles(full_name)`)
@@ -39,6 +66,7 @@ const ServicePageContent = async ({ id }: ServicePageContentProps) => {
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
       <BackButton />
+      {/* Service Images Gallery */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         {(service.image_urls && service.image_urls.length > 0) ? (
           service.image_urls.map((url: string, index: number) => (
