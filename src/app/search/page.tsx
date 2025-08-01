@@ -19,7 +19,7 @@ type ServiceWithProvider = {
   title: string;
   price: number;
   user_id: string;
-  image_url: string | null;
+  image_urls: string[] | null;
   is_approved: boolean;
   locations: ServiceLocation[] | null;
   provider_name: string;
@@ -38,11 +38,14 @@ const SearchPage = () => {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   
+  // CORRECTED: Read category from URL params to initialize state
+  const initialCategory = searchParams.get('category') || '';
+
   const [services, setServices] = useState<ServiceWithProvider[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Updated Filter State
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [selectedProvince, setSelectedProvince] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [minPrice, setMinPrice] = useState('');
@@ -65,11 +68,8 @@ const SearchPage = () => {
     
     // New Location Query Logic
     if (selectedProvince && selectedCity) {
-      // Query for an object containing both province and city
       queryBuilder = queryBuilder.contains('locations', [{ province: selectedProvince, city: selectedCity }]);
     } else if (selectedProvince) {
-      // Query for any object with the matching province.
-      // This requires a text search on the JSONB column.
       queryBuilder = queryBuilder.like('locations::text', `%${selectedProvince}%`);
     }
 
@@ -157,7 +157,7 @@ const SearchPage = () => {
 
       {loading ? <p>Searching...</p> : services.length > 0 ? (
         <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {services.map((service) => <ServiceCard key={service.id} {...service as any} providerId={service.user_id} providerName={service.provider_name} rating={service.average_rating} reviewCount={service.review_count} />)}
+          {services.map((service) => <ServiceCard key={service.id} {...service as any} providerId={service.user_id} providerName={service.provider_name} rating={service.average_rating} reviewCount={service.review_count} imageUrls={service.image_urls} />)}
         </div>
       ) : (
         <p>No services found matching your criteria.</p>
