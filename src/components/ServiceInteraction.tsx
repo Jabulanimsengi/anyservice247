@@ -6,11 +6,12 @@ import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/Button';
 import LeaveReview from '@/components/LeaveReview';
+import BookingCalendar from './BookingCalendar';
 
 type ServiceInteractionProps = {
   serviceId: string;
   serviceProviderId: string;
-  onReviewSubmitted: () => void; // Function to trigger revalidation
+  onReviewSubmitted: () => void;
 };
 
 const ServiceInteraction = ({ serviceId, serviceProviderId, onReviewSubmitted }: ServiceInteractionProps) => {
@@ -18,6 +19,7 @@ const ServiceInteraction = ({ serviceId, serviceProviderId, onReviewSubmitted }:
   const [bookingMessage, setBookingMessage] = useState<string | null>(null);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [canLeaveReview, setCanLeaveReview] = useState(false);
+  const [selectedDateTime, setSelectedDateTime] = useState<string | null>(null);
 
   useEffect(() => {
     const checkUserAndBookingStatus = async () => {
@@ -25,7 +27,6 @@ const ServiceInteraction = ({ serviceId, serviceProviderId, onReviewSubmitted }:
       setUser(user);
 
       if (user) {
-        // Check if the user has completed a booking for this service
         const { data: bookingData } = await supabase
           .from('bookings')
           .select('id')
@@ -34,7 +35,6 @@ const ServiceInteraction = ({ serviceId, serviceProviderId, onReviewSubmitted }:
           .eq('status', 'completed')
           .limit(1);
 
-        // Check if the user has already left a review for this service
         const { data: reviewData } = await supabase
             .from('reviews')
             .select('id')
@@ -42,7 +42,6 @@ const ServiceInteraction = ({ serviceId, serviceProviderId, onReviewSubmitted }:
             .eq('service_id', serviceId)
             .limit(1);
 
-        // User can leave a review if they have a completed booking and have not yet left a review
         if (bookingData && bookingData.length > 0 && reviewData && reviewData.length === 0) {
           setCanLeaveReview(true);
         } else {
@@ -66,11 +65,16 @@ const ServiceInteraction = ({ serviceId, serviceProviderId, onReviewSubmitted }:
         setBookingError('You cannot book your own service.');
         return;
     }
+    if (!selectedDateTime) {
+        setBookingError('Please select a date and time for the appointment.');
+        return;
+    }
 
     const { error } = await supabase.from('bookings').insert({
         user_id: user.id,
         service_id: parseInt(serviceId),
         provider_id: serviceProviderId,
+        appointment_time: selectedDateTime
     });
 
     if (error) {
@@ -82,8 +86,11 @@ const ServiceInteraction = ({ serviceId, serviceProviderId, onReviewSubmitted }:
 
   return (
     <div>
-      <div className="mt-8">
-        <Button size="lg" onClick={handleBookNow}>Book Now</Button>
+      <BookingCalendar providerId={serviceProviderId} onDateTimeSelected={setSelectedDateTime} />
+      <div className="mt-4">
+        <Button size="lg" onClick={handleBookNow} disabled={!selectedDateTime}>
+          Book Now
+        </Button>
         {bookingMessage && <p className="mt-2 text-sm text-green-600">{bookingMessage}</p>}
         {bookingError && <p className="mt-2 text-sm text-red-600">{bookingError}</p>}
       </div>

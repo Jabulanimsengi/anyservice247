@@ -1,15 +1,15 @@
 // src/app/service/[id]/page.tsx
 import ServicePageContent from '@/components/ServicePageContent';
+import Spinner from '@/components/ui/Spinner';
 import { Suspense } from 'react';
 
 interface ServiceDetailPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-// This component now just passes the entire params object down.
 const ServiceDetailPage = ({ params }: ServiceDetailPageProps) => {
   return (
-    <Suspense fallback={<div className="text-center py-12">Loading service...</div>}>
+    <Suspense fallback={<Spinner />}>
       <ServicePageContent params={params} />
     </Suspense>
   );

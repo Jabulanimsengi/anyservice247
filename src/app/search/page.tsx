@@ -8,6 +8,8 @@ import ServiceCard from '@/components/ServiceCard';
 import BackButton from '@/components/BackButton';
 import { Button } from '@/components/ui/Button';
 import { locationsData, provinces } from '@/lib/locations';
+import { categories } from '@/lib/categories'; // Import categories
+import Spinner from '@/components/ui/Spinner';
 
 type ServiceLocation = {
   province: string;
@@ -29,22 +31,14 @@ type ServiceWithProvider = {
   description: string;
 };
 
-const categories = [
-  "Plumbing", "Electrical", "Carpentry", "Painting", "Gardening", 
-  "Cleaning", "Appliance Repair", "Roofing", "Pest Control", "Other"
-];
-
 const SearchPage = () => {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
-  
-  // CORRECTED: Read category from URL params to initialize state
   const initialCategory = searchParams.get('category') || '';
 
   const [services, setServices] = useState<ServiceWithProvider[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Updated Filter State
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [selectedProvince, setSelectedProvince] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
@@ -66,7 +60,6 @@ const SearchPage = () => {
       queryBuilder = queryBuilder.eq('category', selectedCategory);
     }
     
-    // New Location Query Logic
     if (selectedProvince && selectedCity) {
       queryBuilder = queryBuilder.contains('locations', [{ province: selectedProvince, city: selectedCity }]);
     } else if (selectedProvince) {
@@ -107,10 +100,8 @@ const SearchPage = () => {
       <BackButton />
       <h1 className="mb-6 text-3xl font-bold">Search Results {query && `for "${query}"`}</h1>
 
-      {/* Updated Filter Controls */}
       <div className="mb-8 rounded-lg border bg-white p-4 shadow-sm">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
-          {/* Category Filter */}
           <div>
             <label htmlFor="category-filter" className="text-sm font-medium">Category</label>
             <select id="category-filter" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
@@ -119,7 +110,6 @@ const SearchPage = () => {
             </select>
           </div>
 
-          {/* Province Filter */}
           <div>
             <label htmlFor="province-filter" className="text-sm font-medium">Province</label>
             <select id="province-filter" value={selectedProvince} onChange={(e) => { setSelectedProvince(e.target.value); setSelectedCity(''); }} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
@@ -128,7 +118,6 @@ const SearchPage = () => {
             </select>
           </div>
           
-          {/* City Filter */}
           <div>
             <label htmlFor="city-filter" className="text-sm font-medium">City</label>
             <select id="city-filter" value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)} disabled={!selectedProvince} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm disabled:bg-gray-100">
@@ -137,7 +126,6 @@ const SearchPage = () => {
             </select>
           </div>
 
-          {/* Price Filters */}
           <div className="flex gap-2">
             <div>
               <label htmlFor="min-price" className="text-sm font-medium">Min Price</label>
@@ -155,7 +143,7 @@ const SearchPage = () => {
         </div>
       </div>
 
-      {loading ? <p>Searching...</p> : services.length > 0 ? (
+      {loading ? <Spinner /> : services.length > 0 ? (
         <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {services.map((service) => <ServiceCard key={service.id} {...service as any} providerId={service.user_id} providerName={service.provider_name} rating={service.average_rating} reviewCount={service.review_count} imageUrls={service.image_urls} />)}
         </div>

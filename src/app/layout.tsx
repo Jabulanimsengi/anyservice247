@@ -1,13 +1,11 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
-// import { Inter } from "next/font/google"; // Commented out the problematic import
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ToastContainer from "@/components/ui/Toast";
 import LikesInitializer from "@/components/LikesInitializer";
-
-// const inter = Inter({ subsets: ["latin"] }); // This line is no longer needed
+import ChatManager from "@/components/ChatManager";
 
 export const metadata = {
   title: "HomeServices24/7 - Find Trusted Service Providers",
@@ -22,12 +20,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Added direct link to Google Fonts stylesheet */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet" />
       </head>
-      {/* Removed the inter.className from the body tag */}
       <body className={`bg-gray-100`}>
         <LikesInitializer />
         <div className="flex min-h-screen flex-col">
@@ -36,6 +32,7 @@ export default function RootLayout({
           <Footer />
         </div>
         <ToastContainer />
+        <ChatManager />
       </body>
     </html>
   );

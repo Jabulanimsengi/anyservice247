@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import BackButton from '@/components/BackButton';
 import { locationsData, provinces } from '@/lib/locations';
+import { categories } from '@/lib/categories'; // Import categories
 import { X } from 'lucide-react';
 import Image from 'next/image';
 
@@ -15,11 +16,6 @@ type ServiceLocation = {
   province: string;
   city: string;
 };
-
-const categories = [
-  "Plumbing", "Electrical", "Carpentry", "Painting", "Gardening",
-  "Cleaning", "Appliance Repair", "Roofing", "Pest Control", "Other"
-];
 
 const NewServicePage = () => {
   const router = useRouter();

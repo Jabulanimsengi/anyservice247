@@ -7,7 +7,7 @@ import { User } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import BackButton from '@/components/BackButton'; // Import BackButton
+import BackButton from '@/components/BackButton';
 
 const AccountPage = () => {
   const router = useRouter();
@@ -42,7 +42,6 @@ const AccountPage = () => {
         <BackButton />
         <h1 className="mb-6 text-3xl font-bold">Your Account</h1>
 
-        {/* User Profile Section */}
         <div className="mb-8 space-y-4 rounded-lg border bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold">Profile Information</h2>
           <p>
@@ -53,14 +52,23 @@ const AccountPage = () => {
           </p>
         </div>
 
-        {/* Provider Dashboard Section */}
+        <div className="mb-8 space-y-4 rounded-lg border bg-white p-6 shadow-sm">
+          <h2 className="text-xl font-semibold">Client Dashboard</h2>
+          <p className="text-gray-600">
+            View your bookings, messages, and manage your account.
+          </p>
+          <Link href="/account/dashboard">
+            <Button>Go to Your Dashboard</Button>
+          </Link>
+        </div>
+
         <div className="space-y-4 rounded-lg border bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold">Service Provider Area</h2>
           <p className="text-gray-600">
             Manage your services, view bookings, and update your public profile.
           </p>
           <Link href="/account/provider">
-            <Button>Go to Provider Dashboard</Button>
+            <Button variant='outline'>Go to Provider Dashboard</Button>
           </Link>
         </div>
       </div>

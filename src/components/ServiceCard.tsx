@@ -4,7 +4,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import { Star, Heart, MapPin } from 'lucide-react';
+import { Star, Heart, MapPin, MessageSquare } from 'lucide-react';
 import VerifiedBadge from './VerifiedBadge';
 import { useStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
@@ -20,7 +20,7 @@ type ServiceLocation = {
 interface ServiceCardProps {
   id: number;
   providerId: string;
-  imageUrls: string[] | null; // Correctly expects an array of URLs
+  imageUrls: string[] | null;
   title: string;
   providerName: string;
   rating: number;
@@ -33,12 +33,11 @@ interface ServiceCardProps {
 const ServiceCard: React.FC<ServiceCardProps> = ({
   id, providerId, imageUrls, title, providerName, rating, reviewCount, price, is_approved, locations
 }) => {
-  const { likedServiceIds, addLike, removeLike, addToast } = useStore();
+  const { likedServiceIds, addLike, removeLike, addToast, openChat } = useStore();
   const [user, setUser] = useState<User | null>(null);
   const [guestId, setGuestId] = useState<string | null>(null);
   const [isLiking, setIsLiking] = useState(false);
 
-  // Get the first image for the card thumbnail, or a placeholder
   const displayImage = imageUrls && imageUrls.length > 0 ? imageUrls[0] : '/placeholder.png';
 
   useEffect(() => {
@@ -98,6 +97,20 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
     }
   };
 
+  const handleStartChat = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!user) {
+        addToast('Please sign in to send a message.', 'error');
+        return;
+    }
+    if (user.id === providerId) {
+        addToast("You can't message yourself.", 'error');
+        return;
+    }
+    openChat(providerId, providerName);
+  };
+
   return (
     <div className="group relative flex max-w-sm flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md transition-all duration-300 hover:shadow-xl hover:ring-2 hover:ring-brand-teal">
       {is_approved && (
@@ -105,13 +118,21 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
           <VerifiedBadge />
         </div>
       )}
-      <div className="absolute top-2 left-2 z-10">
+      <div className="absolute top-2 left-2 z-10 flex flex-col gap-2">
         <button
           onClick={handleLike}
           disabled={isLiking}
           className="rounded-full bg-white/70 p-2 text-gray-600 backdrop-blur-sm transition-colors hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label="Like service"
         >
           <Heart size={20} fill={isLiked ? '#ef4444' : 'none'} className={isLiked ? 'text-red-500' : ''} />
+        </button>
+        <button
+          onClick={handleStartChat}
+          className="rounded-full bg-white/70 p-2 text-gray-600 backdrop-blur-sm transition-colors hover:text-brand-blue"
+          aria-label="Message provider"
+        >
+          <MessageSquare size={20} />
         </button>
       </div>
       <Link href={`/service/${id}`} passHref>
@@ -154,7 +175,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
 
         <div className="mt-auto pt-4 flex items-center justify-between">
           <span className="text-xl font-bold text-gray-900">
-            R{Number(price).toFixed(2)}
+            from R{Number(price).toFixed(2)}
           </span>
           <Link href={`/service/${id}`} passHref>
             <Button size="sm">View Details</Button>

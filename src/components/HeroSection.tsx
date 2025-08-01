@@ -1,18 +1,56 @@
 // src/components/HeroSection.tsx
 'use client'; 
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { categories } from '@/lib/categories'; // Import categories
 
 const HeroSection = () => {
   const [query, setQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isSuggestionsVisible, setIsSuggestionsVisible] = useState(false);
   const router = useRouter();
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!query.trim()) return;
+    setIsSuggestionsVisible(false);
     router.push(`/search?q=${encodeURIComponent(query)}`);
   };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setQuery(value);
+    if (value.length > 0) {
+      const filteredSuggestions = categories.filter(cat =>
+        cat.toLowerCase().includes(value.toLowerCase())
+      );
+      setSuggestions(filteredSuggestions);
+      setIsSuggestionsVisible(true);
+    } else {
+      setSuggestions([]);
+      setIsSuggestionsVisible(false);
+    }
+  };
+  
+  const handleSuggestionClick = (suggestion: string) => {
+    setQuery(suggestion);
+    setIsSuggestionsVisible(false);
+    router.push(`/search?q=${encodeURIComponent(suggestion)}`);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+        if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+            setIsSuggestionsVisible(false);
+        }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <section className="bg-gray-100">
@@ -24,7 +62,7 @@ const HeroSection = () => {
           <p className="mt-6 mb-8 max-w-2xl mx-auto text-lg text-gray-300">
             HomeServices24/7 is reinventing how South Africans find home services. We meticulously verify every provider, connecting you with trusted, top-tier professionals for any job, big or small.
           </p>
-          <div className="w-full max-w-lg mx-auto">
+          <div ref={searchContainerRef} className="relative w-full max-w-lg mx-auto">
             <form onSubmit={handleSearch} className="flex items-center">
               <label htmlFor="search" className="sr-only">Search</label>
               <div className="relative w-full">
@@ -37,7 +75,9 @@ const HeroSection = () => {
                   type="text"
                   id="search"
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={handleInputChange}
+                  onFocus={() => setIsSuggestionsVisible(query.length > 0 && suggestions.length > 0)}
+                  autoComplete="off"
                   className="block w-full rounded-lg border border-gray-600 bg-gray-700 p-4 pl-10 text-sm text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
                   placeholder="Search for a plumber, electrician, painter..."
                   required
@@ -50,6 +90,20 @@ const HeroSection = () => {
                 Search
               </button>
             </form>
+            {/* Suggestions Dropdown */}
+            {isSuggestionsVisible && suggestions.length > 0 && (
+              <ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-lg text-left">
+                {suggestions.map((suggestion, index) => (
+                  <li 
+                      key={index} 
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      className="px-4 py-2 cursor-pointer hover:bg-gray-100 text-gray-800"
+                  >
+                      {suggestion}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </div>

@@ -4,7 +4,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
-import { useStore } from '@/lib/store'; // Import the store
+import { useStore } from '@/lib/store';
+import Spinner from '@/components/ui/Spinner'; // Import Spinner
 
 type Service = {
   id: number;
@@ -18,7 +19,7 @@ type Service = {
 const AdminServicesPage = () => {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
-  const { addToast } = useStore(); // Get the addToast function
+  const { addToast } = useStore();
 
   const fetchServices = useCallback(async () => {
     setLoading(true);
@@ -62,7 +63,7 @@ const AdminServicesPage = () => {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Manage Service Listings</h1>
       {loading ? (
-        <p>Loading services...</p>
+        <Spinner />
       ) : (
         <div className="overflow-x-auto rounded-lg border bg-white">
           <table className="min-w-full divide-y divide-gray-200">

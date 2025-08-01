@@ -6,7 +6,9 @@ import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 import AuthModal from './AuthModal';
 import Link from 'next/link';
-import { Heart } from 'lucide-react';
+import { Heart, Bell } from 'lucide-react';
+import ConfirmLogoutModal from './ConfirmLogoutModal';
+import { useRouter } from 'next/navigation'; // Import the router
 
 type Profile = {
   role: string;
@@ -16,46 +18,51 @@ const Header = () => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const router = useRouter(); // Initialize the router
 
   useEffect(() => {
-    const getSessionAndProfile = async () => {
+    const getInitialSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
-
-      if (session?.user) {
-        const { data: userProfile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        setProfile(userProfile);
-      }
-      
       setLoading(false);
     };
-
-    getSessionAndProfile();
-
+    getInitialSession();
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
-         getSessionAndProfile();
-      } else {
-         setProfile(null);
-      }
       setLoading(false);
     });
-
     return () => {
       authListener.subscription.unsubscribe();
     };
   }, []);
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
-  const handleSignOut = async () => {
+  useEffect(() => {
+    if (user) {
+      const fetchProfile = async () => {
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        setProfile(userProfile as Profile | null);
+      };
+      fetchProfile();
+    } else {
+      setProfile(null);
+    }
+  }, [user]);
+
+  const handleSignOut = () => {
+    setIsLogoutModalOpen(true);
+  };
+
+  const confirmSignOut = async () => {
     await supabase.auth.signOut();
+    setIsLogoutModalOpen(false);
+    router.push('/'); // Redirect to the homepage
   };
 
   return (
@@ -68,10 +75,15 @@ const Header = () => {
             </a>
           </div>
           <div className="flex items-center space-x-4">
-            <Link href="/academy" className="text-gray-300 hover:text-white">Academy</Link>
-            <Link href="/community" className="text-gray-300 hover:text-white">Community</Link>
-            <Link href="/likes" className="text-gray-300 hover:text-white">
-              <Heart />
+            <Link href="/products" className="text-gray-300 hover:text-white">Products</Link>
+            <Link href="/likes" className="text-gray-300 hover:text-white"><Heart /></Link>
+            <Link href="/account/messages" className="text-gray-300 hover:text-white relative">
+              <Bell />
+              {unreadMessages > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                  {unreadMessages}
+                </span>
+              )}
             </Link>
 
             {loading ? (
@@ -83,9 +95,6 @@ const Header = () => {
                     Admin Panel
                   </Link>
                 )}
-                <span className="hidden sm:inline">
-                  Hello, {user.user_metadata?.full_name || user.email}
-                </span>
                 <Link href="/account" className="rounded-md bg-gray-600 px-4 py-2 text-sm text-white hover:bg-gray-700">
                   Account
                 </Link>
@@ -98,24 +107,15 @@ const Header = () => {
               </div>
             ) : (
               <div className="flex items-center space-x-2">
-                <button
-                  onClick={openModal}
-                  className="text-gray-300 hover:text-white"
-                >
-                  Sign In
-                </button>
-                <button
-                  onClick={openModal}
-                  className="rounded-md bg-brand-teal px-4 py-2 text-white hover:bg-opacity-90"
-                >
-                  Sign Up
-                </button>
+                <button onClick={() => setIsAuthModalOpen(true)} className="text-gray-300 hover:text-white">Sign In</button>
+                <button onClick={() => setIsAuthModalOpen(true)} className="rounded-md bg-brand-teal px-4 py-2 text-white hover:bg-opacity-90">Sign Up</button>
               </div>
             )}
           </div>
         </nav>
       </header>
-      {!user && <AuthModal isOpen={isModalOpen} onClose={closeModal} />}
+      {!user && <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />}
+      <ConfirmLogoutModal isOpen={isLogoutModalOpen} onClose={() => setIsLogoutModalOpen(false)} onConfirm={confirmSignOut} />
     </>
   );
 };

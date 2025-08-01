@@ -1,97 +1,94 @@
 // src/app/provider/[id]/page.tsx
-'use client';
-
-import { useState, useEffect, use } from 'react';
 import { supabase } from '@/lib/supabase';
 import ServiceCard from '@/components/ServiceCard';
-import BackButton from '@/components/BackButton'; // Import BackButton
+import BackButton from '@/components/BackButton';
+import { notFound } from 'next/navigation';
+import { Twitter, Linkedin, Globe } from 'lucide-react';
 
-type Profile = {
-  full_name: string;
-};
+export const dynamic = 'force-dynamic';
 
-type Service = {
-  id: number;
-  title: string;
-  price: number;
-  user_id: string;
-  is_approved: boolean;
-  image_url: string | null;
-  locations: string[] | null;
-  profiles: {
-    full_name: string;
-  }[];
-};
-
+// CORRECTED: The type for params now reflects that it can be a Promise
 interface ProviderProfilePageProps {
-  params: Promise<{
-    id: string;
-  }>;
+  params: Promise<{ id: string }>;
 }
 
-const ProviderProfilePage = ({ params }: ProviderProfilePageProps) => {
-  const { id } = use(params);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [services, setServices] = useState<Service[]>([]);
-  const [loading, setLoading] = useState(true);
+const ProviderProfilePage = async ({ params }: ProviderProfilePageProps) => {
+  // CORRECTED: Awaiting the params promise before destructuring
+  const { id } = await params;
+  if (!id) notFound();
 
-  useEffect(() => {
-    const fetchProviderData = async () => {
-      if (!id) return;
+  const profilePromise = supabase
+    .from('profiles')
+    .select('full_name, portfolio, qualifications, social_media')
+    .eq('id', id)
+    .single();
 
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', id)
-        .single();
+  const servicesPromise = supabase
+    .from('service_with_ratings')
+    .select('*')
+    .eq('user_id', id);
 
-      if (profileError) console.error('Error fetching profile:', profileError);
-      else setProfile(profileData);
+  const completedJobsPromise = supabase
+    .from('bookings')
+    .select('id', { count: 'exact' })
+    .eq('provider_id', id)
+    .eq('status', 'completed');
 
-      const { data: servicesData, error: servicesError } = await supabase
-        .from('services')
-        .select(`id, title, price, user_id, is_approved, image_url, locations, profiles (full_name)`)
-        .eq('user_id', id);
+  const [{ data: profile, error: profileError }, { data: services, error: servicesError }, { count: completedJobsCount }] = await Promise.all([
+    profilePromise,
+    servicesPromise,
+    completedJobsPromise,
+  ]);
 
-      if (servicesError) console.error('Error fetching services:', servicesError);
-      else setServices(servicesData || []);
 
-      setLoading(false);
-    };
-
-    fetchProviderData();
-  }, [id]);
-
-  if (loading) {
-    return <div className="text-center py-12">Loading provider profile...</div>;
+  if (profileError || !profile) {
+    notFound();
   }
 
-  if (!profile) {
-    return <div className="text-center py-12">Provider not found.</div>;
+  if (servicesError) {
+    console.error('Error fetching services:', servicesError);
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
       <BackButton />
-      <div className="mb-8">
+      <div className="mb-8 rounded-lg border bg-white p-6 shadow-sm">
         <h1 className="text-4xl font-bold">{profile.full_name}</h1>
         <p className="text-lg text-gray-500">Service Provider</p>
+        <p className="mt-2 font-semibold text-green-600">{completedJobsCount || 0} Jobs Completed</p>
+        {profile.social_media && (
+          <div className="mt-4 flex space-x-4">
+            {profile.social_media.twitter && <a href={profile.social_media.twitter} target="_blank" rel="noopener noreferrer"><Twitter /></a>}
+            {profile.social_media.linkedin && <a href={profile.social_media.linkedin} target="_blank" rel="noopener noreferrer"><Linkedin /></a>}
+            {profile.social_media.website && <a href={profile.social_media.website} target="_blank" rel="noopener noreferrer"><Globe /></a>}
+          </div>
+        )}
       </div>
 
+      {/* Qualifications Section */}
+      {profile.qualifications && profile.qualifications.length > 0 && (
+          <div className="mb-8 rounded-lg border bg-white p-6 shadow-sm">
+              <h2 className="text-2xl font-bold mb-4">Qualifications</h2>
+              <ul className="list-disc list-inside space-y-2">
+                  {profile.qualifications.map((q: string, i: number) => <li key={i}>{q}</li>)}
+              </ul>
+          </div>
+      )}
+
       <h2 className="text-2xl font-bold mb-6">Services offered by {profile.full_name}</h2>
-      {services.length > 0 ? (
+      {services && services.length > 0 ? (
         <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {services.map((service) => (
+          {services.map((service: any) => (
             <ServiceCard
               key={service.id}
               id={service.id}
               providerId={service.user_id}
               title={service.title}
-              providerName={service.profiles[0]?.full_name ?? 'Anonymous'}
-              rating={5.0}
-              reviewCount={0}
+              providerName={service.provider_name ?? 'Anonymous'}
+              rating={service.average_rating}
+              reviewCount={service.review_count}
               price={service.price}
-              imageUrl={service.image_url}
+              imageUrls={service.image_urls}
               is_approved={service.is_approved}
               locations={service.locations}
             />
