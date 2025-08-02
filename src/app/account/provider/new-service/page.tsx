@@ -29,6 +29,7 @@ const NewServicePage = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [callOutFee, setCallOutFee] = useState(''); // New state for call-out fee
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [category, setCategory] = useState('');
@@ -141,6 +142,7 @@ const NewServicePage = () => {
       title,
       description,
       price: parseFloat(price),
+      call_out_fee: parseFloat(callOutFee) || 0, // Add call_out_fee here
       image_urls: imageUrls,
       locations: locations,
       category: category,
@@ -196,6 +198,10 @@ const NewServicePage = () => {
              <div>
                 <label htmlFor="price" className="mb-2 block text-sm font-medium text-gray-700">Price per Hour (R)</label>
                 <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="e.g., 450.00" required step="0.01" />
+            </div>
+            <div>
+                <label htmlFor="callOutFee" className="mb-2 block text-sm font-medium text-gray-700">Call-Out Fee (R) (Optional)</label>
+                <Input id="callOutFee" type="number" value={callOutFee} onChange={(e) => setCallOutFee(e.target.value)} placeholder="e.g., 150.00" step="0.01" />
             </div>
         </div>
 

@@ -21,6 +21,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [userType, setUserType] = useState('user');
+  const [businessName, setBusinessName] = useState('');
+  const [regNo, setRegNo] = useState('');
+  const [officeEmail, setOfficeEmail] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [location, setLocation] = useState('');
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -47,21 +53,37 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name: fullName,
+          role: userType,
         },
       },
     });
 
     if (error) {
       setError(error.message);
-    } else {
+    } else if (data.user) {
+      if (userType === 'provider') {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            business_name: businessName,
+            registration_number: regNo,
+            office_email: officeEmail,
+            whatsapp: whatsapp,
+            location: location,
+          })
+          .eq('id', data.user.id);
+
+        if (profileError) {
+          setError(profileError.message);
+        }
+      }
       setMessage('Sign-up successful! Please check your email to verify your account.');
-      // Keep modal open to show the success message
     }
     setLoading(false);
   };
@@ -81,6 +103,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         setEmail('');
         setPassword('');
         setFullName('');
+        setUserType('user');
+        setBusinessName('');
+        setRegNo('');
+        setOfficeEmail('');
+        setWhatsapp('');
+        setLocation('');
     }, 300); // Delay to allow animation to finish
   }
 
@@ -135,9 +163,29 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                     </form>
                   ) : (
                     <form onSubmit={handleSignUp} className="space-y-4">
+                      <div className="flex items-center space-x-4">
+                        <label className="text-sm font-medium text-gray-700">Sign up as:</label>
+                        <div className="flex items-center">
+                          <input type="radio" id="user" name="userType" value="user" checked={userType === 'user'} onChange={() => setUserType('user')} className="h-4 w-4 text-brand-teal border-gray-300 focus:ring-brand-teal"/>
+                          <label htmlFor="user" className="ml-2 block text-sm text-gray-900">User</label>
+                        </div>
+                        <div className="flex items-center">
+                          <input type="radio" id="provider" name="userType" value="provider" checked={userType === 'provider'} onChange={() => setUserType('provider')} className="h-4 w-4 text-brand-teal border-gray-300 focus:ring-brand-teal"/>
+                          <label htmlFor="provider" className="ml-2 block text-sm text-gray-900">Service Provider</label>
+                        </div>
+                      </div>
                       <Input id="name-up" type="text" placeholder="Full Name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
                       <Input id="email-up" type="email" placeholder="Email Address" required value={email} onChange={(e) => setEmail(e.target.value)} />
                       <Input id="password-up" type="password" placeholder="Password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                      {userType === 'provider' && (
+                        <>
+                          <Input id="business-name" type="text" placeholder="Business Name" required value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
+                          <Input id="reg-no" type="text" placeholder="Registration Number" value={regNo} onChange={(e) => setRegNo(e.target.value)} />
+                          <Input id="office-email" type="email" placeholder="Office Email" value={officeEmail} onChange={(e) => setOfficeEmail(e.target.value)} />
+                          <Input id="whatsapp" type="tel" placeholder="WhatsApp Number" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
+                          <Input id="location" type="text" placeholder="Business Location" value={location} onChange={(e) => setLocation(e.target.value)} />
+                        </>
+                      )}
                       <Button type="submit" className="w-full" disabled={loading}>
                         {loading ? 'Signing Up...' : 'Sign Up'}
                       </Button>

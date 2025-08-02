@@ -97,7 +97,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
   };
 
   return (
-    <div className="group relative flex max-w-sm flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md transition-all duration-300 hover:shadow-xl hover:ring-2 hover:ring-brand-teal">
+    <div className="group relative flex max-w-sm flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md transition-all duration-300 hover:shadow-xl hover:ring-2 hover:ring-brand-teal h-full">
       {status === 'approved' && (
         <div className="absolute top-2 right-2 z-10">
           <VerifiedBadge />
@@ -132,7 +132,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
         </div>
       </Link>
       <div className="flex flex-grow flex-col p-4">
-        <h3 className="text-md font-bold tracking-tight text-gray-900">
+        <h3 className="text-md font-bold tracking-tight text-gray-900 line-clamp-2">
           <Link href={`/service/${id}`} className="hover:underline">
             {title}
           </Link>
@@ -146,7 +146,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
         {locations && locations.length > 0 && (
           <div className="mt-2 flex items-center gap-1 text-xs text-gray-500">
             <MapPin size={14} />
-            <span>{locations.map(loc => loc.city).join(', ')}</span>
+            <span className="line-clamp-1">{locations.map(loc => loc.city).join(', ')}</span>
           </div>
         )}
 

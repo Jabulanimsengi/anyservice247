@@ -57,7 +57,13 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
                     <h1 className="text-2xl lg:text-3xl font-bold text-gray-800">{service.title}</h1>
                     <p className="mt-1 text-lg">by <Link href={`/provider/${service.user_id}`} className="font-semibold text-blue-600 hover:underline">{service.provider_name ?? 'Anonymous'}</Link></p>
                     <div className="my-6 border-t"></div>
-                    <div className="mb-6"><span className="text-gray-500">from </span><span className="text-4xl font-bold text-gray-900">R{Number(service.price).toFixed(2)}/hr</span></div>
+                    <div className="mb-6">
+                        <span className="text-gray-500">from </span>
+                        <span className="text-4xl font-bold text-gray-900">R{Number(service.price).toFixed(2)}/hr</span>
+                        {service.call_out_fee > 0 && (
+                            <p className="text-sm text-gray-600 mt-2">Call-out fee: R{Number(service.call_out_fee).toFixed(2)}</p>
+                        )}
+                    </div>
 
                     <div className="prose max-w-none mb-4">
                         <h2 className="text-xl font-semibold">About this service</h2>
@@ -87,7 +93,13 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
                             user={user ?? null}
                         />
                         {service.provider_whatsapp && (
-                            <a href={`https://wa.me/${service.provider_whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold h-11 px-8 bg-green-500 text-white hover:bg-green-600 flex-1 md:flex-none">
+                            <a 
+                                href={isLoggedIn ? `https://wa.me/${service.provider_whatsapp.replace(/[^0-9]/g, '')}` : '#'} 
+                                onClick={!isLoggedIn ? (e) => { e.preventDefault(); alert('Please sign in to contact the provider on WhatsApp.'); } : undefined}
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold h-11 px-8 bg-green-500 text-white hover:bg-green-600 flex-1 md:flex-none"
+                            >
                                 Request a Quote (WhatsApp)
                             </a>
                         )}
@@ -101,9 +113,9 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
                         <h3 className="text-2xl font-bold mb-4">Contact Provider</h3>
                         {providerProfile ? (
                              <ul className="space-y-3 text-gray-700">
-                                <li className="flex items-center"><Phone size={16} className="mr-3 text-gray-500"/>{isLoggedIn ? providerProfile.phone || 'Not Provided' : maskNumber(providerProfile.phone)}</li>
-                                <li className="flex items-center"><Building size={16} className="mr-3 text-gray-500"/>{isLoggedIn ? providerProfile.office_number || 'Not Provided' : maskNumber(providerProfile.office_number)}</li>
-                                <li className="flex items-center"><MessageCircle size={16} className="mr-3 text-green-500"/> 
+                                <li className="flex items-center"><Phone size={20} className="mr-3 text-gray-500"/>{isLoggedIn ? providerProfile.phone || 'Not Provided' : maskNumber(providerProfile.phone)}</li>
+                                <li className="flex items-center"><Building size={20} className="mr-3 text-gray-500"/>{isLoggedIn ? providerProfile.office_number || 'Not Provided' : maskNumber(providerProfile.office_number)}</li>
+                                <li className="flex items-center"><MessageCircle size={20} className="mr-3 text-green-500"/> 
                                 {isLoggedIn && providerProfile.whatsapp ? (
                                     <a href={`https://wa.me/${providerProfile.whatsapp.replace(/[^0-9]/g, '')}`} className="text-green-600 hover:underline">{providerProfile.whatsapp}</a>
                                 ) : (

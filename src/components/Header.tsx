@@ -20,12 +20,12 @@ const Header = () => {
   const [loading, setLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-  const [unreadMessages, setUnreadMessages] = useState(0);
-  const [hasHydrated, setHasHydrated] = useState(false); // State to prevent hydration mismatch
+  const [unreadNotifications, setUnreadNotifications] = useState(0); // Changed from unreadMessages
+  const [hasHydrated, setHasHydrated] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    setHasHydrated(true); // Component has now mounted on the client
+    setHasHydrated(true);
 
     const getInitialSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -46,17 +46,25 @@ const Header = () => {
 
   useEffect(() => {
     if (user) {
-      const fetchProfile = async () => {
+      const fetchProfileAndNotifications = async () => {
         const { data: userProfile } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', user.id)
           .single();
         setProfile(userProfile as Profile | null);
+
+        const { count } = await supabase
+          .from('notifications')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('is_read', false);
+        setUnreadNotifications(count || 0);
       };
-      fetchProfile();
+      fetchProfileAndNotifications();
     } else {
       setProfile(null);
+      setUnreadNotifications(0);
     }
   }, [user]);
 
@@ -84,16 +92,15 @@ const Header = () => {
             <Link href="/academy" className="text-gray-300 hover:text-white">Academy</Link>
             <Link href="/products" className="text-gray-300 hover:text-white">Products</Link>
             <Link href="/likes" className="text-gray-300 hover:text-white"><Heart /></Link>
-            <Link href="/account/messages" className="text-gray-300 hover:text-white relative">
+            <Link href="/account/notifications" className="text-gray-300 hover:text-white relative">
               <Bell />
-              {unreadMessages > 0 && (
+              {unreadNotifications > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-                  {unreadMessages}
+                  {unreadNotifications}
                 </span>
               )}
             </Link>
 
-            {/* CORRECTED: This wrapper prevents layout shift and content mismatch */}
             <div className="h-9 w-48 flex items-center justify-end">
                 {hasHydrated && (
                     <>
