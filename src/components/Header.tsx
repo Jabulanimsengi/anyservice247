@@ -20,19 +20,19 @@ const Header = () => {
   const [loading, setLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-  const [unreadNotifications, setUnreadNotifications] = useState(0); // Changed from unreadMessages
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [hasHydrated, setHasHydrated] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     setHasHydrated(true);
 
-    const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser(); // Updated to getUser()
+      setUser(user);
       setLoading(false);
     };
-    getInitialSession();
+    getCurrentUser();
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
@@ -88,45 +88,47 @@ const Header = () => {
               HomeServices<span className="text-brand-teal">24/7</span>
             </Link>
           </div>
-          <div className="flex items-center space-x-4">
-            <Link href="/academy" className="text-gray-300 hover:text-white">Academy</Link>
-            <Link href="/products" className="text-gray-300 hover:text-white">Products</Link>
-            <Link href="/likes" className="text-gray-300 hover:text-white"><Heart /></Link>
-            <Link href="/account/notifications" className="text-gray-300 hover:text-white relative">
-              <Bell />
+          <div className="flex items-center gap-x-6">
+            <Link href="/academy" className="text-sm text-gray-300 hover:text-white transition-colors">Academy</Link>
+            <Link href="/products" className="text-sm text-gray-300 hover:text-white transition-colors">Products</Link>
+            <Link href="/likes" className="text-gray-300 hover:text-white transition-colors p-2 rounded-md hover:bg-gray-700">
+                <Heart size={20} />
+            </Link>
+            <Link href="/account/notifications" className="text-gray-300 hover:text-white relative transition-colors p-2 rounded-md hover:bg-gray-700">
+              <Bell size={20} />
               {unreadNotifications > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
                   {unreadNotifications}
                 </span>
               )}
             </Link>
 
-            <div className="h-9 w-48 flex items-center justify-end">
+            <div className="flex items-center gap-x-2">
                 {hasHydrated && (
                     <>
                         {loading ? (
-                          <div className="h-8 w-full animate-pulse rounded-md bg-gray-700"></div>
+                          <div className="h-9 w-40 animate-pulse rounded-md bg-gray-700"></div>
                         ) : user ? (
-                          <div className="flex items-center space-x-4">
+                          <div className="flex items-center gap-x-2">
                               {profile?.role === 'admin' && (
-                              <Link href="/admin" className="rounded-md bg-yellow-500 px-4 py-2 text-sm font-bold text-black hover:bg-yellow-400">
+                              <Link href="/admin" className="whitespace-nowrap rounded-md bg-yellow-500 px-4 py-2 text-sm font-bold text-black hover:bg-yellow-400 transition-colors">
                                   Admin Panel
                               </Link>
                               )}
-                              <Link href="/account" className="rounded-md bg-gray-600 px-4 py-2 text-sm text-white hover:bg-gray-700">
+                              <Link href="/account" className="whitespace-nowrap rounded-md bg-gray-600 px-4 py-2 text-sm text-white hover:bg-gray-700 transition-colors">
                               Account
                               </Link>
                               <button
                               onClick={handleSignOut}
-                              className="rounded-md bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600"
+                              className="whitespace-nowrap rounded-md bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600 transition-colors"
                               >
                               Sign Out
                               </button>
                           </div>
                         ) : (
-                          <div className="flex items-center space-x-2">
-                              <button onClick={() => setIsAuthModalOpen(true)} className="text-gray-300 hover:text-white">Sign In</button>
-                              <button onClick={() => setIsAuthModalOpen(true)} className="rounded-md bg-brand-teal px-4 py-2 text-white hover:bg-opacity-90">Sign Up</button>
+                          <div className="flex items-center gap-x-2">
+                              <button onClick={() => setIsAuthModalOpen(true)} className="whitespace-nowrap text-sm text-gray-300 hover:text-white transition-colors px-4 py-2">Sign In</button>
+                              <button onClick={() => setIsAuthModalOpen(true)} className="whitespace-nowrap rounded-md bg-brand-teal px-4 py-2 text-sm text-white hover:bg-opacity-90 transition-colors">Sign Up</button>
                           </div>
                         )}
                     </>

@@ -1,14 +1,13 @@
 // src/components/ServicePageContent.tsx
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { supabase } from '@/lib/supabase';
-import { Star, Phone, MessageCircle, Building, MapPin } from 'lucide-react'; 
+import { createClient } from '@/lib/utils/supabase/server';
+import { Star, Phone, MessageCircle, Building, MapPin } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import ServiceInteraction from '@/components/ServiceInteraction';
 import { revalidatePath } from 'next/cache';
 import ImageGallery from './ImageGallery';
 import Link from 'next/link';
 import MessageProviderButton from './MessageProviderButton';
+import WhatsAppButton from './WhatsAppButton';
 
 const maskNumber = (number: string | null) => {
     if (!number) return 'Not Provided';
@@ -17,13 +16,9 @@ const maskNumber = (number: string | null) => {
 
 const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
+  const supabase = await createClient(); // Await the createClient function
 
-  // CORRECTED: This new initialization pattern ensures cookies are handled asynchronously.
-  const cookieStore = cookies();
-  const supabaseServer = createServerComponentClient({ cookies: () => cookieStore });
-  
-  const { data: { session } } = await supabaseServer.auth.getSession();
-  const user = session?.user;
+  const { data: { user } } = await supabase.auth.getUser();
   const isLoggedIn = !!user;
 
   const { data: service, error: serviceError } = await supabase
@@ -74,8 +69,8 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
                         <div className="mb-6">
                             <h3 className="text-xl font-semibold mb-2">Service Areas</h3>
                             <div className="flex flex-wrap gap-2">
-                                {service.locations.map((loc: {city: string, province: string}) => (
-                                    <div key={loc.city} className="flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
+                                {service.locations.map((loc: {city: string, province: string}, index: number) => (
+                                    <div key={`${loc.city}-${index}`} className="flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
                                         <MapPin size={14} className="mr-2" />
                                         {loc.city}, {loc.province}
                                     </div>
@@ -92,16 +87,8 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
                             providerName={service.provider_name ?? 'Anonymous'}
                             user={user ?? null}
                         />
-                        {service.provider_whatsapp && (
-                            <a 
-                                href={isLoggedIn ? `https://wa.me/${service.provider_whatsapp.replace(/[^0-9]/g, '')}` : '#'} 
-                                onClick={!isLoggedIn ? (e) => { e.preventDefault(); alert('Please sign in to contact the provider on WhatsApp.'); } : undefined}
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold h-11 px-8 bg-green-500 text-white hover:bg-green-600 flex-1 md:flex-none"
-                            >
-                                Request a Quote (WhatsApp)
-                            </a>
+                        {providerProfile?.whatsapp && (
+                           <WhatsAppButton isLoggedIn={isLoggedIn} whatsappNumber={providerProfile.whatsapp} />
                         )}
                     </div>
                 </div>
@@ -149,7 +136,7 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
                     <div key={review.id} className="border-b py-4 last:border-b-0">
                         <div className="flex items-center justify-between">
                         <p className="font-semibold">{review.profiles?.full_name ?? 'Anonymous'}</p>
-                        <div className="flex items-center">{[...Array(5)].map((_, i) => (<Star key={i} size={16} className={i < review.rating ? "text-yellow-400" : "text-gray-300"} fill={i < review.rating ? "currentColor" : "none"} />))}</div>
+                        <div className="flex items-center">{[...Array(5)].map((_, i) => (<Star key={`star-${review.id}-${i}`} size={16} className={i < review.rating ? "text-yellow-400" : "text-gray-300"} fill={i < review.rating ? "currentColor" : "none"} />))}</div>
                         </div>
                         <p className="mt-2 text-gray-600 text-sm">{review.comment}</p>
                         <p className="mt-2 text-xs text-gray-400">{new Date(review.created_at).toLocaleDateString()}</p>
