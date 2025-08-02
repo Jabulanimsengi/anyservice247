@@ -12,8 +12,8 @@ type ServiceWithProvider = {
   title: string;
   price: number;
   user_id: string;
-  image_urls: string[] | null; // Corrected type to string array
-  is_approved: boolean;
+  image_urls: string[] | null;
+  status: string; // Changed from is_approved
   locations: ServiceLocation[] | null;
   provider_name: string;
   average_rating: number;
@@ -22,10 +22,11 @@ type ServiceWithProvider = {
 };
 
 const ServiceGrid = async () => {
+  // CORRECTED: The query now filters by status = 'approved'
   const { data: services, error } = await supabase
     .from('service_with_ratings')
     .select('*')
-    .eq('is_approved', true)
+    .eq('status', 'approved') // Use the new status column
     .limit(280); 
 
   if (error) {

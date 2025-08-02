@@ -15,8 +15,8 @@ type Service = {
   title: string;
   price: number;
   user_id: string;
-  image_urls: string[] | null; // CORRECTED: from image_url to image_urls
-  is_approved: boolean;
+  image_urls: string[] | null;
+  status: string; // CORRECTED: from is_approved to status
   locations: ServiceLocation[] | null;
   provider_name: string;
   average_rating: number;
@@ -70,8 +70,8 @@ const CategoryRow: React.FC<CategoryRowProps> = ({ category, services }) => {
                 rating={service.average_rating}
                 reviewCount={service.review_count}
                 price={service.price}
-                imageUrls={service.image_urls} // CORRECTED: pass imageUrls
-                is_approved={service.is_approved}
+                imageUrls={service.image_urls}
+                status={service.status} // Now correctly passing status
                 locations={service.locations}
               />
             </div>

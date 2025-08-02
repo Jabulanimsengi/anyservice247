@@ -5,12 +5,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { useStore } from '@/lib/store';
-import Spinner from '@/components/ui/Spinner'; // Import Spinner
+import Spinner from '@/components/ui/Spinner';
 
 type Service = {
   id: number;
   title: string;
-  is_approved: boolean;
+  status: string; // Corrected from is_approved
   profiles: {
     full_name: string;
   }[] | null;
@@ -28,7 +28,7 @@ const AdminServicesPage = () => {
       .select(`
         id,
         title,
-        is_approved,
+        status, 
         profiles (full_name)
       `)
       .order('created_at', { ascending: false });
@@ -45,10 +45,22 @@ const AdminServicesPage = () => {
     fetchServices();
   }, [fetchServices]);
 
-  const handleApproval = async (serviceId: number, newStatus: boolean) => {
+  const handleApproval = async (serviceId: number, newStatus: 'approved' | 'rejected') => {
+    let updateData: { status: string, rejection_reason?: string } = { status: newStatus };
+
+    if (newStatus === 'rejected') {
+        const reason = prompt("Please provide a reason for rejecting this service:");
+        if (reason) {
+            updateData.rejection_reason = reason;
+        } else {
+            // If user cancels the prompt, do nothing.
+            return;
+        }
+    }
+
     const { error } = await supabase
       .from('services')
-      .update({ is_approved: newStatus })
+      .update(updateData)
       .eq('id', serviceId);
 
     if (error) {
@@ -58,6 +70,14 @@ const AdminServicesPage = () => {
       fetchServices();
     }
   };
+
+  const getStatusBadge = (status: string) => {
+    switch(status) {
+        case 'approved': return 'bg-green-100 text-green-800';
+        case 'rejected': return 'bg-red-100 text-red-800';
+        default: return 'bg-yellow-100 text-yellow-800 capitalize';
+    }
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -81,20 +101,20 @@ const AdminServicesPage = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{service.title}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{service.profiles?.[0]?.full_name ?? 'N/A'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <span className={`rounded-full px-2 py-1 text-xs font-semibold ${
-                        service.is_approved
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}
-                    >
-                      {service.is_approved ? 'Approved' : 'Pending'}
+                    <span className={`rounded-full px-2 py-1 text-xs font-semibold ${getStatusBadge(service.status)}`}>
+                      {service.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {!service.is_approved && (
-                      <Button size="sm" onClick={() => handleApproval(service.id, true)}>
-                        Approve
-                      </Button>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                    {service.status === 'pending' && (
+                      <>
+                        <Button size="sm" onClick={() => handleApproval(service.id, 'approved')}>
+                            Approve
+                        </Button>
+                         <Button size="sm" variant="destructive" onClick={() => handleApproval(service.id, 'rejected')}>
+                            Reject
+                        </Button>
+                      </>
                     )}
                   </td>
                 </tr>

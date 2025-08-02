@@ -8,14 +8,21 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import BackButton from '@/components/BackButton';
 import { locationsData, provinces } from '@/lib/locations';
-import { categories } from '@/lib/categories'; // Import categories
-import { X } from 'lucide-react';
+import { categories } from '@/lib/categories';
+import { X, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
+import Spinner from '@/components/ui/Spinner';
 
 type ServiceLocation = {
   province: string;
   city: string;
 };
+
+type Availability = {
+    [key: string]: { start: string; end: string };
+}
+
+const weekDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 const NewServicePage = () => {
   const router = useRouter();
@@ -27,9 +34,29 @@ const NewServicePage = () => {
   const [category, setCategory] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
   const [locations, setLocations] = useState<ServiceLocation[]>([]);
   const [currentProvince, setCurrentProvince] = useState('');
   const [currentCity, setCurrentCity] = useState('');
+
+  // State for provider details
+  const [phone, setPhone] = useState('');
+  const [officeNumber, setOfficeNumber] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [availability, setAvailability] = useState<Availability>({});
+
+  const handleAvailabilityChange = (day: string, field: 'start' | 'end', value: string) => {
+    setAvailability(prev => {
+        const currentDay = prev[day] || { start: '', end: '' };
+        return {
+            ...prev,
+            [day]: {
+                ...currentDay,
+                [field]: value,
+            }
+        };
+    });
+  };
 
   const handleAddLocation = () => {
     if (currentProvince && currentCity) {
@@ -53,7 +80,6 @@ const NewServicePage = () => {
         return;
       }
       setImageFiles((prevFiles) => [...prevFiles, ...files]);
-
       const newPreviews = files.map((file) => URL.createObjectURL(file));
       setImagePreviews((prevPreviews) => [...prevPreviews, ...newPreviews]);
     }
@@ -64,23 +90,16 @@ const NewServicePage = () => {
     setImagePreviews((prevPreviews) => {
         const newPreviews = [...prevPreviews];
         const removedPreview = newPreviews.splice(index, 1);
-        if (removedPreview[0]) {
-            URL.revokeObjectURL(removedPreview[0]);
-        }
+        if (removedPreview[0]) URL.revokeObjectURL(removedPreview[0]);
         return newPreviews;
     });
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!category) {
-      setError('Please select a service category.');
-      return;
-    }
-    if (locations.length === 0) {
-      setError('Please add at least one service location.');
-      return;
-    }
+    if (!category) { setError('Please select a service category.'); return; }
+    if (locations.length === 0) { setError('Please add at least one service location.'); return; }
+    
     setLoading(true);
     setError(null);
 
@@ -91,23 +110,28 @@ const NewServicePage = () => {
       return;
     }
 
-    const imageUrls: string[] = [];
+    const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ phone, office_number: officeNumber, whatsapp, availability })
+        .eq('id', user.id);
+
+    if(profileError) {
+        setError(`Error updating profile: ${profileError.message}`);
+        setLoading(false);
+        return;
+    }
+
+    let imageUrls: string[] = [];
     if (imageFiles.length > 0) {
       for (const file of imageFiles) {
         const fileName = `${user.id}/${Date.now()}_${file.name}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('service-images')
-          .upload(fileName, file);
-
+        const { data: uploadData, error: uploadError } = await supabase.storage.from('service-images').upload(fileName, file);
         if (uploadError) {
           setError(`Image upload failed: ${uploadError.message}`);
           setLoading(false);
           return;
         }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('service-images')
-          .getPublicUrl(uploadData.path);
+        const { data: { publicUrl } } = supabase.storage.from('service-images').getPublicUrl(uploadData.path);
         imageUrls.push(publicUrl);
       }
     }
@@ -120,32 +144,86 @@ const NewServicePage = () => {
       image_urls: imageUrls,
       locations: locations,
       category: category,
+      status: 'pending'
     });
 
     if (insertError) {
       setError(insertError.message);
       setLoading(false);
     } else {
-      router.push('/account/provider');
+      setIsSubmitted(true);
     }
   };
+  
+    if (isSubmitted) {
+    return (
+        <div className="container mx-auto max-w-2xl px-4 py-8 text-center">
+            <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
+            <h1 className="mt-4 text-2xl font-bold">Service Submitted!</h1>
+            <p className="mt-2 text-gray-600">
+                Your service listing is now awaiting admin approval. You will be notified once it has been reviewed.
+            </p>
+            <Button onClick={() => router.push('/account/provider')} className="mt-6">
+                Back to Dashboard
+            </Button>
+        </div>
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
       <BackButton />
       <h1 className="mb-6 text-3xl font-bold">Add a New Service</h1>
       <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border bg-white p-8 shadow-sm">
-        <div>
-          <label htmlFor="title" className="mb-2 block text-sm font-medium text-gray-700">Service Title</label>
-          <Input id="title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Professional Plumbing Services" required />
+        
+        <div className="space-y-4 rounded-md border p-4">
+            <h3 className="font-medium text-gray-800">Service Details</h3>
+            <div>
+                <label htmlFor="title" className="mb-2 block text-sm font-medium text-gray-700">Service Title</label>
+                <Input id="title" type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Professional Plumbing Services" required />
+            </div>
+            <div>
+                <label htmlFor="category" className="mb-2 block text-sm font-medium text-gray-700">Category</label>
+                <select id="category" value={category} onChange={(e) => setCategory(e.target.value)} required className="block w-full rounded-md border border-gray-300 bg-background p-3 text-sm ring-offset-background">
+                    <option value="" disabled>Select a category...</option>
+                    {categories.map(cat => (<option key={cat} value={cat}>{cat}</option>))}
+                </select>
+            </div>
+            <div>
+                <label htmlFor="description" className="mb-2 block text-sm font-medium text-gray-700">Service Description</label>
+                <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe the service you offer..." rows={5} className="block w-full rounded-md border border-gray-300 bg-background p-3 text-sm ring-offset-background" />
+            </div>
+             <div>
+                <label htmlFor="price" className="mb-2 block text-sm font-medium text-gray-700">Price per Hour (R)</label>
+                <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="e.g., 450.00" required step="0.01" />
+            </div>
         </div>
 
-        <div>
-          <label htmlFor="category" className="mb-2 block text-sm font-medium text-gray-700">Category</label>
-          <select id="category" value={category} onChange={(e) => setCategory(e.target.value)} required className="block w-full rounded-md border border-gray-300 bg-background p-3 text-sm ring-offset-background">
-            <option value="" disabled>Select a category...</option>
-            {categories.map(cat => (<option key={cat} value={cat}>{cat}</option>))}
-          </select>
+        <div className="space-y-4 rounded-md border p-4">
+            <h3 className="font-medium text-gray-800">Your Contact Details</h3>
+             <div>
+                <label htmlFor="phone" className="mb-2 block text-sm font-medium text-gray-700">Mobile Phone</label>
+                <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="e.g., 082 123 4567" />
+            </div>
+             <div>
+                <label htmlFor="officeNumber" className="mb-2 block text-sm font-medium text-gray-700">Office Number</label>
+                <Input id="officeNumber" type="tel" value={officeNumber} onChange={(e) => setOfficeNumber(e.target.value)} placeholder="e.g., 011 123 4567" />
+            </div>
+             <div>
+                <label htmlFor="whatsapp" className="mb-2 block text-sm font-medium text-gray-700">WhatsApp Number</label>
+                <Input id="whatsapp" type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="e.g., 082 123 4567" />
+            </div>
+        </div>
+
+        <div className="space-y-4 rounded-md border p-4">
+             <h3 className="font-medium text-gray-800">Your Weekly Availability</h3>
+             {weekDays.map(day => (
+                 <div key={day} className="grid grid-cols-3 items-center gap-4">
+                     <label htmlFor={day} className="capitalize text-sm font-medium">{day}</label>
+                     <Input type="time" id={`${day}-start`} value={availability[day]?.start || ''} onChange={e => handleAvailabilityChange(day, 'start', e.target.value)} />
+                     <Input type="time" id={`${day}-end`} value={availability[day]?.end || ''} onChange={e => handleAvailabilityChange(day, 'end', e.target.value)} />
+                 </div>
+             ))}
         </div>
 
         <div>
@@ -155,26 +233,10 @@ const NewServicePage = () => {
             {imagePreviews.map((preview, index) => (
               <div key={preview} className="relative">
                 <Image src={preview} alt={`Preview ${index + 1}`} width={150} height={150} className="w-full h-32 object-cover rounded-md" />
-                <button
-                  type="button"
-                  onClick={() => handleRemoveImage(index)}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
-                >
-                  <X size={16} />
-                </button>
+                <button type="button" onClick={() => handleRemoveImage(index)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><X size={16} /></button>
               </div>
             ))}
           </div>
-        </div>
-
-        <div>
-          <label htmlFor="description" className="mb-2 block text-sm font-medium text-gray-700">Service Description</label>
-          <textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe the service you offer..." rows={5} className="block w-full rounded-md border border-gray-300 bg-background p-3 text-sm ring-offset-background" />
-        </div>
-
-        <div>
-          <label htmlFor="price" className="mb-2 block text-sm font-medium text-gray-700">Price (R)</label>
-          <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="e.g., 450.00" required step="0.01" />
         </div>
 
         <div className="space-y-4 rounded-md border p-4">
@@ -209,7 +271,9 @@ const NewServicePage = () => {
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <Button type="submit" disabled={loading} className="w-full">{loading ? 'Saving...' : 'Save Service'}</Button>
+        <Button type="submit" disabled={loading} className="w-full">
+          {loading ? <Spinner /> : 'Submit for Approval'}
+        </Button>
       </form>
     </div>
   );

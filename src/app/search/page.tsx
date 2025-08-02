@@ -8,7 +8,7 @@ import ServiceCard from '@/components/ServiceCard';
 import BackButton from '@/components/BackButton';
 import { Button } from '@/components/ui/Button';
 import { locationsData, provinces } from '@/lib/locations';
-import { categories } from '@/lib/categories'; // Import categories
+import { categories } from '@/lib/categories';
 import Spinner from '@/components/ui/Spinner';
 
 type ServiceLocation = {
@@ -22,7 +22,7 @@ type ServiceWithProvider = {
   price: number;
   user_id: string;
   image_urls: string[] | null;
-  is_approved: boolean;
+  status: string;
   locations: ServiceLocation[] | null;
   provider_name: string;
   average_rating: number;
@@ -33,25 +33,27 @@ type ServiceWithProvider = {
 
 const SearchPage = () => {
   const searchParams = useSearchParams();
-  const query = searchParams.get('q') || '';
-  const initialCategory = searchParams.get('category') || '';
-
+  
+  // State is now initialized based on the URL search parameters.
   const [services, setServices] = useState<ServiceWithProvider[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  // Filter States
+  const [query, setQuery] = useState(searchParams.get('q') || '');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
   const [selectedProvince, setSelectedProvince] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
 
+  // This function fetches services based on the current state of the filters.
   const fetchServices = useCallback(async () => {
     setLoading(true);
 
     let queryBuilder = supabase
       .from('service_with_ratings')
       .select('*')
-      .eq('is_approved', true);
+      .eq('status', 'approved');
 
     if (query) {
       queryBuilder = queryBuilder.or(`title.ilike.%${query}%,description.ilike.%${query}%`);
@@ -83,9 +85,17 @@ const SearchPage = () => {
     setLoading(false);
   }, [query, selectedCategory, selectedProvince, selectedCity, minPrice, maxPrice]);
   
+  // This effect runs the search whenever the filters change.
   useEffect(() => {
     fetchServices();
   }, [fetchServices]);
+
+  // CORRECTED: This new effect ensures that if the URL changes, the filters are updated.
+  useEffect(() => {
+    setQuery(searchParams.get('q') || '');
+    setSelectedCategory(searchParams.get('category') || '');
+  }, [searchParams]);
+
 
   const handleResetFilters = () => {
     setSelectedCategory('');
@@ -93,6 +103,7 @@ const SearchPage = () => {
     setSelectedCity('');
     setMinPrice('');
     setMaxPrice('');
+    setQuery('');
   };
 
   return (

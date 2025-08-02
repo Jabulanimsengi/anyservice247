@@ -7,13 +7,11 @@ import { Twitter, Linkedin, Globe } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-// CORRECTED: The type for params now reflects that it can be a Promise
 interface ProviderProfilePageProps {
   params: Promise<{ id: string }>;
 }
 
 const ProviderProfilePage = async ({ params }: ProviderProfilePageProps) => {
-  // CORRECTED: Awaiting the params promise before destructuring
   const { id } = await params;
   if (!id) notFound();
 
@@ -65,7 +63,6 @@ const ProviderProfilePage = async ({ params }: ProviderProfilePageProps) => {
         )}
       </div>
 
-      {/* Qualifications Section */}
       {profile.qualifications && profile.qualifications.length > 0 && (
           <div className="mb-8 rounded-lg border bg-white p-6 shadow-sm">
               <h2 className="text-2xl font-bold mb-4">Qualifications</h2>
@@ -89,7 +86,7 @@ const ProviderProfilePage = async ({ params }: ProviderProfilePageProps) => {
               reviewCount={service.review_count}
               price={service.price}
               imageUrls={service.image_urls}
-              is_approved={service.is_approved}
+              status={service.status} // CORRECTED: Changed from is_approved to status
               locations={service.locations}
             />
           ))}

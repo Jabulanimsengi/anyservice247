@@ -26,12 +26,12 @@ interface ServiceCardProps {
   rating: number;
   reviewCount: number;
   price: number;
-  is_approved: boolean;
+  status: string; // CORRECTED: Changed from is_approved
   locations: ServiceLocation[] | null;
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({
-  id, providerId, imageUrls, title, providerName, rating, reviewCount, price, is_approved, locations
+  id, providerId, imageUrls, title, providerName, rating, reviewCount, price, status, locations
 }) => {
   const { likedServiceIds, addLike, removeLike, addToast, openChat } = useStore();
   const [user, setUser] = useState<User | null>(null);
@@ -62,35 +62,20 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-
+    if (!user) {
+        addToast('Please sign in to like a service.', 'error');
+        return;
+    }
     if (isLiking) return;
     setIsLiking(true);
 
     try {
       if (isLiked) {
-        const query = supabase.from('likes').delete().eq('service_id', id);
-        if (user) {
-          query.eq('user_id', user.id);
-        } else {
-          query.eq('guest_id', guestId);
-        }
-        const { error } = await query;
-        
-        if (!error) {
-          removeLike(id);
-          addToast('Removed from your Likes', 'error');
-        }
+        const { error } = await supabase.from('likes').delete().eq('service_id', id).eq('user_id', user.id);
+        if (!error) removeLike(id);
       } else {
-        const likeData = {
-          service_id: id,
-          user_id: user?.id,
-          guest_id: user ? null : guestId,
-        };
-        const { error } = await supabase.from('likes').insert(likeData);
-        if (!error) {
-          addLike(id);
-          addToast('Added to your Likes!');
-        }
+        const { error } = await supabase.from('likes').insert({ service_id: id, user_id: user.id });
+        if (!error) addLike(id);
       }
     } finally {
       setIsLiking(false);
@@ -113,7 +98,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
 
   return (
     <div className="group relative flex max-w-sm flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md transition-all duration-300 hover:shadow-xl hover:ring-2 hover:ring-brand-teal">
-      {is_approved && (
+      {status === 'approved' && (
         <div className="absolute top-2 right-2 z-10">
           <VerifiedBadge />
         </div>
@@ -175,7 +160,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
 
         <div className="mt-auto pt-4 flex items-center justify-between">
           <span className="text-xl font-bold text-gray-900">
-            from R{Number(price).toFixed(2)}
+            from R{Number(price).toFixed(2)}/hr
           </span>
           <Link href={`/service/${id}`} passHref>
             <Button size="sm">View Details</Button>

@@ -5,25 +5,26 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { Star } from 'lucide-react';
-import { useStore } from '@/lib/store'; // Import the store
+import { useStore } from '@/lib/store';
+import Spinner from '@/components/ui/Spinner';
 
 type Review = {
   id: number;
   comment: string | null;
   rating: number;
-  is_approved: boolean;
+  is_approved: boolean; // This table still uses is_approved
   profiles: {
     full_name: string;
-  }[] | null;
+  } | null; // Corrected type
   services: {
     title: string;
-  }[] | null;
+  } | null; // Corrected type
 };
 
 const AdminReviewsPage = () => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
-  const { addToast } = useStore(); // Get the addToast function
+  const { addToast } = useStore();
 
   const fetchReviews = useCallback(async () => {
     setLoading(true);
@@ -42,7 +43,8 @@ const AdminReviewsPage = () => {
     if (error) {
       console.error("Error fetching reviews for admin:", error);
     } else {
-      setReviews(data || []);
+      // Casting to any to handle potential mismatch if profiles/services are arrays
+      setReviews(data as any[] || []);
     }
     setLoading(false);
   }, []);
@@ -69,16 +71,16 @@ const AdminReviewsPage = () => {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-6">Manage Customer Reviews</h1>
       {loading ? (
-        <p>Loading reviews...</p>
+        <Spinner />
       ) : (
         <div className="space-y-4">
           {reviews.map((review) => (
             <div key={review.id} className="rounded-lg border bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="font-semibold">{review.profiles?.[0]?.full_name ?? 'Anonymous'}</p>
+                  <p className="font-semibold">{review.profiles?.full_name ?? 'Anonymous'}</p>
                   <p className="text-sm text-gray-500">
-                    Review for: <span className="font-medium text-gray-700">{review.services?.[0]?.title ?? 'N/A'}</span>
+                    Review for: <span className="font-medium text-gray-700">{review.services?.title ?? 'N/A'}</span>
                   </p>
                   <div className="flex items-center mt-1">
                       {[...Array(5)].map((_, i) => (

@@ -8,7 +8,7 @@ import AuthModal from './AuthModal';
 import Link from 'next/link';
 import { Heart, Bell } from 'lucide-react';
 import ConfirmLogoutModal from './ConfirmLogoutModal';
-import { useRouter } from 'next/navigation'; // Import the router
+import { useRouter } from 'next/navigation';
 
 type Profile = {
   role: string;
@@ -21,19 +21,24 @@ const Header = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
-  const router = useRouter(); // Initialize the router
+  const [hasHydrated, setHasHydrated] = useState(false); // State to prevent hydration mismatch
+  const router = useRouter();
 
   useEffect(() => {
+    setHasHydrated(true); // Component has now mounted on the client
+
     const getInitialSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
       setLoading(false);
     };
     getInitialSession();
+
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
+
     return () => {
       authListener.subscription.unsubscribe();
     };
@@ -62,7 +67,8 @@ const Header = () => {
   const confirmSignOut = async () => {
     await supabase.auth.signOut();
     setIsLogoutModalOpen(false);
-    router.push('/'); // Redirect to the homepage
+    router.push('/');
+    router.refresh();
   };
 
   return (
@@ -70,11 +76,12 @@ const Header = () => {
       <header className="bg-brand-dark text-white shadow-md">
         <nav className="container mx-auto flex items-center justify-between px-6 py-4">
           <div className="text-2xl font-bold">
-            <a href="/" className="bg-gray-700/50 px-3 py-1 rounded-md transition-colors hover:bg-gray-700">
+            <Link href="/" className="bg-gray-700/50 px-3 py-1 rounded-md transition-colors hover:bg-gray-700">
               HomeServices<span className="text-brand-teal">24/7</span>
-            </a>
+            </Link>
           </div>
           <div className="flex items-center space-x-4">
+            <Link href="/academy" className="text-gray-300 hover:text-white">Academy</Link>
             <Link href="/products" className="text-gray-300 hover:text-white">Products</Link>
             <Link href="/likes" className="text-gray-300 hover:text-white"><Heart /></Link>
             <Link href="/account/messages" className="text-gray-300 hover:text-white relative">
@@ -86,31 +93,38 @@ const Header = () => {
               )}
             </Link>
 
-            {loading ? (
-              <div className="h-8 w-48 animate-pulse rounded-md bg-gray-700"></div>
-            ) : user ? (
-              <div className="flex items-center space-x-4">
-                {profile?.role === 'admin' && (
-                  <Link href="/admin" className="rounded-md bg-yellow-500 px-4 py-2 text-sm font-bold text-black hover:bg-yellow-400">
-                    Admin Panel
-                  </Link>
+            {/* CORRECTED: This wrapper prevents layout shift and content mismatch */}
+            <div className="h-9 w-48 flex items-center justify-end">
+                {hasHydrated && (
+                    <>
+                        {loading ? (
+                          <div className="h-8 w-full animate-pulse rounded-md bg-gray-700"></div>
+                        ) : user ? (
+                          <div className="flex items-center space-x-4">
+                              {profile?.role === 'admin' && (
+                              <Link href="/admin" className="rounded-md bg-yellow-500 px-4 py-2 text-sm font-bold text-black hover:bg-yellow-400">
+                                  Admin Panel
+                              </Link>
+                              )}
+                              <Link href="/account" className="rounded-md bg-gray-600 px-4 py-2 text-sm text-white hover:bg-gray-700">
+                              Account
+                              </Link>
+                              <button
+                              onClick={handleSignOut}
+                              className="rounded-md bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600"
+                              >
+                              Sign Out
+                              </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-2">
+                              <button onClick={() => setIsAuthModalOpen(true)} className="text-gray-300 hover:text-white">Sign In</button>
+                              <button onClick={() => setIsAuthModalOpen(true)} className="rounded-md bg-brand-teal px-4 py-2 text-white hover:bg-opacity-90">Sign Up</button>
+                          </div>
+                        )}
+                    </>
                 )}
-                <Link href="/account" className="rounded-md bg-gray-600 px-4 py-2 text-sm text-white hover:bg-gray-700">
-                  Account
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="rounded-md bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600"
-                >
-                  Sign Out
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <button onClick={() => setIsAuthModalOpen(true)} className="text-gray-300 hover:text-white">Sign In</button>
-                <button onClick={() => setIsAuthModalOpen(true)} className="rounded-md bg-brand-teal px-4 py-2 text-white hover:bg-opacity-90">Sign Up</button>
-              </div>
-            )}
+            </div>
           </div>
         </nav>
       </header>

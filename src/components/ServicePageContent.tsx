@@ -1,46 +1,31 @@
 // src/components/ServicePageContent.tsx
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 import { supabase } from '@/lib/supabase';
-import { Star } from 'lucide-react';
+import { Star, Phone, MessageCircle, Building, MapPin } from 'lucide-react'; 
 import BackButton from '@/components/BackButton';
 import ServiceInteraction from '@/components/ServiceInteraction';
 import { revalidatePath } from 'next/cache';
-import ImageGallery from './ImageGallery'; // Use the new reusable component
+import ImageGallery from './ImageGallery';
+import Link from 'next/link';
+import MessageProviderButton from './MessageProviderButton';
 
-// --- Type Definitions ---
-type Service = {
-  title: string;
-  price: number;
-  description: string;
-  user_id: string;
-  provider_name: string | null;
-  image_urls: string[] | null;
-  provider_email: string | null;
-  provider_website: string | null;
-  provider_whatsapp: string | null;
-  provider_office_number: string | null;
-};
-
-type Review = {
-  id: number;
-  rating: number;
-  comment: string;
-  created_at: string;
-  profiles: { full_name: string; } | null;
-};
-
-interface ServicePageContentProps {
-  params: Promise<{ id: string }>;
+const maskNumber = (number: string | null) => {
+    if (!number) return 'Not Provided';
+    return number.substring(0, 4) + '... (Sign in to view)';
 }
 
-const ServicePageContent = async ({ params }: ServicePageContentProps) => {
+const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
+
+  const supabaseServer = createServerComponentClient({ cookies: () => cookies() });
+  const { data: { session } } = await supabaseServer.auth.getSession();
+  const user = session?.user;
+  const isLoggedIn = !!user;
 
   const { data: service, error: serviceError } = await supabase
     .from('service_with_ratings')
-    .select(`
-      title, price, description, user_id, provider_name, image_urls,
-      provider_email, provider_website, provider_whatsapp, provider_office_number
-    `)
+    .select(`*, profiles ( phone, office_number, whatsapp, availability )`)
     .eq('id', id)
     .single();
 
@@ -55,69 +40,109 @@ const ServicePageContent = async ({ params }: ServicePageContentProps) => {
     .eq('is_approved', true)
     .order('created_at', { ascending: false });
 
-  const handleReviewSubmitted = async () => {
-    'use server';
-    revalidatePath(`/service/${id}`);
-  };
+  const handleReviewSubmitted = async () => { 'use server'; revalidatePath(`/service/${id}`); };
+
+  const providerProfile = service.profiles;
 
   return (
     <div className="bg-white">
         <div className="container mx-auto max-w-6xl px-4 py-8">
             <BackButton />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 mt-4">
-                {/* Left Column: Image Gallery */}
                 <ImageGallery imageUrls={service.image_urls} itemName={service.title} />
-
-                {/* Right Column: Service Details */}
                 <div className="flex flex-col">
                     <h1 className="text-2xl lg:text-3xl font-bold text-gray-800">{service.title}</h1>
-                    <p className="mt-1 text-lg">
-                        by <a href={`/provider/${service.user_id}`} className="font-semibold text-blue-600 hover:underline">{service.provider_name ?? 'Anonymous'}</a>
-                    </p>
+                    <p className="mt-1 text-lg">by <Link href={`/provider/${service.user_id}`} className="font-semibold text-blue-600 hover:underline">{service.provider_name ?? 'Anonymous'}</Link></p>
                     <div className="my-6 border-t"></div>
+                    <div className="mb-6"><span className="text-gray-500">from </span><span className="text-4xl font-bold text-gray-900">R{Number(service.price).toFixed(2)}/hr</span></div>
 
-                    <div className="mb-6"><span className="text-gray-500">from </span><span className="text-4xl font-bold text-gray-900">R{Number(service.price).toFixed(2)}</span></div>
-                    
-                    <div className="prose max-w-none mb-6">
+                    <div className="prose max-w-none mb-4">
                         <h2 className="text-xl font-semibold">About this service</h2>
                         <p>{service.description || 'No description provided.'}</p>
                     </div>
 
+                    {service.locations && service.locations.length > 0 && (
+                        <div className="mb-6">
+                            <h3 className="text-xl font-semibold mb-2">Service Areas</h3>
+                            <div className="flex flex-wrap gap-2">
+                                {service.locations.map((loc: {city: string, province: string}) => (
+                                    <div key={loc.city} className="flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
+                                        <MapPin size={14} className="mr-2" />
+                                        {loc.city}, {loc.province}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    
                     <ServiceInteraction serviceId={id} serviceProviderId={service.user_id} onReviewSubmitted={handleReviewSubmitted} />
+
+                    <div className="flex flex-wrap gap-2 mt-4">
+                        <MessageProviderButton
+                            providerId={service.user_id}
+                            providerName={service.provider_name ?? 'Anonymous'}
+                            user={user ?? null}
+                        />
+                        {service.provider_whatsapp && (
+                            <a href={`https://wa.me/${service.provider_whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold h-11 px-8 bg-green-500 text-white hover:bg-green-600 flex-1 md:flex-none">
+                                Request a Quote (WhatsApp)
+                            </a>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            {/* Contact & Reviews Section */}
             <div className="mt-12 border-t pt-8">
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
                         <h3 className="text-2xl font-bold mb-4">Contact Provider</h3>
-                        <ul className="space-y-2 text-gray-700">
-                            {service.provider_email && <li><strong>Email:</strong> {service.provider_email}</li>}
-                            {service.provider_website && <li><strong>Website:</strong> <a href={service.provider_website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">{service.provider_website}</a></li>}
-                            {service.provider_whatsapp && <li><strong>WhatsApp:</strong> <a href={`https://wa.me/${service.provider_whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-green-500 hover:underline">{service.provider_whatsapp}</a></li>}
-                            {service.provider_office_number && <li><strong>Office Number:</strong> {service.provider_office_number}</li>}
-                        </ul>
+                        {providerProfile ? (
+                             <ul className="space-y-3 text-gray-700">
+                                <li className="flex items-center"><Phone size={16} className="mr-3 text-gray-500"/>{isLoggedIn ? providerProfile.phone || 'Not Provided' : maskNumber(providerProfile.phone)}</li>
+                                <li className="flex items-center"><Building size={16} className="mr-3 text-gray-500"/>{isLoggedIn ? providerProfile.office_number || 'Not Provided' : maskNumber(providerProfile.office_number)}</li>
+                                <li className="flex items-center"><MessageCircle size={16} className="mr-3 text-green-500"/> 
+                                {isLoggedIn && providerProfile.whatsapp ? (
+                                    <a href={`https://wa.me/${providerProfile.whatsapp.replace(/[^0-9]/g, '')}`} className="text-green-600 hover:underline">{providerProfile.whatsapp}</a>
+                                ) : (
+                                    <span>{isLoggedIn ? 'Not Provided' : maskNumber(providerProfile.whatsapp)}</span>
+                                )}
+                                </li>
+                            </ul>
+                        ) : <p className="text-sm text-gray-500">Contact details not provided.</p>}
                     </div>
                     <div>
-                        <h2 className="text-2xl font-bold mb-4">Reviews</h2>
-                         {reviews && reviews.length > 0 ? (
-                            <div className="space-y-4">
-                            {reviews.map((review) => (
-                                <div key={review.id} className="border-b pb-4">
-                                    <div className="flex items-center justify-between">
-                                        <p className="font-semibold">{review.profiles?.full_name ?? 'Anonymous'}</p>
-                                        <div className="flex items-center">{[...Array(5)].map((_, i) => (<Star key={i} size={16} className={i < review.rating ? "text-yellow-400" : "text-gray-300"} fill={i < review.rating ? "currentColor" : "none"} />))}</div>
+                        <h2 className="text-2xl font-bold mb-4">Availability</h2>
+                        {providerProfile?.availability ? (
+                            <div className="space-y-2 text-sm">
+                                {Object.entries(providerProfile.availability).map(([day, times]: any) => (
+                                    (times.start && times.end) &&
+                                    <div key={day} className="grid grid-cols-3">
+                                        <span className="font-semibold capitalize">{day}</span>
+                                        <span>{times.start} - {times.end}</span>
                                     </div>
-                                    <p className="mt-2 text-gray-600 text-sm">{review.comment}</p>
-                                    <p className="mt-2 text-xs text-gray-400">{new Date(review.created_at).toLocaleDateString()}</p>
-                                </div>
-                            ))}
+                                ))}
                             </div>
-                        ) : (<p className="text-sm text-gray-500">No reviews yet. Be the first to leave one!</p>)}
+                        ) : <p className="text-sm text-gray-500">Availability not specified.</p>}
                     </div>
                  </div>
             </div>
+            
+             <div className="mt-12 border-t pt-8" id="reviews">
+                <h2 className="text-2xl font-bold">Reviews</h2>
+                 {reviews && reviews.length > 0 ? (
+                    reviews.map((review: any) => (
+                    // CORRECTED: Added the unique key prop here
+                    <div key={review.id} className="border-b py-4 last:border-b-0">
+                        <div className="flex items-center justify-between">
+                        <p className="font-semibold">{review.profiles?.full_name ?? 'Anonymous'}</p>
+                        <div className="flex items-center">{[...Array(5)].map((_, i) => (<Star key={i} size={16} className={i < review.rating ? "text-yellow-400" : "text-gray-300"} fill={i < review.rating ? "currentColor" : "none"} />))}</div>
+                        </div>
+                        <p className="mt-2 text-gray-600 text-sm">{review.comment}</p>
+                        <p className="mt-2 text-xs text-gray-400">{new Date(review.created_at).toLocaleDateString()}</p>
+                    </div>
+                    ))
+                ) : (<p className="mt-4 text-gray-500">No reviews yet. Be the first to leave one!</p>)}
+                </div>
         </div>
     </div>
   );
