@@ -18,7 +18,10 @@ const maskNumber = (number: string | null) => {
 const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
 
-  const supabaseServer = createServerComponentClient({ cookies: () => cookies() });
+  // CORRECTED: This new initialization pattern ensures cookies are handled asynchronously.
+  const cookieStore = cookies();
+  const supabaseServer = createServerComponentClient({ cookies: () => cookieStore });
+  
   const { data: { session } } = await supabaseServer.auth.getSession();
   const user = session?.user;
   const isLoggedIn = !!user;
@@ -131,7 +134,6 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
                 <h2 className="text-2xl font-bold">Reviews</h2>
                  {reviews && reviews.length > 0 ? (
                     reviews.map((review: any) => (
-                    // CORRECTED: Added the unique key prop here
                     <div key={review.id} className="border-b py-4 last:border-b-0">
                         <div className="flex items-center justify-between">
                         <p className="font-semibold">{review.profiles?.full_name ?? 'Anonymous'}</p>
