@@ -14,7 +14,6 @@ const HeroSection = () => {
   const router = useRouter();
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  // --- UPDATED THIS LIST ---
   const servicesToDisplay = [
     "Plumbing", 
     "Painting", 
@@ -76,15 +75,15 @@ const HeroSection = () => {
   return (
     <section className="bg-gray-100">
       <div className="container mx-auto px-4 pt-16 pb-8">
-        <div className="rounded-lg bg-brand-dark p-8 text-center text-white md:p-12">
-          <h1 className="text-4xl font-bold leading-tight sm:text-5xl h-24 sm:h-auto">
+        <div className="rounded-lg bg-brand-dark p-6 text-center text-white md:p-12">
+          <h1 className="text-3xl sm:text-5xl font-bold leading-tight h-28 sm:h-auto">
             Find Verified Pros for Your 
             <br />
             <span className="text-brand-teal">
                 <TypingEffect words={servicesToDisplay} />
             </span>
           </h1>
-          <p className="mt-6 mb-8 max-w-2xl mx-auto text-lg text-gray-300">
+          <p className="mt-6 mb-8 max-w-2xl mx-auto text-base sm:text-lg text-gray-300">
             HomeServices24/7 is reinventing how South Africans find home services. We meticulously verify every provider, connecting you with trusted, top-tier professionals for any job, big or small.
           </p>
           <div ref={searchContainerRef} className="relative w-full max-w-lg mx-auto">

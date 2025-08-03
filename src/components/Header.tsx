@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 import AuthModal from './AuthModal';
 import Link from 'next/link';
-import { Heart, Bell, Home } from 'lucide-react';
+import { Heart, Bell, Home, Menu, X } from 'lucide-react';
 import ConfirmLogoutModal from './ConfirmLogoutModal';
 import { useRouter } from 'next/navigation';
 
@@ -22,6 +22,7 @@ const Header = () => {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [hasHydrated, setHasHydrated] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -81,17 +82,18 @@ const Header = () => {
 
   return (
     <>
-      <header className="bg-brand-dark text-white shadow-md">
+      <header className="bg-brand-dark text-white shadow-md relative z-50"> {/* Added z-50 */}
         <nav className="container mx-auto flex items-center justify-between px-6 py-3">
-          <Link href="/" className="flex items-center gap-x-2 text-2xl font-bold">
-              <Home style={{ color: '#ff5757' }} size={28} />
+          <Link href="/" className="flex items-center gap-x-2 text-xl font-bold">
+              <Home style={{ color: '#ff5757' }} size={24} />
               <div>
                   <span className="font-extrabold text-white">HomeService</span>
                   <span style={{ color: '#ff5757' }}>24/7</span>
               </div>
           </Link>
 
-          <div className="flex items-center gap-x-6">
+          {/* --- DESKTOP NAVIGATION --- */}
+          <div className="hidden md:flex items-center gap-x-6">
             <Link href="/explore" className="text-sm text-gray-300 hover:text-white transition-colors">Explore</Link>
             <Link href="/academy" className="text-sm text-gray-300 hover:text-white transition-colors">Academy</Link>
             <Link href="/products" className="text-sm text-gray-300 hover:text-white transition-colors">Products</Link>
@@ -139,7 +141,50 @@ const Header = () => {
                 )}
             </div>
           </div>
+
+          {/* --- MOBILE MENU BUTTON --- */}
+          <div className="md:hidden">
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </nav>
+
+        {/* --- MOBILE MENU --- */}
+        {isMobileMenuOpen && (
+            <div className="md:hidden absolute top-full left-0 w-full bg-brand-dark border-t border-gray-700 p-6 z-50"> {/* Added z-50 */}
+                <nav className="flex flex-col gap-y-4">
+                    <Link href="/explore" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Explore</Link>
+                    <Link href="/academy" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Academy</Link>
+                    <Link href="/products" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Products</Link>
+                    <Link href="/likes" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Liked Services</Link>
+                    <Link href="/account/notifications" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Notifications</Link>
+
+                    <div className="border-t border-gray-700 pt-4 mt-2">
+                        {user ? (
+                             <div className="flex flex-col gap-y-4">
+                                {profile?.role === 'admin' && (
+                                <Link href="/admin" className="text-yellow-400 hover:text-yellow-300" onClick={() => setIsMobileMenuOpen(false)}>
+                                    Admin Panel
+                                </Link>
+                                )}
+                                <Link href="/account" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>
+                                    Account
+                                </Link>
+                                <button onClick={() => { handleSignOut(); setIsMobileMenuOpen(false); }} className="text-left text-red-500 hover:text-red-400">
+                                    Sign Out
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-y-4">
+                                <button onClick={() => { setIsAuthModalOpen(true); setIsMobileMenuOpen(false); }} className="text-left text-gray-300 hover:text-white">Sign In</button>
+                                <button onClick={() => { setIsAuthModalOpen(true); setIsMobileMenuOpen(false); }} className="text-left rounded-md bg-brand-teal px-4 py-2 text-white hover:bg-opacity-90 w-min whitespace-nowrap">Sign Up</button>
+                            </div>
+                        )}
+                    </div>
+                </nav>
+            </div>
+        )}
       </header>
       {!user && <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />}
       <ConfirmLogoutModal isOpen={isLogoutModalOpen} onClose={() => setIsLogoutModalOpen(false)} onConfirm={confirmSignOut} />

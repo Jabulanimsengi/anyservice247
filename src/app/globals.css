@@ -22,3 +22,8 @@
 .blinking-cursor {
   animation: blink 1s step-end infinite;
 }
+
+@keyframes progress-bar {
+  from { width: 0%; }
+  to { width: 100%; }
+}
