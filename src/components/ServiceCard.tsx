@@ -4,7 +4,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import { Star, Heart, MapPin, MessageSquare } from 'lucide-react';
+import { Star, Heart, MapPin, MessageSquare, Clock } from 'lucide-react';
 import VerifiedBadge from './VerifiedBadge';
 import { useStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
@@ -28,10 +28,11 @@ interface ServiceCardProps {
   price: number;
   status: string;
   locations: ServiceLocation[] | null;
+  availability: any;
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({
-  id, providerId, imageUrls, title, providerName, rating, reviewCount, price, status, locations
+  id, providerId, imageUrls, title, providerName, rating, reviewCount, price, status, locations, availability
 }) => {
   const { likedServiceIds, addLike, removeLike, addToast, openChat } = useStore();
   const [user, setUser] = useState<User | null>(null);
@@ -39,6 +40,12 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
   const [isLiking, setIsLiking] = useState(false);
 
   const displayImage = imageUrls && imageUrls.length > 0 ? imageUrls[0] : '/placeholder.png';
+
+  const is24HourService = () => {
+    if (!availability) return false;
+    const weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+    return weekdays.every(day => availability[day]?.is24Hours);
+  }
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -109,7 +116,12 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
           <VerifiedBadge />
         </div>
       )}
-      <div className="absolute top-2 left-2 z-10 flex flex-col gap-2">
+      {is24HourService() && (
+        <div className="absolute top-2 left-2 z-10 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center">
+            <Clock size={14} className="mr-1"/> 24/7
+        </div>
+      )}
+      <div className="absolute top-10 left-2 z-10 flex flex-col gap-2">
         <button
           onClick={handleLike}
           disabled={isLiking}

@@ -53,7 +53,7 @@ const ServiceInteraction = ({ serviceId, serviceProviderId, onReviewSubmitted }:
     checkUserAndBookingStatus();
   }, [serviceId]);
 
-  const handleBookNow = async () => {
+  const handleRequestQuote = async () => {
     setBookingMessage(null);
     setBookingError(null);
 
@@ -88,8 +88,8 @@ const ServiceInteraction = ({ serviceId, serviceProviderId, onReviewSubmitted }:
     <div>
       <BookingCalendar providerId={serviceProviderId} onDateTimeSelected={setSelectedDateTime} />
       <div className="mt-4">
-        <Button size="lg" onClick={handleBookNow} disabled={!selectedDateTime}>
-          Book Now
+        <Button size="lg" onClick={handleRequestQuote} disabled={!selectedDateTime}>
+          Request Quote
         </Button>
         {bookingMessage && <p className="mt-2 text-sm text-green-600">{bookingMessage}</p>}
         {bookingError && <p className="mt-2 text-sm text-red-600">{bookingError}</p>}

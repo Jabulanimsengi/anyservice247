@@ -60,6 +60,16 @@ const AdminDashboardPage = () => {
            <h2 className="text-xl font-semibold">Manage Reviews</h2>
            <p className="mt-2 text-gray-600">Approve and view all customer reviews.</p>
         </Link>
+
+        <Link href="/admin/reports" className="rounded-lg border bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+           <h2 className="text-xl font-semibold">User Reports</h2>
+           <p className="mt-2 text-gray-600">View user-submitted reports.</p>
+        </Link>
+
+        <Link href="/admin/suggestions" className="rounded-lg border bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+           <h2 className="text-xl font-semibold">User Suggestions</h2>
+           <p className="mt-2 text-gray-600">View user-submitted suggestions.</p>
+        </Link>
       </div>
     </div>
   );

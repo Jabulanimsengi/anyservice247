@@ -31,6 +31,7 @@ const EditServicePage = ({ params }: EditServicePageProps) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [callOutFee, setCallOutFee] = useState('');
   const [category, setCategory] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,6 +61,7 @@ const EditServicePage = ({ params }: EditServicePageProps) => {
         setTitle(data.title);
         setDescription(data.description || '');
         setPrice(String(data.price));
+        setCallOutFee(String(data.call_out_fee || ''));
         setCategory(data.category || '');
         setLocations(data.locations || []);
         setExistingImageUrls(data.image_urls || []);
@@ -136,6 +138,7 @@ const EditServicePage = ({ params }: EditServicePageProps) => {
         title,
         description,
         price: parseFloat(price),
+        call_out_fee: parseFloat(callOutFee) || 0,
         locations: locations,
         category: category,
         image_urls: finalImageUrls,
@@ -213,6 +216,11 @@ const EditServicePage = ({ params }: EditServicePageProps) => {
         <div>
           <label htmlFor="price" className="mb-2 block text-sm font-medium text-gray-700">Price (R)</label>
           <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} required step="0.01" />
+        </div>
+        
+        <div>
+            <label htmlFor="callOutFee" className="mb-2 block text-sm font-medium text-gray-700">Call-Out Fee (R) (Optional)</label>
+            <Input id="callOutFee" type="number" value={callOutFee} onChange={(e) => setCallOutFee(e.target.value)} placeholder="e.g., 150.00" step="0.01" />
         </div>
 
         <div className="space-y-4 rounded-md border p-4">

@@ -8,7 +8,7 @@ import AuthModal from './AuthModal';
 import Link from 'next/link';
 import { Heart, Bell, Home, Menu, X } from 'lucide-react';
 import ConfirmLogoutModal from './ConfirmLogoutModal';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 type Profile = {
   role: string;
@@ -24,6 +24,13 @@ const Header = () => {
   const [hasHydrated, setHasHydrated] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+
+  const getLinkClass = (path: string) => {
+    return pathname === path 
+      ? "text-white bg-gray-700 rounded-md px-3 py-2 text-sm font-medium" 
+      : "text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium transition-colors";
+  };
 
   useEffect(() => {
     setHasHydrated(true);
@@ -94,13 +101,13 @@ const Header = () => {
 
           {/* --- DESKTOP NAVIGATION --- */}
           <div className="hidden md:flex items-center gap-x-6">
-            <Link href="/explore" className="text-sm text-gray-300 hover:text-white transition-colors">Explore</Link>
-            <Link href="/academy" className="text-sm text-gray-300 hover:text-white transition-colors">Academy</Link>
-            <Link href="/products" className="text-sm text-gray-300 hover:text-white transition-colors">Products</Link>
-            <Link href="/likes" className="text-gray-300 hover:text-white transition-colors p-2 rounded-full hover:bg-gray-700">
+            <Link href="/explore" className={getLinkClass("/explore")}>Explore</Link>
+            <Link href="/academy" className={getLinkClass("/academy")}>Academy</Link>
+            <Link href="/products" className={getLinkClass("/products")}>Products</Link>
+            <Link href="/likes" className={getLinkClass("/likes")}>
                 <Heart size={20} />
             </Link>
-            <Link href="/account/notifications" className="text-gray-300 hover:text-white relative transition-colors p-2 rounded-full hover:bg-gray-700">
+            <Link href="/account/notifications" className={`${getLinkClass("/account/notifications")} relative`}>
               <Bell size={20} />
               {unreadNotifications > 0 && (
                 <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">

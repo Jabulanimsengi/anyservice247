@@ -19,7 +19,7 @@ type ServiceLocation = {
 };
 
 type Availability = {
-    [key: string]: { start: string; end: string };
+    [key: string]: { start: string; end: string; is24Hours: boolean };
 }
 
 const weekDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -46,9 +46,9 @@ const NewServicePage = () => {
   const [whatsapp, setWhatsapp] = useState('');
   const [availability, setAvailability] = useState<Availability>({});
 
-  const handleAvailabilityChange = (day: string, field: 'start' | 'end', value: string) => {
+  const handleAvailabilityChange = (day: string, field: 'start' | 'end' | 'is24Hours', value: string | boolean) => {
     setAvailability(prev => {
-        const currentDay = prev[day] || { start: '', end: '' };
+        const currentDay = prev[day] || { start: '', end: '', is24Hours: false };
         return {
             ...prev,
             [day]: {
@@ -58,6 +58,17 @@ const NewServicePage = () => {
         };
     });
   };
+
+  const applyToAllDays = () => {
+    const firstDay = availability['monday'];
+    if(firstDay) {
+      const newAvailability: Availability = {};
+      weekDays.forEach(day => {
+        newAvailability[day] = { ...firstDay };
+      });
+      setAvailability(newAvailability);
+    }
+  }
 
   const handleAddLocation = () => {
     if (currentProvince && currentCity) {
@@ -223,11 +234,16 @@ const NewServicePage = () => {
 
         <div className="space-y-4 rounded-md border p-4">
              <h3 className="font-medium text-gray-800">Your Weekly Availability</h3>
+             <Button type="button" variant="outline" onClick={applyToAllDays} className="w-full">Apply to all days</Button>
              {weekDays.map(day => (
-                 <div key={day} className="grid grid-cols-3 items-center gap-4">
+                 <div key={day} className="grid grid-cols-4 items-center gap-4">
                      <label htmlFor={day} className="capitalize text-sm font-medium">{day}</label>
-                     <Input type="time" id={`${day}-start`} value={availability[day]?.start || ''} onChange={e => handleAvailabilityChange(day, 'start', e.target.value)} />
-                     <Input type="time" id={`${day}-end`} value={availability[day]?.end || ''} onChange={e => handleAvailabilityChange(day, 'end', e.target.value)} />
+                     <Input type="time" id={`${day}-start`} value={availability[day]?.start || ''} onChange={e => handleAvailabilityChange(day, 'start', e.target.value)} disabled={availability[day]?.is24Hours}/>
+                     <Input type="time" id={`${day}-end`} value={availability[day]?.end || ''} onChange={e => handleAvailabilityChange(day, 'end', e.target.value)} disabled={availability[day]?.is24Hours}/>
+                      <div>
+                        <input type="checkbox" id={`${day}-24hours`} checked={availability[day]?.is24Hours || false} onChange={e => handleAvailabilityChange(day, 'is24Hours', e.target.checked)} />
+                        <label htmlFor={`${day}-24hours`} className="ml-2 text-sm">24 hours</label>
+                      </div>
                  </div>
              ))}
         </div>

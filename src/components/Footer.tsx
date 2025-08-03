@@ -1,9 +1,31 @@
 // src/components/Footer.tsx
-import React from 'react';
+'use client'
+
+import React, { useState } from 'react';
 import { Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { Button } from './ui/Button';
+import { supabase } from '@/lib/supabase';
+import { useStore } from '@/lib/store';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const [suggestion, setSuggestion] = useState('');
+  const { addToast } = useStore();
+
+  const handleSuggestionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (suggestion.trim() === '') {
+        addToast('Please enter a suggestion.', 'error');
+        return;
+    }
+    const { error } = await supabase.from('suggestions').insert({ content: suggestion });
+    if (error) {
+        addToast('Failed to submit suggestion. Please try again.', 'error');
+    } else {
+        addToast('Suggestion submitted successfully! Thank you.', 'success');
+        setSuggestion('');
+    }
+  }
 
   return (
     <footer className="bg-brand-dark text-white">
@@ -38,12 +60,17 @@ const Footer = () => {
             </ul>
           </div>
           <div>
-            <h3 className="text-lg font-semibold">Contact Us</h3>
-            <ul className="mt-4 space-y-2 text-sm text-gray-400">
-              <li>Email: support@homeservices247.com</li>
-              <li>Phone: +27 11 123 4567</li>
-              <li>Location: Vosloorus, Gauteng</li>
-            </ul>
+            <h3 className="text-lg font-semibold">Have a suggestion?</h3>
+            <form onSubmit={handleSuggestionSubmit} className="mt-4 space-y-2">
+              <textarea
+                value={suggestion}
+                onChange={(e) => setSuggestion(e.target.value)}
+                placeholder="Tell us how we can improve..."
+                rows={3}
+                className="w-full rounded-md border border-gray-600 bg-gray-700 p-2 text-sm text-white placeholder-gray-400"
+              />
+              <Button type="submit" size="sm" className="w-full">Submit</Button>
+            </form>
           </div>
         </div>
         <div className="mt-12 border-t border-gray-700 pt-8 text-center text-sm text-gray-400">

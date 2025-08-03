@@ -1,6 +1,6 @@
 // src/components/ServicePageContent.tsx
 import { createClient } from '@/lib/utils/supabase/server';
-import { Star, Phone, MessageCircle, Building, MapPin } from 'lucide-react';
+import { Star, Phone, MessageCircle, Building, MapPin, Flag } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import ServiceInteraction from '@/components/ServiceInteraction';
 import { revalidatePath } from 'next/cache';
@@ -8,6 +8,7 @@ import ImageGallery from './ImageGallery';
 import Link from 'next/link';
 import MessageProviderButton from './MessageProviderButton';
 import WhatsAppButton from './WhatsAppButton';
+import ReportButton from './ReportButton';
 
 const maskNumber = (number: string | null) => {
     if (!number) return 'Not Provided';
@@ -16,7 +17,7 @@ const maskNumber = (number: string | null) => {
 
 const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
-  const supabase = await createClient(); // Await the createClient function
+  const supabase = await createClient(); // Added await here
 
   const { data: { user } } = await supabase.auth.getUser();
   const isLoggedIn = !!user;
@@ -90,6 +91,7 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
                         {providerProfile?.whatsapp && (
                            <WhatsAppButton isLoggedIn={isLoggedIn} whatsappNumber={providerProfile.whatsapp} />
                         )}
+                        <ReportButton serviceId={parseInt(id)} isLoggedIn={isLoggedIn} />
                     </div>
                 </div>
             </div>
@@ -120,7 +122,7 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
                                     (times.start && times.end) &&
                                     <div key={day} className="grid grid-cols-3">
                                         <span className="font-semibold capitalize">{day}</span>
-                                        <span>{times.start} - {times.end}</span>
+                                        <span>{times.is24Hours ? '24 hours' : `${times.start} - ${times.end}`}</span>
                                     </div>
                                 ))}
                             </div>
