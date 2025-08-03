@@ -90,11 +90,21 @@ const ChatWindow = ({ providerId, providerName }: ChatWindowProps) => {
         e.preventDefault();
         if (newMessage.trim() === '' || !user || !conversationId) return;
 
-        await supabase.from('messages').insert({
+        const { data: messageData, error } = await supabase.from('messages').insert({
             conversation_id: conversationId,
             sender_id: user.id,
             content: newMessage,
-        });
+        }).select().single();
+        
+        if (!error && messageData) {
+            // Send a notification to the other user
+            await supabase.from('notifications').insert({
+                user_id: providerId,
+                message: `You have a new message from ${user.user_metadata.full_name || 'a user'}.`,
+                link: '/account/messages'
+            });
+        }
+        
         setNewMessage('');
     };
 

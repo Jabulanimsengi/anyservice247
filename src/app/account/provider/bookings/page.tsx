@@ -5,19 +5,19 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { User } from '@supabase/supabase-js';
+import BackButton from '@/components/BackButton'; // Import the BackButton
 
 // --- Type Definitions ---
-// CORRECTED: services and profiles are now correctly typed as arrays
 type Booking = {
   id: number;
   created_at: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   services: {
     title: string;
-  }[]; // Changed to an array of objects
+  } | null;
   profiles: {
     full_name: string;
-  }[]; // Changed to an array of objects
+  } | null;
 };
 
 // --- Component ---
@@ -29,6 +29,7 @@ const ManageBookingsPage = () => {
   // --- Data Fetching ---
   const fetchBookings = useCallback(async (providerId: string) => {
     setLoading(true);
+    // Corrected the query to reflect the relationship
     const { data, error } = await supabase
       .from('bookings')
       .select(`
@@ -36,15 +37,15 @@ const ManageBookingsPage = () => {
         created_at,
         status,
         services ( title ),
-        profiles ( full_name )
+        profiles:user_id ( full_name ) 
       `)
       .eq('provider_id', providerId)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Error fetching bookings:', error);
+    if (error && error.message) {
+      console.error('Error fetching bookings:', error.message);
     } else {
-      setBookings(data || []);
+      setBookings(data as any[] || []);
     }
     setLoading(false);
   }, []);
@@ -81,6 +82,7 @@ const ManageBookingsPage = () => {
   // --- Render Logic ---
   return (
     <div className="container mx-auto px-4 py-8">
+      <BackButton /> {/* Added the BackButton */}
       <h1 className="mb-6 text-3xl font-bold">Manage Your Bookings</h1>
 
       {loading ? (
@@ -93,11 +95,9 @@ const ManageBookingsPage = () => {
             <div key={booking.id} className="rounded-lg border bg-white p-4 shadow-sm">
               <div className="flex flex-col justify-between sm:flex-row">
                 <div>
-                  {/* CORRECTED: Access the first element of the services array */}
-                  <h3 className="text-lg font-semibold">{booking.services[0]?.title}</h3>
+                  <h3 className="text-lg font-semibold">{booking.services?.title || 'Service Not Available'}</h3>
                   <p className="text-sm text-gray-600">
-                    {/* CORRECTED: Access the first element of the profiles array */}
-                    Booked by: {booking.profiles[0]?.full_name ?? 'A customer'}
+                    Booked by: {booking.profiles?.full_name ?? 'A customer'}
                   </p>
                   <p className="text-xs text-gray-400">
                     Requested on: {new Date(booking.created_at).toLocaleDateString()}

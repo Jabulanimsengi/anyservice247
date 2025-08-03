@@ -10,7 +10,8 @@ import Spinner from '@/components/ui/Spinner';
 type Service = {
   id: number;
   title: string;
-  status: string; // Corrected from is_approved
+  status: string;
+  user_id: string; // Added user_id to send notifications
   profiles: {
     full_name: string;
   }[] | null;
@@ -28,7 +29,8 @@ const AdminServicesPage = () => {
       .select(`
         id,
         title,
-        status, 
+        status,
+        user_id, 
         profiles (full_name)
       `)
       .order('created_at', { ascending: false });
@@ -45,27 +47,35 @@ const AdminServicesPage = () => {
     fetchServices();
   }, [fetchServices]);
 
-  const handleApproval = async (serviceId: number, newStatus: 'approved' | 'rejected') => {
-    let updateData: { status: string, rejection_reason?: string } = { status: newStatus };
+  const handleApproval = async (service: Service, newStatus: 'approved' | 'rejected') => {
+    let updateData: { status: string, rejection_reason?: string | null } = { status: newStatus, rejection_reason: null };
+    let notificationMessage = `Your service "${service.title}" has been ${newStatus}.`;
 
     if (newStatus === 'rejected') {
         const reason = prompt("Please provide a reason for rejecting this service:");
         if (reason) {
             updateData.rejection_reason = reason;
+            notificationMessage += ` Reason: ${reason}`;
         } else {
-            // If user cancels the prompt, do nothing.
-            return;
+            return; // User cancelled the prompt
         }
     }
 
     const { error } = await supabase
       .from('services')
       .update(updateData)
-      .eq('id', serviceId);
+      .eq('id', service.id);
 
     if (error) {
       addToast(`Error updating status: ${error.message}`, 'error');
     } else {
+      // Send notification to the provider
+      await supabase.from('notifications').insert({
+        user_id: service.user_id,
+        message: notificationMessage,
+        link: `/service/${service.id}`
+      });
+      
       addToast('Service status updated successfully!', 'success');
       fetchServices();
     }
@@ -108,10 +118,10 @@ const AdminServicesPage = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                     {service.status === 'pending' && (
                       <>
-                        <Button size="sm" onClick={() => handleApproval(service.id, 'approved')}>
+                        <Button size="sm" onClick={() => handleApproval(service, 'approved')}>
                             Approve
                         </Button>
-                         <Button size="sm" variant="destructive" onClick={() => handleApproval(service.id, 'rejected')}>
+                         <Button size="sm" variant="destructive" onClick={() => handleApproval(service, 'rejected')}>
                             Reject
                         </Button>
                       </>
