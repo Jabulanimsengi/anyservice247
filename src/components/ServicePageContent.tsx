@@ -17,7 +17,7 @@ const maskNumber = (number: string | null) => {
 
 const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
-  const supabase = await createClient(); // Added await here
+  const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
   const isLoggedIn = !!user;
@@ -53,12 +53,26 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
                     <h1 className="text-2xl lg:text-3xl font-bold text-gray-800">{service.title}</h1>
                     <p className="mt-1 text-lg">by <Link href={`/provider/${service.user_id}`} className="font-semibold text-blue-600 hover:underline">{service.provider_name ?? 'Anonymous'}</Link></p>
                     <div className="my-6 border-t"></div>
-                    <div className="mb-6">
-                        <span className="text-gray-500">from </span>
-                        <span className="text-4xl font-bold text-gray-900">R{Number(service.price).toFixed(2)}/hr</span>
-                        {service.call_out_fee > 0 && (
-                            <p className="text-sm text-gray-600 mt-2">Call-out fee: R{Number(service.call_out_fee).toFixed(2)}</p>
-                        )}
+                    
+                    {/* --- NEW APPLICABLE FEES SECTION --- */}
+                    <div className="mb-6 rounded-lg border bg-gray-50 p-4">
+                        <h3 className="text-xl font-semibold mb-2">Applicable Fees</h3>
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-baseline">
+                                <span className="text-gray-600">Hourly Rate (from)</span>
+                                <span className="text-2xl font-bold text-gray-900">
+                                    R{Number(service.price).toFixed(2)}
+                                </span>
+                            </div>
+                            {service.call_out_fee > 0 && (
+                                <div className="flex justify-between items-baseline">
+                                    <span className="text-gray-600">Call-Out Fee</span>
+                                    <span className="text-lg font-semibold text-gray-800">
+                                        R{Number(service.call_out_fee).toFixed(2)}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     <div className="prose max-w-none mb-4">
@@ -119,7 +133,7 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
                         {providerProfile?.availability ? (
                             <div className="space-y-2 text-sm">
                                 {Object.entries(providerProfile.availability).map(([day, times]: any) => (
-                                    (times.start && times.end) &&
+                                    (times.start && times.end || times.is24Hours) &&
                                     <div key={day} className="grid grid-cols-3">
                                         <span className="font-semibold capitalize">{day}</span>
                                         <span>{times.is24Hours ? '24 hours' : `${times.start} - ${times.end}`}</span>

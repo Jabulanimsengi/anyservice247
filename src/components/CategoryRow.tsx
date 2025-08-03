@@ -14,14 +14,16 @@ type Service = {
   id: number;
   title: string;
   price: number;
+  call_out_fee: number; // Added
   user_id: string;
   image_urls: string[] | null;
-  status: string; // CORRECTED: from is_approved to status
+  status: string;
   locations: ServiceLocation[] | null;
   provider_name: string;
   average_rating: number;
   review_count: number;
   category: string;
+  availability: any; // Added
 };
 
 interface CategoryRowProps {
@@ -70,9 +72,11 @@ const CategoryRow: React.FC<CategoryRowProps> = ({ category, services }) => {
                 rating={service.average_rating}
                 reviewCount={service.review_count}
                 price={service.price}
+                call_out_fee={service.call_out_fee} // Added this line
                 imageUrls={service.image_urls}
-                status={service.status} // Now correctly passing status
+                status={service.status}
                 locations={service.locations}
+                availability={service.availability} // Added this line
               />
             </div>
           ))}

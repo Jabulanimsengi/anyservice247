@@ -17,6 +17,7 @@ type ServiceLocation = {
   city: string;
 };
 
+// This interface is now updated to accept the call_out_fee
 interface ServiceCardProps {
   id: number;
   providerId: string;
@@ -26,6 +27,7 @@ interface ServiceCardProps {
   rating: number;
   reviewCount: number;
   price: number;
+  call_out_fee?: number; // Added call_out_fee as an optional prop
   status: string;
   locations: ServiceLocation[] | null;
   availability: any;

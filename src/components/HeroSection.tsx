@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { categories } from '@/lib/categories';
-import { ShieldCheck, CalendarCheck, MessageSquare } from 'lucide-react';
+import { ShieldCheck, CalendarCheck, MessageSquare, BadgeDollarSign } from 'lucide-react'; // Added BadgeDollarSign
 import TypingEffect from './TypingEffect';
 
 const HeroSection = () => {
@@ -129,7 +129,7 @@ const HeroSection = () => {
             )}
           </div>
         </div>
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div className="p-6 bg-white rounded-lg shadow-md border">
                 <ShieldCheck className="mx-auto h-10 w-10 text-brand-teal" />
                 <h3 className="mt-4 text-lg font-semibold text-brand-dark">Verified Professionals</h3>
@@ -144,6 +144,12 @@ const HeroSection = () => {
                 <MessageSquare className="mx-auto h-10 w-10 text-brand-teal" />
                 <h3 className="mt-4 text-lg font-semibold text-brand-dark">Direct Communication</h3>
                 <p className="mt-2 text-sm text-gray-600">Chat with providers to get quotes and discuss your needs.</p>
+            </div>
+            {/* --- NEW TRANSPARENCY CARD --- */}
+            <div className="p-6 bg-white rounded-lg shadow-md border">
+                <BadgeDollarSign className="mx-auto h-10 w-10 text-brand-teal" />
+                <h3 className="mt-4 text-lg font-semibold text-brand-dark">Transparent Pricing</h3>
+                <p className="mt-2 text-sm text-gray-600">No hidden fees. See rates upfront and get clear quotes.</p>
             </div>
         </div>
       </div>

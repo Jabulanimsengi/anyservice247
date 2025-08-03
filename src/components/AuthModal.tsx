@@ -1,19 +1,20 @@
 // src/components/AuthModal.tsx
 'use client';
 
-import { Fragment, useState } from 'react';
+import { Fragment, useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { X } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
-import { supabase } from '@/lib/supabase'; // Import our Supabase client
+import { supabase } from '@/lib/supabase';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialView?: 'signIn' | 'signUp';
 }
 
-const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
+const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 'signIn' }) => {
   const [isSigningIn, setIsSigningIn] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,6 +28,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [officeEmail, setOfficeEmail] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [location, setLocation] = useState('');
+  
+  useEffect(() => {
+    if (isOpen) {
+      setIsSigningIn(initialView === 'signIn');
+    }
+  }, [isOpen, initialView]);
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

@@ -20,6 +20,7 @@ const Header = () => {
   const [loading, setLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [initialAuthView, setInitialAuthView] = useState<'signIn' | 'signUp'>('signIn');
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [hasHydrated, setHasHydrated] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -30,6 +31,11 @@ const Header = () => {
     return pathname === path 
       ? "text-white bg-gray-700 rounded-md px-3 py-2 text-sm font-medium" 
       : "text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium transition-colors";
+  };
+  
+  const openAuthModal = (view: 'signIn' | 'signUp') => {
+    setInitialAuthView(view);
+    setIsAuthModalOpen(true);
   };
 
   useEffect(() => {
@@ -89,7 +95,7 @@ const Header = () => {
 
   return (
     <>
-      <header className="bg-brand-dark text-white shadow-md relative z-50"> {/* Added z-50 */}
+      <header className="bg-brand-dark text-white shadow-md relative z-50">
         <nav className="container mx-auto flex items-center justify-between px-6 py-3">
           <Link href="/" className="flex items-center gap-x-2 text-xl font-bold">
               <Home style={{ color: '#ff5757' }} size={24} />
@@ -140,8 +146,8 @@ const Header = () => {
                           </div>
                         ) : (
                           <div className="flex items-center gap-x-2">
-                              <button onClick={() => setIsAuthModalOpen(true)} className="whitespace-nowrap text-sm text-gray-300 hover:text-white transition-colors px-4 py-2">Sign In</button>
-                              <button onClick={() => setIsAuthModalOpen(true)} className="whitespace-nowrap rounded-md bg-brand-teal px-4 py-2 text-sm text-white hover:bg-opacity-90 transition-colors">Sign Up</button>
+                              <button onClick={() => openAuthModal('signIn')} className="whitespace-nowrap rounded-md px-4 py-2 text-sm text-gray-300 transition-colors hover:bg-gray-700 hover:text-white">Sign In</button>
+                              <button onClick={() => openAuthModal('signUp')} className="whitespace-nowrap rounded-md bg-brand-teal px-4 py-2 text-sm text-white hover:bg-brand-teal/90 transition-colors">Sign Up</button>
                           </div>
                         )}
                     </>
@@ -159,7 +165,7 @@ const Header = () => {
 
         {/* --- MOBILE MENU --- */}
         {isMobileMenuOpen && (
-            <div className="md:hidden absolute top-full left-0 w-full bg-brand-dark border-t border-gray-700 p-6 z-50"> {/* Added z-50 */}
+            <div className="md:hidden absolute top-full left-0 w-full bg-brand-dark border-t border-gray-700 p-6 z-50">
                 <nav className="flex flex-col gap-y-4">
                     <Link href="/explore" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Explore</Link>
                     <Link href="/academy" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Academy</Link>
@@ -184,8 +190,8 @@ const Header = () => {
                             </div>
                         ) : (
                             <div className="flex flex-col gap-y-4">
-                                <button onClick={() => { setIsAuthModalOpen(true); setIsMobileMenuOpen(false); }} className="text-left text-gray-300 hover:text-white">Sign In</button>
-                                <button onClick={() => { setIsAuthModalOpen(true); setIsMobileMenuOpen(false); }} className="text-left rounded-md bg-brand-teal px-4 py-2 text-white hover:bg-opacity-90 w-min whitespace-nowrap">Sign Up</button>
+                                <button onClick={() => { openAuthModal('signIn'); setIsMobileMenuOpen(false); }} className="text-left text-gray-300 hover:text-white">Sign In</button>
+                                <button onClick={() => { openAuthModal('signUp'); setIsMobileMenuOpen(false); }} className="text-left rounded-md bg-brand-teal px-4 py-2 text-white hover:bg-opacity-90 w-min whitespace-nowrap">Sign Up</button>
                             </div>
                         )}
                     </div>
@@ -193,7 +199,11 @@ const Header = () => {
             </div>
         )}
       </header>
-      {!user && <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />}
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)}
+        initialView={initialAuthView}
+      />
       <ConfirmLogoutModal isOpen={isLogoutModalOpen} onClose={() => setIsLogoutModalOpen(false)} onConfirm={confirmSignOut} />
     </>
   );
