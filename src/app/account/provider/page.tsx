@@ -67,12 +67,22 @@ const ProviderDashboard = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="mb-6 text-3xl font-bold">Provider Dashboard</h1>
-      <div className="mb-8 rounded-lg border bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold">Incoming Bookings</h2>
-        <p className="mt-2 text-gray-600">View and manage all booking requests from customers.</p>
-        <Link href="/account/provider/bookings" className="mt-4 inline-block">
-          <Button>Manage Bookings</Button>
-        </Link>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div className="rounded-lg border bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-semibold">Incoming Bookings</h2>
+            <p className="mt-2 text-gray-600">View and manage all booking requests from customers.</p>
+            <Link href="/account/provider/bookings" className="mt-4 inline-block">
+            <Button>Manage Bookings</Button>
+            </Link>
+        </div>
+        {/* --- NEW SECTION FOR STATUS UPDATES --- */}
+        <div className="rounded-lg border bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-semibold">Share Your Work</h2>
+            <p className="mt-2 text-gray-600">Post a status update to show customers your latest projects.</p>
+            <Link href="/account/provider/add-status" className="mt-4 inline-block">
+            <Button variant="outline">+ Post a Status</Button>
+            </Link>
+        </div>
       </div>
 
       <div className="rounded-lg border bg-white p-6 shadow-sm">

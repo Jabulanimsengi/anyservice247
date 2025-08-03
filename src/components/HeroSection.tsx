@@ -3,7 +3,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { categories } from '@/lib/categories'; // Import categories
+import { categories } from '@/lib/categories';
+import { ShieldCheck, CalendarCheck, MessageSquare } from 'lucide-react';
+import TypingEffect from './TypingEffect';
 
 const HeroSection = () => {
   const [query, setQuery] = useState('');
@@ -11,6 +13,25 @@ const HeroSection = () => {
   const [isSuggestionsVisible, setIsSuggestionsVisible] = useState(false);
   const router = useRouter();
   const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // --- UPDATED THIS LIST ---
+  const servicesToDisplay = [
+    "Plumbing", 
+    "Painting", 
+    "Window Cleaning", 
+    "Electrical", 
+    "Gardening", 
+    "Welding",
+    "Gate Repair",
+    "Ceiling Installation",
+    "Door Installation",
+    "Tile Installation",
+    "Kitchen Installation",
+    "TV Stand Installation",
+    "Paving",
+    "Waterproofing",
+    "Built-in Cupboards"
+  ];
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -54,10 +75,14 @@ const HeroSection = () => {
 
   return (
     <section className="bg-gray-100">
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 pt-16 pb-8">
         <div className="rounded-lg bg-brand-dark p-8 text-center text-white md:p-12">
-          <h1 className="text-4xl font-bold leading-tight sm:text-5xl">
-            The Smart Way to Hire. <span className="text-brand-teal">Verified Pros for Your Home.</span>
+          <h1 className="text-4xl font-bold leading-tight sm:text-5xl h-24 sm:h-auto">
+            Find Verified Pros for Your 
+            <br />
+            <span className="text-brand-teal">
+                <TypingEffect words={servicesToDisplay} />
+            </span>
           </h1>
           <p className="mt-6 mb-8 max-w-2xl mx-auto text-lg text-gray-300">
             HomeServices24/7 is reinventing how South Africans find home services. We meticulously verify every provider, connecting you with trusted, top-tier professionals for any job, big or small.
@@ -79,7 +104,7 @@ const HeroSection = () => {
                   onFocus={() => setIsSuggestionsVisible(query.length > 0 && suggestions.length > 0)}
                   autoComplete="off"
                   className="block w-full rounded-lg border border-gray-600 bg-gray-700 p-4 pl-10 text-sm text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="Search for a plumber, electrician, painter..."
+                  placeholder="Search for a service..."
                   required
                 />
               </div>
@@ -90,7 +115,6 @@ const HeroSection = () => {
                 Search
               </button>
             </form>
-            {/* Suggestions Dropdown */}
             {isSuggestionsVisible && suggestions.length > 0 && (
               <ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-lg text-left">
                 {suggestions.map((suggestion, index) => (
@@ -105,6 +129,23 @@ const HeroSection = () => {
               </ul>
             )}
           </div>
+        </div>
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+            <div className="p-6 bg-white rounded-lg shadow-md border">
+                <ShieldCheck className="mx-auto h-10 w-10 text-brand-teal" />
+                <h3 className="mt-4 text-lg font-semibold text-brand-dark">Verified Professionals</h3>
+                <p className="mt-2 text-sm text-gray-600">Every service provider is vetted for quality and reliability.</p>
+            </div>
+            <div className="p-6 bg-white rounded-lg shadow-md border">
+                <CalendarCheck className="mx-auto h-10 w-10 text-brand-teal" />
+                <h3 className="mt-4 text-lg font-semibold text-brand-dark">Easy Scheduling</h3>
+                <p className="mt-2 text-sm text-gray-600">Book and manage appointments directly on our platform.</p>
+            </div>
+            <div className="p-6 bg-white rounded-lg shadow-md border">
+                <MessageSquare className="mx-auto h-10 w-10 text-brand-teal" />
+                <h3 className="mt-4 text-lg font-semibold text-brand-dark">Direct Communication</h3>
+                <p className="mt-2 text-sm text-gray-600">Chat with providers to get quotes and discuss your needs.</p>
+            </div>
         </div>
       </div>
     </section>

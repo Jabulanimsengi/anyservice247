@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 import AuthModal from './AuthModal';
 import Link from 'next/link';
-import { Heart, Bell } from 'lucide-react';
+import { Heart, Bell, Home } from 'lucide-react';
 import ConfirmLogoutModal from './ConfirmLogoutModal';
 import { useRouter } from 'next/navigation';
 
@@ -28,7 +28,7 @@ const Header = () => {
     setHasHydrated(true);
 
     const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser(); // Updated to getUser()
+      const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
       setLoading(false);
     };
@@ -82,19 +82,23 @@ const Header = () => {
   return (
     <>
       <header className="bg-brand-dark text-white shadow-md">
-        <nav className="container mx-auto flex items-center justify-between px-6 py-4">
-          <div className="text-2xl font-bold">
-            <Link href="/" className="bg-gray-700/50 px-3 py-1 rounded-md transition-colors hover:bg-gray-700">
-              HomeServices<span className="text-brand-teal">24/7</span>
-            </Link>
-          </div>
+        <nav className="container mx-auto flex items-center justify-between px-6 py-3">
+          <Link href="/" className="flex items-center gap-x-2 text-2xl font-bold">
+              <Home style={{ color: '#ff5757' }} size={28} />
+              <div>
+                  <span className="font-extrabold text-white">HomeService</span>
+                  <span style={{ color: '#ff5757' }}>24/7</span>
+              </div>
+          </Link>
+
           <div className="flex items-center gap-x-6">
+            <Link href="/explore" className="text-sm text-gray-300 hover:text-white transition-colors">Explore</Link>
             <Link href="/academy" className="text-sm text-gray-300 hover:text-white transition-colors">Academy</Link>
             <Link href="/products" className="text-sm text-gray-300 hover:text-white transition-colors">Products</Link>
-            <Link href="/likes" className="text-gray-300 hover:text-white transition-colors p-2 rounded-md hover:bg-gray-700">
+            <Link href="/likes" className="text-gray-300 hover:text-white transition-colors p-2 rounded-full hover:bg-gray-700">
                 <Heart size={20} />
             </Link>
-            <Link href="/account/notifications" className="text-gray-300 hover:text-white relative transition-colors p-2 rounded-md hover:bg-gray-700">
+            <Link href="/account/notifications" className="text-gray-300 hover:text-white relative transition-colors p-2 rounded-full hover:bg-gray-700">
               <Bell size={20} />
               {unreadNotifications > 0 && (
                 <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">
@@ -111,7 +115,7 @@ const Header = () => {
                         ) : user ? (
                           <div className="flex items-center gap-x-2">
                               {profile?.role === 'admin' && (
-                              <Link href="/admin" className="whitespace-nowrap rounded-md bg-yellow-500 px-4 py-2 text-sm font-bold text-black hover:bg-yellow-400 transition-colors">
+                              <Link href="/admin" className="whitespace-nowrap rounded-md bg-yellow-400 px-4 py-2 text-sm font-bold text-black hover:bg-yellow-500 transition-colors">
                                   Admin Panel
                               </Link>
                               )}

@@ -26,7 +26,7 @@ interface ServiceCardProps {
   rating: number;
   reviewCount: number;
   price: number;
-  status: string; // CORRECTED: Changed from is_approved
+  status: string;
   locations: ServiceLocation[] | null;
 }
 
@@ -72,10 +72,16 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
     try {
       if (isLiked) {
         const { error } = await supabase.from('likes').delete().eq('service_id', id).eq('user_id', user.id);
-        if (!error) removeLike(id);
+        if (!error) {
+            removeLike(id);
+            addToast('Service removed from likes.', 'success');
+        }
       } else {
         const { error } = await supabase.from('likes').insert({ service_id: id, user_id: user.id });
-        if (!error) addLike(id);
+        if (!error) {
+            addLike(id);
+            addToast('Service added to likes!', 'success');
+        }
       }
     } finally {
       setIsLiking(false);

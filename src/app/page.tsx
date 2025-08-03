@@ -4,8 +4,8 @@ import HeroSection from '@/components/HeroSection';
 import ServiceGrid from '@/components/ServiceGrid';
 import ServiceCardSkeleton from '@/components/ServiceCardSkeleton';
 import SearchFilters from '@/components/SearchFilters';
+import StatusFeed from '@/components/StatusFeed'; // Import the new component
 
-// Add this line to force the page to always fetch fresh data
 export const dynamic = 'force-dynamic';
 
 const LoadingSkeleton = () => (
@@ -20,6 +20,9 @@ export default function Home() {
   return (
     <div>
       <HeroSection />
+      <Suspense fallback={null}>
+        <StatusFeed />
+      </Suspense>
       <div className="sticky top-0 z-40 bg-gray-100/95 backdrop-blur-sm py-4">
         <div className="container mx-auto px-4">
           <SearchFilters />
