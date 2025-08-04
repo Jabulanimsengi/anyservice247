@@ -3,7 +3,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
 import Link from 'next/link';
 import BackButton from '@/components/BackButton';
 import Spinner from '@/components/ui/Spinner';
@@ -20,12 +19,11 @@ type Notification = {
 const NotificationsPage = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
   const { addToast } = useStore();
 
   const fetchNotifications = useCallback(async (userId: string) => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('notifications')
       .select('*')
       .eq('user_id', userId)
@@ -41,7 +39,6 @@ const NotificationsPage = () => {
     const getInitialData = async () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          setUser(user);
           fetchNotifications(user.id);
           // Mark notifications as read
           await supabase

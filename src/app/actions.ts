@@ -27,7 +27,13 @@ export async function submitReport(serviceId: number, reason: string) {
   return { success: 'Report submitted successfully!' };
 }
 
-export async function handleProfileUpdateApproval(request: any, newStatus: 'approved' | 'rejected') {
+interface ProfileUpdateRequest {
+    id: string;
+    user_id: string;
+    new_data: Record<string, unknown>;
+}
+
+export async function handleProfileUpdateApproval(request: ProfileUpdateRequest, newStatus: 'approved' | 'rejected') {
     // This client is for checking the current user's permissions
     const supabase = await createServerClientUtil();
 

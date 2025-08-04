@@ -15,11 +15,11 @@ type Booking = {
   services: {
     title: string;
     id: number;
-  } | null;
+  }[] | null; // Corrected: This is an array
   profiles: {
     full_name: string;
     id: string;
-  } | null;
+  }[] | null; // Corrected: This is an array
 };
 
 const ClientBookingsPage = () => {
@@ -42,7 +42,7 @@ const ClientBookingsPage = () => {
     if (error) {
       console.error('Error fetching bookings:', error);
     } else {
-      setBookings(data as any[] || []);
+      setBookings((data as Booking[]) || []);
     }
     setLoading(false);
   }, []);
@@ -75,11 +75,11 @@ const ClientBookingsPage = () => {
             <div key={booking.id} className="rounded-lg border bg-white p-4 shadow-sm">
               <div className="flex flex-col justify-between sm:flex-row">
                 <div>
-                  <Link href={`/service/${booking.services?.id}`} className="text-lg font-semibold hover:underline">
-                    {booking.services?.title}
+                  <Link href={`/service/${booking.services?.[0]?.id}`} className="text-lg font-semibold hover:underline">
+                    {booking.services?.[0]?.title}
                   </Link>
                   <p className="text-sm text-gray-600">
-                    Provider: <Link href={`/provider/${booking.profiles?.id}`} className="text-blue-500 hover:underline">{booking.profiles?.full_name}</Link>
+                    Provider: <Link href={`/provider/${booking.profiles?.[0]?.id}`} className="text-blue-500 hover:underline">{booking.profiles?.[0]?.full_name}</Link>
                   </p>
                   {booking.appointment_time && (
                      <p className="text-sm font-semibold text-gray-800">

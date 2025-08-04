@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { User } from '@supabase/supabase-js';
-import BackButton from '@/components/BackButton'; // Import the BackButton
+import BackButton from '@/components/BackButton';
 
 // --- Type Definitions ---
 type Booking = {
@@ -14,10 +14,10 @@ type Booking = {
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   services: {
     title: string;
-  } | null;
+  }[] | null; // Corrected: This is an array
   profiles: {
     full_name: string;
-  } | null;
+  }[] | null; // Corrected: This is an array
 };
 
 // --- Component ---
@@ -29,7 +29,6 @@ const ManageBookingsPage = () => {
   // --- Data Fetching ---
   const fetchBookings = useCallback(async (providerId: string) => {
     setLoading(true);
-    // Corrected the query to reflect the relationship
     const { data, error } = await supabase
       .from('bookings')
       .select(`
@@ -45,7 +44,7 @@ const ManageBookingsPage = () => {
     if (error && error.message) {
       console.error('Error fetching bookings:', error.message);
     } else {
-      setBookings(data as any[] || []);
+      setBookings((data as Booking[]) || []);
     }
     setLoading(false);
   }, []);
@@ -95,9 +94,9 @@ const ManageBookingsPage = () => {
             <div key={booking.id} className="rounded-lg border bg-white p-4 shadow-sm">
               <div className="flex flex-col justify-between sm:flex-row">
                 <div>
-                  <h3 className="text-lg font-semibold">{booking.services?.title || 'Service Not Available'}</h3>
+                  <h3 className="text-lg font-semibold">{booking.services?.[0]?.title || 'Service Not Available'}</h3>
                   <p className="text-sm text-gray-600">
-                    Booked by: {booking.profiles?.full_name ?? 'A customer'}
+                    Booked by: {booking.profiles?.[0]?.full_name ?? 'A customer'}
                   </p>
                   <p className="text-xs text-gray-400">
                     Requested on: {new Date(booking.created_at).toLocaleDateString()}

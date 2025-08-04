@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
 import Link from 'next/link';
 import BackButton from '@/components/BackButton';
 import Spinner from '@/components/ui/Spinner';
@@ -18,15 +17,13 @@ type Notification = {
 const AdminMessagesPage = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
     const fetchNotifications = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        setUser(user);
         // We can filter for admin-specific messages here if needed in the future
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('notifications')
           .select('*')
           .eq('user_id', user.id)

@@ -31,9 +31,10 @@ const AdminUsersPage = () => {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to fetch user data.');
       }
-      const data = await response.json();
+      const data: Profile[] = await response.json();
       setProfiles(data);
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       console.error("Error fetching profiles:", error.message);
       addToast(error.message || 'An unknown error occurred.', 'error');
     }
@@ -65,7 +66,8 @@ const AdminUsersPage = () => {
             delete next[userId];
             return next;
         });
-      } catch (error: any) {
+      } catch (err: unknown) {
+        const error = err as Error;
         addToast(`Error updating role: ${error.message}`, 'error');
       }
     }

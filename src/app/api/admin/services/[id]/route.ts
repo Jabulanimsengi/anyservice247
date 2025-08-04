@@ -57,8 +57,9 @@ export async function PATCH(
 
     return NextResponse.json({ message: 'Service status updated successfully.' });
 
-  } catch (e: any) {
-    console.error("Critical error in PATCH /api/admin/services/[id]:", e);
-    return NextResponse.json({ error: 'An unexpected server error occurred.', details: e.message }, { status: 500 });
+  } catch (err: unknown) {
+    const error = err as Error;
+    console.error("Critical error in PATCH /api/admin/services/[id]:", error);
+    return NextResponse.json({ error: 'An unexpected server error occurred.', details: error.message }, { status: 500 });
   }
 }

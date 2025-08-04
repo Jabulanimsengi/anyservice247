@@ -3,7 +3,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/Button';
 import Spinner from '@/components/ui/Spinner';
 import Link from 'next/link';
 
@@ -13,12 +12,12 @@ type Report = {
   reason: string;
   reporter_id: string;
   service_id: number;
-  services: {
+  services: { // Corrected: Expecting an array
     title: string;
-  } | null;
-  profiles: {
+  }[] | null;
+  profiles: { // Corrected: Expecting an array
     full_name: string;
-  } | null;
+  }[] | null;
 };
 
 const AdminReportsPage = () => {
@@ -43,7 +42,7 @@ const AdminReportsPage = () => {
     if (error) {
       console.error("Error fetching reports:", error);
     } else {
-      setReports(data as any[] || []);
+      setReports((data as Report[]) || []);
     }
     setLoading(false);
   }, []);
@@ -64,10 +63,10 @@ const AdminReportsPage = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm text-gray-500">
-                    Reported by: <span className="font-medium text-gray-700">{report.profiles?.full_name ?? 'Anonymous'}</span>
+                    Reported by: <span className="font-medium text-gray-700">{report.profiles?.[0]?.full_name ?? 'Anonymous'}</span>
                   </p>
                   <p className="text-sm text-gray-500">
-                    Service: <Link href={`/service/${report.service_id}`} className="font-medium text-blue-600 hover:underline">{report.services?.title ?? 'N/A'}</Link>
+                    Service: <Link href={`/service/${report.service_id}`} className="font-medium text-blue-600 hover:underline">{report.services?.[0]?.title ?? 'N/A'}</Link>
                   </p>
                   <p className="text-xs text-gray-400">{new Date(report.created_at).toLocaleString()}</p>
                 </div>

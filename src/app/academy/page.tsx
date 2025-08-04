@@ -5,6 +5,13 @@ import BackButton from '@/components/BackButton';
 
 export const dynamic = 'force-dynamic';
 
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  image_url: string;
+}
+
 const AcademyPage = async () => {
   const { data: courses, error } = await supabase
     .from('courses')
@@ -35,7 +42,7 @@ const AcademyPage = async () => {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {courses.map((course: any) => (
+        {courses.map((course: Course) => (
           <CourseCard key={course.id} course={course} />
         ))}
       </div>

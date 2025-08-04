@@ -29,13 +29,13 @@ type ServiceWithProvider = {
   review_count: number;
   category: string;
   description: string;
+  availability: any;
   profiles: { business_name: string } | null;
 };
 
 const SearchPage = () => {
   const searchParams = useSearchParams();
   
-  // State is now initialized based on the URL search parameters.
   const [services, setServices] = useState<ServiceWithProvider[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -47,7 +47,6 @@ const SearchPage = () => {
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
 
-  // This function fetches services based on the current state of the filters.
   const fetchServices = useCallback(async () => {
     setLoading(true);
 
@@ -86,12 +85,10 @@ const SearchPage = () => {
     setLoading(false);
   }, [query, selectedCategory, selectedProvince, selectedCity, minPrice, maxPrice]);
   
-  // This effect runs the search whenever the filters change.
   useEffect(() => {
     fetchServices();
   }, [fetchServices]);
 
-  // CORRECTED: This new effect ensures that if the URL changes, the filters are updated.
   useEffect(() => {
     setQuery(searchParams.get('q') || '');
     setSelectedCategory(searchParams.get('category') || '');
@@ -157,7 +154,7 @@ const SearchPage = () => {
 
       {loading ? <Spinner /> : services.length > 0 ? (
         <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {services.map((service) => <ServiceCard key={service.id} {...service as any} providerId={service.user_id} providerName={service.provider_name} businessName={service.profiles?.business_name} rating={service.average_rating} reviewCount={service.review_count} imageUrls={service.image_urls} />)}
+          {services.map((service) => <ServiceCard key={service.id} {...service} businessName={service.profiles?.business_name} providerId={service.user_id} providerName={service.provider_name} rating={service.average_rating} reviewCount={service.review_count} imageUrls={service.image_urls} />)}
         </div>
       ) : (
         <p>No services found matching your criteria.</p>

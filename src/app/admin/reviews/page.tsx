@@ -12,13 +12,13 @@ type Review = {
   id: number;
   comment: string | null;
   rating: number;
-  is_approved: boolean; // This table still uses is_approved
-  profiles: {
+  is_approved: boolean;
+  profiles: { // Corrected: Expecting an array
     full_name: string;
-  } | null; // Corrected type
-  services: {
+  }[] | null;
+  services: { // Corrected: Expecting an array
     title: string;
-  } | null; // Corrected type
+  }[] | null;
 };
 
 const AdminReviewsPage = () => {
@@ -43,8 +43,7 @@ const AdminReviewsPage = () => {
     if (error) {
       console.error("Error fetching reviews for admin:", error);
     } else {
-      // Casting to any to handle potential mismatch if profiles/services are arrays
-      setReviews(data as any[] || []);
+      setReviews((data as Review[]) || []);
     }
     setLoading(false);
   }, []);
@@ -78,9 +77,9 @@ const AdminReviewsPage = () => {
             <div key={review.id} className="rounded-lg border bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="font-semibold">{review.profiles?.full_name ?? 'Anonymous'}</p>
+                  <p className="font-semibold">{review.profiles?.[0]?.full_name ?? 'Anonymous'}</p>
                   <p className="text-sm text-gray-500">
-                    Review for: <span className="font-medium text-gray-700">{review.services?.title ?? 'N/A'}</span>
+                    Review for: <span className="font-medium text-gray-700">{review.services?.[0]?.title ?? 'N/A'}</span>
                   </p>
                   <div className="flex items-center mt-1">
                       {[...Array(5)].map((_, i) => (

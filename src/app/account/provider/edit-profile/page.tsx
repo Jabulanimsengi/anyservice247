@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -15,11 +14,10 @@ type UpdateRequest = {
   id: string;
   created_at: string;
   status: 'pending' | 'approved' | 'rejected';
-  new_data: any;
+  new_data: Record<string, unknown>;
 };
 
 const EditProfilePage = () => {
-  const router = useRouter();
   const { addToast } = useStore();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,7 +60,7 @@ const EditProfilePage = () => {
           .order('created_at', { ascending: false });
 
         if (requests) {
-          setUpdateRequests(requests as UpdateRequest[]);
+          setUpdateRequests(requests);
         }
       }
       setLoading(false);
@@ -113,7 +111,6 @@ const EditProfilePage = () => {
           await supabase.from('notifications').insert(notifications);
       }
       addToast('Changes submitted for admin approval.', 'success');
-      // No longer pushing, so the user can see the status on the same page
     }
 
     setIsSubmitting(false);
@@ -128,7 +125,6 @@ const EditProfilePage = () => {
       <BackButton />
       <h1 className="mb-6 text-3xl font-bold">Edit Business Information</h1>
       <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border bg-white p-8 shadow-sm">
-        {/* Form fields remain the same */}
         <div>
           <label htmlFor="business-name" className="mb-2 block text-sm font-medium text-gray-700">Business Name</label>
           <Input id="business-name" type="text" value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
@@ -154,7 +150,6 @@ const EditProfilePage = () => {
         </Button>
       </form>
 
-      {/* Display update requests history */}
       <div className="mt-8">
         <h2 className="text-2xl font-bold mb-4">Update History</h2>
         <div className="space-y-4">

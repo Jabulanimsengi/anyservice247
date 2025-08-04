@@ -51,7 +51,8 @@ export async function GET() {
 
     return NextResponse.json(combinedData);
 
-  } catch (error: any) {
+  } catch (err: unknown) {
+    const error = err as Error;
     // This outer catch is still useful for any completely unexpected errors
     console.error('An unexpected error occurred in the /api/admin/users route:', error);
     return NextResponse.json({ error: 'An unexpected server error occurred.' }, { status: 500 });

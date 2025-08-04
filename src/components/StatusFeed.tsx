@@ -7,7 +7,7 @@ const StatusFeed = async () => {
   const supabase = await createClient(); // Correctly await the client
   const { data: statuses, error } = await supabase
     .from('status_updates')
-    .select('*, profiles(full_name, id)')
+    .select('*, profiles(full_name, id, business_name)')
     .order('created_at', { ascending: false })
     .limit(15);
 
@@ -22,7 +22,7 @@ const StatusFeed = async () => {
             {statuses.map((status: any) => (
                 <Link key={status.id} href={`/status/${status.id}`}>
                     <div className="flex-shrink-0 w-24 text-center cursor-pointer group">
-                        <div className="relative h-24 w-24 rounded-full border-2 border-brand-teal p-1 transition-transform group-hover:scale-105">
+                        <div className="relative h-24 w-24 rounded-full border-4 border-green-500 p-1 transition-transform group-hover:scale-105">
                             {status.image_urls && status.image_urls.length > 0 && (
                                 <Image
                                     src={status.image_urls[0]}
@@ -33,7 +33,7 @@ const StatusFeed = async () => {
                                 />
                             )}
                         </div>
-                        <p className="text-xs mt-2 font-semibold truncate group-hover:underline">{status.profiles.full_name}</p>
+                        <p className="text-xs mt-2 font-semibold truncate group-hover:underline">{status.profiles.business_name || status.profiles.full_name}</p>
                     </div>
                 </Link>
             ))}

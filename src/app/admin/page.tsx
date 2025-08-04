@@ -1,9 +1,10 @@
 // src/app/admin/page.tsx
 'use client';
 
-import { BarChart, Users, MessageSquare, Edit, Flag, Server, ThumbsUp } from 'lucide-react';
+import { Users, MessageSquare, Edit, Flag, Server, ThumbsUp } from 'lucide-react';
 import Link from 'next/link';
 import BackButton from '@/components/BackButton';
+import React from 'react';
 
 const AdminCard = ({ href, icon: Icon, title, description }: { href: string, icon: React.ElementType, title: string, description: string }) => (
   <Link href={href}>

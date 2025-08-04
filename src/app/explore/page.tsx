@@ -27,14 +27,14 @@ const ExploreGrid = async () => {
 
   return (
     <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {services.map((service: any) => (
+      {services.map((service) => (
         <ServiceCard
           key={service.id}
           id={service.id}
           providerId={service.user_id}
           title={service.title}
           providerName={service.provider_name ?? 'Anonymous'}
-          businessName={service.profiles?.business_name}
+          businessName={(service.profiles as any)?.business_name}
           rating={service.average_rating}
           reviewCount={service.review_count}
           price={service.price}

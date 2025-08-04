@@ -7,6 +7,16 @@ import BackButton from '@/components/BackButton';
 
 export const dynamic = 'force-dynamic';
 
+interface Product {
+    id: string;
+    name: string;
+    price: number;
+    image_urls: string[] | null;
+    stores: {
+        name: string;
+    };
+}
+
 const ProductGrid = async () => {
   const { data: products, error } = await supabase
     .from('products')
@@ -26,7 +36,7 @@ const ProductGrid = async () => {
 
   return (
     <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {products.map((product: any) => (
+      {products.map((product: Product) => (
         <ProductCard key={product.id} product={product} />
       ))}
     </div>
@@ -56,7 +66,7 @@ const ProductsPage = () => {
           <p className="mt-4 max-w-3xl mx-auto text-gray-700">
             Our products section is growing! We are actively working to partner with reputable hardware stores and national suppliers to bring you a comprehensive marketplace.
             <br /><br />
-            Soon, you'll be able to source high-quality tools and materials directly through our platform, often at exclusive, competitive prices. Our mission is to equip you for success, making it easier and more affordable to run your business and deliver exceptional quality work to your clients.
+            Soon, you&apos;ll be able to source high-quality tools and materials directly through our platform, often at exclusive, competitive prices. Our mission is to equip you for success, making it easier and more affordable to run your business and deliver exceptional quality work to your clients.
           </p>
         </div>
       </div>

@@ -7,17 +7,17 @@ import { Button } from '@/components/ui/Button';
 import { useStore } from '@/lib/store';
 import Spinner from '@/components/ui/Spinner';
 import BackButton from '@/components/BackButton';
-import ConfirmActionModal from '@/components/ConfirmActionModal'; // Import the new modal
-import { Input } from '@/components/ui/Input'; // Import Input for the rejection reason
+import ConfirmActionModal from '@/components/ConfirmActionModal';
+import { Input } from '@/components/ui/Input';
 
 type Service = {
   id: number;
   title: string;
   status: string;
-  user_id: string; 
+  user_id: string;
   profiles: {
     full_name: string;
-  }[] | null;
+  }[] | null; // Corrected: Expecting an array
 };
 
 // Define a type for the state that controls the modal
@@ -44,7 +44,7 @@ const AdminServicesPage = () => {
       console.error("Error fetching services for admin:", error);
       addToast(`Error fetching services: ${error.message}`, 'error');
     } else {
-      setServices(data || []);
+      setServices((data as Service[]) || []);
     }
     setLoading(false);
   }, [addToast]);
@@ -94,7 +94,8 @@ const AdminServicesPage = () => {
       addToast(`Service ${action} successfully!`, 'success');
       fetchServices(); // Re-fetch data to show the latest status
 
-    } catch (error: any) {
+    } catch (err: unknown) {
+      const error = err as Error;
       addToast(error.message, 'error');
       console.error(`Failed to ${action} service:`, error);
     } finally {
@@ -120,7 +121,7 @@ const AdminServicesPage = () => {
         confirmButtonText={modalState.action === 'approved' ? 'Approve' : 'Reject Service'}
         confirmButtonVariant={modalState.action === 'rejected' ? 'destructive' : 'default'}
       >
-        <p>Are you sure you want to {modalState.action} the service titled "{modalState.service?.title}"?</p>
+        <p>Are you sure you want to {modalState.action} the service titled &quot;{modalState.service?.title}&quot;?</p>
         {modalState.action === 'rejected' && (
           <div className="mt-4">
             <label htmlFor="rejectionReason" className="block text-sm font-medium text-gray-700">Reason for Rejection (Optional)</label>

@@ -7,6 +7,22 @@ import Spinner from '@/components/ui/Spinner';
 
 export const dynamic = 'force-dynamic';
 
+interface Service {
+  id: number;
+  title: string;
+  price: number;
+  call_out_fee: number;
+  user_id: string;
+  image_urls: string[] | null;
+  status: string;
+  locations: any[] | null;
+  provider_name: string;
+  average_rating: number;
+  review_count: number;
+  availability: any;
+  profiles: { business_name: string } | null;
+}
+
 const LikesPage = async () => {
   const supabase = await createClient(); // Await the client
 
@@ -24,7 +40,7 @@ const LikesPage = async () => {
   }
 
   // 2. Fetch the full service details for the liked IDs.
-  let initialServices = [];
+  let initialServices: Service[] = [];
   if (likedServiceIds.length > 0) {
     const { data: services, error } = await supabase
       .from('service_with_ratings')
@@ -44,7 +60,7 @@ const LikesPage = async () => {
       <BackButton />
       <h1 className="mb-6 text-3xl font-bold">Your Liked Services</h1>
       <Suspense fallback={<Spinner />}>
-        <LikedServicesGrid initialServices={initialServices as any} />
+        <LikedServicesGrid initialServices={initialServices} />
       </Suspense>
     </div>
   );

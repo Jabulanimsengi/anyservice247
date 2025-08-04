@@ -119,7 +119,7 @@ const ProviderDashboard = () => {
           </div>
           <div className="mt-4">
             {loading ? <Spinner /> : services.length === 0 ? (
-              <p className="text-gray-500">You haven't listed any services yet.</p>
+              <p className="text-gray-500">You haven&apos;t listed any services yet.</p>
             ) : (
               <div className="space-y-4">
                 {services.map((service) => (

@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import BackButton from '@/components/BackButton';
 import Spinner from '@/components/ui/Spinner';
 import { useStore } from '@/lib/store';

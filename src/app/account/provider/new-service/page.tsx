@@ -133,7 +133,7 @@ const NewServicePage = () => {
         return;
     }
 
-    let imageUrls: string[] = [];
+    const imageUrls: string[] = [];
     if (imageFiles.length > 0) {
       for (const file of imageFiles) {
         const fileName = `${user.id}/${Date.now()}_${file.name}`;

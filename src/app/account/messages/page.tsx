@@ -6,7 +6,6 @@ import { supabase } from '@/lib/supabase';
 import { useStore } from '@/lib/store';
 import BackButton from '@/components/BackButton';
 import Spinner from '@/components/ui/Spinner';
-import { User } from '@supabase/supabase-js';
 
 // Type for a single user profile
 type Profile = {
@@ -34,7 +33,6 @@ type FormattedConversation = {
 
 const MessagesPage = () => {
     const { openChat } = useStore();
-    const [user, setUser] = useState<User | null>(null);
     const [conversations, setConversations] = useState<FormattedConversation[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -76,7 +74,6 @@ const MessagesPage = () => {
     useEffect(() => {
         const getUserAndConversations = async () => {
             const { data: { user } } = await supabase.auth.getUser();
-            setUser(user);
             if (user) {
                 fetchConversations(user.id);
             } else {
@@ -100,7 +97,7 @@ const MessagesPage = () => {
             {loading ? (
                 <Spinner />
             ) : conversations.length === 0 ? (
-                <p>You have no conversations yet. Start a chat from a service provider's profile!</p>
+                <p>You have no conversations yet. Start a chat from a service provider&apos;s profile!</p>
             ) : (
                 <div className="space-y-4">
                     <p className="text-gray-600">Select a conversation to open the chat window.</p>

@@ -21,6 +21,7 @@ type Status = {
   profiles: {
     full_name: string;
     id: string;
+    business_name: string | null;
   } | null;
 };
 
@@ -37,7 +38,7 @@ const StatusPage = ({ params }: StatusPageProps) => {
 
       const { data, error } = await supabase
         .from('status_updates')
-        .select('*, profiles(full_name, id)')
+        .select('*, profiles(full_name, id, business_name)')
         .eq('id', id)
         .single();
 
@@ -93,7 +94,7 @@ const StatusPage = ({ params }: StatusPageProps) => {
                 <div className="relative h-10 w-10 rounded-full bg-gray-600">
                     {/* Placeholder for provider avatar, you can add this later */}
                 </div>
-                <span className="text-white font-semibold text-sm">{provider?.full_name}</span>
+                <span className="text-white font-semibold text-sm">{provider?.business_name || provider?.full_name}</span>
             </Link>
             <button onClick={() => router.back()} className="text-white/80 hover:text-white">
                 <X size={28} />

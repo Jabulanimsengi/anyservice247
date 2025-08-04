@@ -28,7 +28,7 @@ const EditUserProfilePage = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUser(user);
-        const { data: profile, error } = await supabase
+        const { data: profile } = await supabase
           .from('profiles')
           .select('full_name, phone, whatsapp')
           .eq('id', user.id)
@@ -62,7 +62,7 @@ const EditUserProfilePage = () => {
     if (error) {
       addToast(`Error updating profile: ${error.message}`, 'error');
     } else {
-        // Also update the user metadata in auth for consistency
+        // Also update the user metadata in auth
         await supabase.auth.updateUser({ data: { full_name: fullName } });
         addToast('Profile updated successfully!', 'success');
         router.push('/account');

@@ -38,7 +38,7 @@ const AdminProfileEditsPage = () => {
     if (error) {
       console.error("Error fetching requests:", error);
     } else {
-      setRequests(data as any[] || []);
+      setRequests((data as ProfileUpdateRequest[]) || []);
     }
     setLoading(false);
   }, []);
