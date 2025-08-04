@@ -2,16 +2,17 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { useStore } from '@/lib/store';
 import BackButton from '@/components/BackButton';
 import Spinner from '@/components/ui/Spinner';
 
+type Role = 'user' | 'provider' | 'admin';
+
 type Profile = {
   id: string;
   full_name: string;
-  role: string;
+  role: Role;
   email: string;
   whatsapp: string;
 };
@@ -20,23 +21,22 @@ const AdminUsersPage = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const { addToast } = useStore();
+  const [newRoles, setNewRoles] = useState<{ [key: string]: Role }>({});
 
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
-    
-    // Fetch data from our new secure API route
     try {
       const response = await fetch('/api/admin/users');
       if (!response.ok) {
-        throw new Error('Failed to fetch user data.');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch user data.');
       }
       const data = await response.json();
       setProfiles(data);
     } catch (error: any) {
-      console.error("Error fetching profiles:", error);
+      console.error("Error fetching profiles:", error.message);
       addToast(error.message || 'An unknown error occurred.', 'error');
     }
-
     setLoading(false);
   }, [addToast]);
 
@@ -44,20 +44,35 @@ const AdminUsersPage = () => {
     fetchProfiles();
   }, [fetchProfiles]);
 
-  const handleRoleChange = async (userId: string, newRole: 'user' | 'admin') => {
+  const handleRoleSelection = (userId: string, newRole: Role) => {
+    setNewRoles(prev => ({ ...prev, [userId]: newRole }));
+  };
+
+  const handleRoleChange = async (userId: string, newRole: Role) => {
     if (window.confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
-      const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
-      if (error) {
-        addToast(`Error updating role: ${error.message}`, 'error');
-      } else {
+      try {
+        const response = await fetch(`/api/admin/users/${userId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role: newRole }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Failed to update role.');
         addToast('User role updated successfully!', 'success');
         fetchProfiles();
+        setNewRoles(prev => {
+            const next = {...prev};
+            delete next[userId];
+            return next;
+        });
+      } catch (error: any) {
+        addToast(`Error updating role: ${error.message}`, 'error');
       }
     }
   };
 
   const handleDeleteUser = async (userId: string, fullName: string) => {
-    if (window.confirm(`Are you sure you want to PERMANENTLY DELETE the user "${fullName}"? This will also delete all of their services, bookings, and reviews. This action cannot be undone.`)) {
+    if (window.confirm(`Are you sure you want to PERMANENTLY DELETE the user "${fullName}"?`)) {
       addToast("User deletion should be handled via a secure server-side function.", 'error');
       console.log(`Request to delete user: ${userId}`);
     }
@@ -70,14 +85,14 @@ const AdminUsersPage = () => {
       {loading ? (
         <Spinner />
       ) : (
-        <div className="overflow-x-auto rounded-lg border bg-white">
+        <div className="overflow-x-auto rounded-lg border bg-white shadow-md">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Full Name</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Email</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">WhatsApp</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Role</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Current Role</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
               </tr>
             </thead>
@@ -87,20 +102,30 @@ const AdminUsersPage = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{profile.full_name}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{profile.email || 'N/A'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{profile.whatsapp || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{profile.role}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    {profile.role === 'user' ? (
-                      <Button size="sm" variant="outline" onClick={() => handleRoleChange(profile.id, 'admin')}>
-                        Make Admin
-                      </Button>
-                    ) : (
-                      <Button size="sm" variant="secondary" onClick={() => handleRoleChange(profile.id, 'user')}>
-                        Make User
-                      </Button>
-                    )}
-                    <Button size="sm" variant="destructive" onClick={() => handleDeleteUser(profile.id, profile.full_name)}>
-                      Delete
-                    </Button>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{profile.role}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center space-x-2">
+                        <select
+                            value={newRoles[profile.id] || profile.role}
+                            onChange={(e) => handleRoleSelection(profile.id, e.target.value as Role)}
+                            className="block w-32 rounded-md border-gray-300 shadow-sm p-2 text-sm"
+                        >
+                            <option value="user">User</option>
+                            <option value="provider">Provider</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleRoleChange(profile.id, newRoles[profile.id] || profile.role)}
+                            disabled={!newRoles[profile.id] || newRoles[profile.id] === profile.role}
+                        >
+                            Save
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDeleteUser(profile.id, profile.full_name)}>
+                            Delete
+                        </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -1,120 +1,74 @@
 // src/app/admin/page.tsx
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/Button';
-import { useStore } from '@/lib/store';
+import { BarChart, Users, MessageSquare, Edit, Flag, Server, ThumbsUp } from 'lucide-react';
+import Link from 'next/link';
 import BackButton from '@/components/BackButton';
-import Spinner from '@/components/ui/Spinner';
 
-type Profile = {
-  id: string;
-  full_name: string;
-  role: string;
-  email: string;
-  whatsapp: string;
-};
+const AdminCard = ({ href, icon: Icon, title, description }: { href: string, icon: React.ElementType, title: string, description: string }) => (
+  <Link href={href}>
+    <div className="rounded-lg border bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-lg hover:border-brand-teal">
+      <div className="flex items-center gap-4">
+        <div className="bg-gray-100 p-3 rounded-full">
+            <Icon className="h-6 w-6 text-brand-teal" />
+        </div>
+        <div>
+            <h2 className="text-xl font-semibold">{title}</h2>
+            <p className="mt-1 text-gray-600">{description}</p>
+        </div>
+      </div>
+    </div>
+  </Link>
+);
 
-const AdminUsersPage = () => {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { addToast } = useStore();
 
-  const fetchProfiles = useCallback(async () => {
-    setLoading(true);
-    
-    // Fetch data from our new secure API route
-    try {
-      const response = await fetch('/api/admin/users');
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch user data.');
-      }
-
-      const data = await response.json();
-      setProfiles(data);
-
-    } catch (error: any) {
-      console.error("Error fetching profiles:", error.message);
-      addToast(error.message || 'An unknown error occurred.', 'error');
-    }
-
-    setLoading(false);
-  }, [addToast]);
-
-  useEffect(() => {
-    fetchProfiles();
-  }, [fetchProfiles]);
-
-  const handleRoleChange = async (userId: string, newRole: 'user' | 'admin') => {
-    if (window.confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
-      const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId);
-      if (error) {
-        addToast(`Error updating role: ${error.message}`, 'error');
-      } else {
-        addToast('User role updated successfully!', 'success');
-        fetchProfiles();
-      }
-    }
-  };
-
-  const handleDeleteUser = async (userId: string, fullName: string) => {
-    if (window.confirm(`Are you sure you want to PERMANENTLY DELETE the user "${fullName}"? This will also delete all of their services, bookings, and reviews. This action cannot be undone.`)) {
-      // Note: This should ideally be a call to a secure API route as well
-      addToast("User deletion should be handled via a secure server-side function.", 'error');
-      console.log(`Request to delete user: ${userId}`);
-    }
-  };
-
+const AdminDashboardPage = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <BackButton />
-      <h1 className="text-3xl font-bold mb-6">Manage Users</h1>
-      {loading ? (
-        <Spinner />
-      ) : (
-        <div className="overflow-x-auto rounded-lg border bg-white">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Full Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">WhatsApp</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Role</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {profiles.map((profile) => (
-                <tr key={profile.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{profile.full_name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{profile.email || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{profile.whatsapp || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{profile.role}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    {profile.role === 'user' ? (
-                      <Button size="sm" variant="outline" onClick={() => handleRoleChange(profile.id, 'admin')}>
-                        Make Admin
-                      </Button>
-                    ) : (
-                      <Button size="sm" variant="secondary" onClick={() => handleRoleChange(profile.id, 'user')}>
-                        Make User
-                      </Button>
-                    )}
-                    <Button size="sm" variant="destructive" onClick={() => handleDeleteUser(profile.id, profile.full_name)}>
-                      Delete
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <h1 className="mb-8 text-4xl font-bold">Admin Dashboard</h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* We'll use the existing /admin/users page for this */}
+        <AdminCard 
+          href="/admin/users" 
+          icon={Users} 
+          title="Manage Users" 
+          description="View, edit roles, and manage all users." 
+        />
+        <AdminCard 
+          href="/admin/services" 
+          icon={Server} 
+          title="Approve Services" 
+          description="Review and approve new service listings." 
+        />
+        <AdminCard 
+          href="/admin/reviews" 
+          icon={ThumbsUp} 
+          title="Manage Reviews" 
+          description="Approve new customer reviews." 
+        />
+        <AdminCard 
+          href="/admin/profile-edits" 
+          icon={Edit} 
+          title="Profile Edits" 
+          description="Approve requests for profile information changes." 
+        />
+        <AdminCard 
+          href="/admin/reports" 
+          icon={Flag} 
+          title="View Reports" 
+          description="Review user reports against services." 
+        />
+        <AdminCard 
+          href="/admin/suggestions" 
+          icon={MessageSquare} 
+          title="User Suggestions" 
+          description="View feedback and suggestions from users." 
+        />
+      </div>
     </div>
   );
 };
 
-export default AdminUsersPage;
+export default AdminDashboardPage;
