@@ -17,13 +17,13 @@ const ProviderProfilePage = async ({ params }: ProviderProfilePageProps) => {
 
   const profilePromise = supabase
     .from('profiles')
-    .select('full_name, portfolio, qualifications, social_media')
+    .select('full_name, portfolio, qualifications, social_media, business_name')
     .eq('id', id)
     .single();
 
   const servicesPromise = supabase
     .from('service_with_ratings')
-    .select('*')
+    .select('*, profiles(business_name)')
     .eq('user_id', id);
 
   const completedJobsPromise = supabase
@@ -51,8 +51,10 @@ const ProviderProfilePage = async ({ params }: ProviderProfilePageProps) => {
     <div className="container mx-auto px-4 py-8">
       <BackButton />
       <div className="mb-8 rounded-lg border bg-white p-6 shadow-sm">
-        <h1 className="text-4xl font-bold">{profile.full_name}</h1>
-        <p className="text-lg text-gray-500">Service Provider</p>
+        <h1 className="text-4xl font-bold">{profile.business_name || profile.full_name}</h1>
+        {profile.business_name && (
+          <p className="text-lg text-gray-500">Operated by {profile.full_name}</p>
+        )}
         <p className="mt-2 font-semibold text-green-600">{completedJobsCount || 0} Jobs Completed</p>
         {profile.social_media && (
           <div className="mt-4 flex space-x-4">
@@ -72,7 +74,7 @@ const ProviderProfilePage = async ({ params }: ProviderProfilePageProps) => {
           </div>
       )}
 
-      <h2 className="text-2xl font-bold mb-6">Services offered by {profile.full_name}</h2>
+      <h2 className="text-2xl font-bold mb-6">Services offered by {profile.business_name || profile.full_name}</h2>
       {services && services.length > 0 ? (
         <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {services.map((service: any) => (
@@ -82,12 +84,14 @@ const ProviderProfilePage = async ({ params }: ProviderProfilePageProps) => {
               providerId={service.user_id}
               title={service.title}
               providerName={service.provider_name ?? 'Anonymous'}
+              businessName={service.profiles?.business_name}
               rating={service.average_rating}
               reviewCount={service.review_count}
               price={service.price}
               imageUrls={service.image_urls}
-              status={service.status} // CORRECTED: Changed from is_approved to status
+              status={service.status}
               locations={service.locations}
+              availability={service.availability}
             />
           ))}
         </div>

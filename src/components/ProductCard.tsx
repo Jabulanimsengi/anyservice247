@@ -28,7 +28,7 @@ const ProductCard = ({ product }: { product: any }) => {
           </Link>
         </h3>
         <p className="text-sm text-gray-500">
-          Sold by {product.stores.name}
+          Business: {product.stores.name}
         </p>
         <div className="mt-auto pt-4 flex items-center justify-between">
           <span className="text-xl font-bold text-gray-900">

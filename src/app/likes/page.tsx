@@ -28,7 +28,7 @@ const LikesPage = async () => {
   if (likedServiceIds.length > 0) {
     const { data: services, error } = await supabase
       .from('service_with_ratings')
-      .select('*')
+      .select('*, profiles(business_name)')
       .in('id', likedServiceIds)
       .eq('status', 'approved');
     

@@ -49,6 +49,15 @@ const AccountPage = () => {
     checkUserAndProfile();
   }, [router]);
 
+  // Determine the correct edit profile link based on user role
+  const getEditProfileLink = () => {
+    if (profile?.role === 'provider') {
+      return "/account/provider/edit-profile";
+    }
+    // For 'user' and 'admin' roles
+    return "/account/edit-profile";
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -89,16 +98,6 @@ const AccountPage = () => {
             </div>
           )}
           
-          <div className="space-y-4 rounded-lg border bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold">Admin Messages</h2>
-            <p className="text-gray-600">
-              View notifications and messages from the admin team.
-            </p>
-            <Link href="/account/admin-messages">
-              <Button>View Admin Messages</Button>
-            </Link>
-          </div>
-
           {profile.role === 'provider' && (
             <div className="space-y-4 rounded-lg border bg-white p-6 shadow-sm">
               <h2 className="text-xl font-semibold">Service Provider Area</h2>
@@ -110,7 +109,28 @@ const AccountPage = () => {
               </Link>
             </div>
           )}
-            
+          
+          {/* New Edit Profile Card */}
+          <div className="space-y-4 rounded-lg border bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-semibold">Edit Profile</h2>
+            <p className="text-gray-600">
+              Update your personal or business information.
+            </p>
+            <Link href={getEditProfileLink()}>
+              <Button>Edit Information</Button>
+            </Link>
+          </div>
+
+          <div className="space-y-4 rounded-lg border bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-semibold">Admin Messages</h2>
+            <p className="text-gray-600">
+              View notifications and messages from the admin team.
+            </p>
+            <Link href="/account/admin-messages">
+              <Button>View Admin Messages</Button>
+            </Link>
+          </div>
+
         </div>
       </div>
     );

@@ -11,7 +11,7 @@ const ExploreGrid = async () => {
   const supabase = await createClient(); // Correctly await the client
   const { data: services, error } = await supabase
     .from('service_with_ratings')
-    .select('*')
+    .select('*, profiles(business_name)')
     .eq('status', 'approved')
     .order('created_at', { ascending: false })
     .limit(20);
@@ -34,12 +34,14 @@ const ExploreGrid = async () => {
           providerId={service.user_id}
           title={service.title}
           providerName={service.provider_name ?? 'Anonymous'}
+          businessName={service.profiles?.business_name}
           rating={service.average_rating}
           reviewCount={service.review_count}
           price={service.price}
           imageUrls={service.image_urls}
           status={service.status}
           locations={service.locations}
+          availability={service.availability}
         />
       ))}
     </div>

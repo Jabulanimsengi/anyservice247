@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { useStore } from '@/lib/store';
 import Spinner from '@/components/ui/Spinner';
+import { handleProfileUpdateApproval } from '@/app/actions'; // Import the server action
 
 type ProfileUpdateRequest = {
   id: string;
@@ -47,31 +48,14 @@ const AdminProfileEditsPage = () => {
   }, [fetchRequests]);
 
   const handleApproval = async (request: ProfileUpdateRequest, newStatus: 'approved' | 'rejected') => {
-    const { error: updateProfileError } = await supabase
-      .from('profiles')
-      .update(request.new_data)
-      .eq('id', request.user_id);
+    const result = await handleProfileUpdateApproval(request, newStatus);
     
-    if (updateProfileError) {
-      addToast('Error updating profile.', 'error');
-      return;
-    }
-
-    const { error: updateRequestError } = await supabase
-      .from('profile_update_requests')
-      .update({ status: newStatus })
-      .eq('id', request.id);
-
-    if (updateRequestError) {
-      addToast('Error updating request status.', 'error');
+    if (result.error) {
+        addToast(result.error, 'error');
     } else {
-      addToast(`Profile changes ${newStatus}.`, 'success');
-      await supabase.from('notifications').insert({
-        user_id: request.user_id,
-        message: `Your profile update has been ${newStatus}.`,
-        link: '/account/provider/edit-profile',
-      });
-      fetchRequests();
+        addToast(result.success || 'Action completed.', 'success');
+        // Refresh the list of pending requests
+        fetchRequests();
     }
   };
 
@@ -87,7 +71,7 @@ const AdminProfileEditsPage = () => {
               <h2 className="font-semibold">{request.profiles?.full_name}</h2>
               <div className="mt-2 space-y-1 text-sm">
                 {Object.entries(request.new_data).map(([key, value]) => (
-                  <p key={key}><span className="font-semibold">{key.replace(/_/g, ' ')}:</span> {value}</p>
+                  <p key={key}><span className="font-semibold">{key.replace(/_/g, ' ')}:</span> {String(value)}</p>
                 ))}
               </div>
               <div className="mt-4 flex space-x-2">

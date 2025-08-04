@@ -19,6 +19,7 @@ type Service = {
   average_rating: number;
   review_count: number;
   availability: any; // Added availability to the type
+  profiles: { business_name: string } | null;
 };
 
 interface LikedServicesGridProps {
@@ -47,6 +48,7 @@ const LikedServicesGrid: React.FC<LikedServicesGridProps> = ({ initialServices }
           providerId={service.user_id}
           title={service.title}
           providerName={service.provider_name}
+          businessName={service.profiles?.business_name}
           rating={service.average_rating}
           reviewCount={service.review_count}
           price={service.price}

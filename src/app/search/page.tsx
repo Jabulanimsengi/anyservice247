@@ -29,6 +29,7 @@ type ServiceWithProvider = {
   review_count: number;
   category: string;
   description: string;
+  profiles: { business_name: string } | null;
 };
 
 const SearchPage = () => {
@@ -52,7 +53,7 @@ const SearchPage = () => {
 
     let queryBuilder = supabase
       .from('service_with_ratings')
-      .select('*')
+      .select('*, profiles(business_name)')
       .eq('status', 'approved');
 
     if (query) {
@@ -156,7 +157,7 @@ const SearchPage = () => {
 
       {loading ? <Spinner /> : services.length > 0 ? (
         <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {services.map((service) => <ServiceCard key={service.id} {...service as any} providerId={service.user_id} providerName={service.provider_name} rating={service.average_rating} reviewCount={service.review_count} imageUrls={service.image_urls} />)}
+          {services.map((service) => <ServiceCard key={service.id} {...service as any} providerId={service.user_id} providerName={service.provider_name} businessName={service.profiles?.business_name} rating={service.average_rating} reviewCount={service.review_count} imageUrls={service.image_urls} />)}
         </div>
       ) : (
         <p>No services found matching your criteria.</p>

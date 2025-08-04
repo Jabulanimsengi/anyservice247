@@ -148,7 +148,7 @@ const NewServicePage = () => {
       }
     }
 
-    const { error: insertError } = await supabase.from('services').insert({
+    const { data: serviceData, error: insertError } = await supabase.from('services').insert({
       user_id: user.id,
       title,
       description,
@@ -158,12 +158,22 @@ const NewServicePage = () => {
       locations: locations,
       category: category,
       status: 'pending'
-    });
+    }).select().single();
 
     if (insertError) {
       setError(insertError.message);
       setLoading(false);
     } else {
+      // Notify Admins
+      const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin');
+      if (admins && serviceData) {
+        const notifications = admins.map(admin => ({
+          user_id: admin.id,
+          message: `A new service "${title}" has been submitted for approval.`,
+          link: `/admin/services`
+        }));
+        await supabase.from('notifications').insert(notifications);
+      }
       setIsSubmitted(true);
     }
   };

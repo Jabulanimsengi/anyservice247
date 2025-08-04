@@ -24,6 +24,7 @@ type Service = {
   review_count: number;
   category: string;
   availability: any; // Added
+  profiles: { business_name: string } | null;
 };
 
 interface CategoryRowProps {
@@ -69,6 +70,7 @@ const CategoryRow: React.FC<CategoryRowProps> = ({ category, services }) => {
                 providerId={service.user_id}
                 title={service.title}
                 providerName={service.provider_name ?? 'Anonymous'}
+                businessName={service.profiles?.business_name}
                 rating={service.average_rating}
                 reviewCount={service.review_count}
                 price={service.price}

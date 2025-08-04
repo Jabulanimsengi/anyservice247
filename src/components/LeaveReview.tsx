@@ -28,16 +28,26 @@ const LeaveReview: React.FC<LeaveReviewProps> = ({ serviceId, userId, onReviewSu
     setLoading(true);
     setError(null);
 
-    const { error: insertError } = await supabase.from('reviews').insert({
+    const { data: reviewData, error: insertError } = await supabase.from('reviews').insert({
       user_id: userId,
       service_id: parseInt(serviceId),
       rating,
       comment,
-    });
+    }).select().single();
 
     if (insertError) {
       setError(insertError.message);
     } else {
+       // Notify Admins
+       const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin');
+       if (admins && reviewData) {
+         const notifications = admins.map(admin => ({
+           user_id: admin.id,
+           message: `A new review has been submitted and is awaiting approval.`,
+           link: `/admin/reviews`
+         }));
+         await supabase.from('notifications').insert(notifications);
+       }
       setRating(0);
       setComment('');
       onReviewSubmitted(); // Notify parent component to refetch

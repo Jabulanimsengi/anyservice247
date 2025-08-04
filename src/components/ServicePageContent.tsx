@@ -24,7 +24,7 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
 
   const { data: service, error: serviceError } = await supabase
     .from('service_with_ratings')
-    .select(`*, profiles ( phone, office_number, whatsapp, availability )`)
+    .select(`*, profiles ( phone, office_number, whatsapp, availability, business_name )`)
     .eq('id', id)
     .single();
 
@@ -51,7 +51,7 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
                 <ImageGallery imageUrls={service.image_urls} itemName={service.title} />
                 <div className="flex flex-col">
                     <h1 className="text-2xl lg:text-3xl font-bold text-gray-800">{service.title}</h1>
-                    <p className="mt-1 text-lg">by <Link href={`/provider/${service.user_id}`} className="font-semibold text-blue-600 hover:underline">{service.provider_name ?? 'Anonymous'}</Link></p>
+                    <p className="mt-1 text-lg">by <Link href={`/provider/${service.user_id}`} className="font-semibold text-blue-600 hover:underline">{(providerProfile?.business_name || service.provider_name) ?? 'Anonymous'}</Link></p>
                     <div className="my-6 border-t"></div>
                     
                     {/* --- NEW APPLICABLE FEES SECTION --- */}

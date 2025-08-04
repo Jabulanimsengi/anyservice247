@@ -24,6 +24,7 @@ interface ServiceCardProps {
   imageUrls: string[] | null;
   title: string;
   providerName: string;
+  businessName?: string;
   rating: number;
   reviewCount: number;
   price: number;
@@ -34,7 +35,7 @@ interface ServiceCardProps {
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({
-  id, providerId, imageUrls, title, providerName, rating, reviewCount, price, status, locations, availability
+  id, providerId, imageUrls, title, providerName, businessName, rating, reviewCount, price, status, locations, availability
 }) => {
   const { likedServiceIds, addLike, removeLike, addToast, openChat } = useStore();
   const [user, setUser] = useState<User | null>(null);
@@ -159,7 +160,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
         </h3>
         <Link href={`/provider/${providerId}`} passHref>
           <p className="cursor-pointer text-sm text-blue-500 hover:underline">
-            by {providerName}
+            by {businessName || providerName}
           </p>
         </Link>
         

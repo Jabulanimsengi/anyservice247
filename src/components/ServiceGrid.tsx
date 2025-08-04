@@ -19,13 +19,16 @@ type ServiceWithProvider = {
   average_rating: number;
   review_count: number;
   category: string;
+  call_out_fee: number;
+  availability: any;
+  profiles: { business_name: string } | null;
 };
 
 const ServiceGrid = async () => {
-  // CORRECTED: The query now filters by status = 'approved'
+  // CORRECTED: The query now filters by status = 'approved' and fetches business_name
   const { data: services, error } = await supabase
     .from('service_with_ratings')
-    .select('*')
+    .select('*, profiles(business_name)')
     .eq('status', 'approved') // Use the new status column
     .limit(280); 
 
