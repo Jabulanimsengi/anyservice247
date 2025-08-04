@@ -84,6 +84,7 @@ const ProviderDashboard = () => {
     <>
       <div className="container mx-auto px-4 py-8">
         <h1 className="mb-6 text-3xl font-bold">Provider Dashboard</h1>
+        {/* --- Grid updated to 3 columns to fit the new card --- */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           <div className="rounded-lg border bg-white p-6 shadow-sm">
               <h2 className="text-xl font-semibold">Incoming Bookings</h2>
@@ -92,6 +93,7 @@ const ProviderDashboard = () => {
               <Button>Manage Bookings</Button>
               </Link>
           </div>
+          {/* --- NEW MESSAGES CARD ADDED HERE --- */}
           <div className="rounded-lg border bg-white p-6 shadow-sm">
               <h2 className="text-xl font-semibold">Messages</h2>
               <p className="mt-2 text-gray-600">View and manage your conversations with clients.</p>
