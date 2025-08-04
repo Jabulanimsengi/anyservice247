@@ -1,4 +1,4 @@
-// src/app/admin/users/page.tsx
+// src/app/admin/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -24,15 +24,23 @@ const AdminUsersPage = () => {
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
     
-    const { data, error } = await supabase.rpc('get_all_users_with_details');
+    // Fetch data from our new secure API route
+    try {
+      const response = await fetch('/api/admin/users');
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch user data.');
+      }
 
-    // Updated error handling to be more specific
-    if (error) {
-        console.error("Error fetching profiles:", error);
-        addToast(error.message || 'An unknown error occurred.', 'error');
-    } else {
-        setProfiles(data || []);
+      const data = await response.json();
+      setProfiles(data);
+
+    } catch (error: any) {
+      console.error("Error fetching profiles:", error.message);
+      addToast(error.message || 'An unknown error occurred.', 'error');
     }
+
     setLoading(false);
   }, [addToast]);
 
@@ -54,6 +62,7 @@ const AdminUsersPage = () => {
 
   const handleDeleteUser = async (userId: string, fullName: string) => {
     if (window.confirm(`Are you sure you want to PERMANENTLY DELETE the user "${fullName}"? This will also delete all of their services, bookings, and reviews. This action cannot be undone.`)) {
+      // Note: This should ideally be a call to a secure API route as well
       addToast("User deletion should be handled via a secure server-side function.", 'error');
       console.log(`Request to delete user: ${userId}`);
     }
