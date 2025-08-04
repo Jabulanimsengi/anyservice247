@@ -23,12 +23,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [userType, setUserType] = useState('user');
+  
+  // State for provider fields
   const [businessName, setBusinessName] = useState('');
   const [regNo, setRegNo] = useState('');
   const [officeEmail, setOfficeEmail] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
-  const [location, setLocation] = useState('');
   
+  // State for both user and provider
+  const [whatsapp, setWhatsapp] = useState('');
+  const [phone, setPhone] = useState(''); // Added for cellphone number
+
+
   useEffect(() => {
     if (isOpen) {
       setIsSigningIn(initialView === 'signIn');
@@ -67,6 +72,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
         data: {
           full_name: fullName,
           role: userType,
+          // We can pass metadata here, but profile updates are more robust
         },
       },
     });
@@ -74,23 +80,30 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
     if (error) {
       setError(error.message);
     } else if (data.user) {
-      if (userType === 'provider') {
+        let profileData: any = {
+            whatsapp,
+            phone,
+        };
+        
+        if (userType === 'provider') {
+            profileData = {
+                ...profileData,
+                business_name: businessName,
+                registration_number: regNo,
+                office_email: officeEmail,
+            };
+        }
+
         const { error: profileError } = await supabase
           .from('profiles')
-          .update({
-            business_name: businessName,
-            registration_number: regNo,
-            office_email: officeEmail,
-            whatsapp: whatsapp,
-            location: location,
-          })
+          .update(profileData)
           .eq('id', data.user.id);
 
         if (profileError) {
           setError(profileError.message);
+        } else {
+            setMessage('Sign-up successful! Please check your email to verify your account.');
         }
-      }
-      setMessage('Sign-up successful! Please check your email to verify your account.');
     }
     setLoading(false);
   };
@@ -115,7 +128,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
         setRegNo('');
         setOfficeEmail('');
         setWhatsapp('');
-        setLocation('');
+        setPhone(''); // Reset phone state
     }, 300); // Delay to allow animation to finish
   }
 
@@ -184,13 +197,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
                       <Input id="name-up" type="text" placeholder="Full Name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
                       <Input id="email-up" type="email" placeholder="Email Address" required value={email} onChange={(e) => setEmail(e.target.value)} />
                       <Input id="password-up" type="password" placeholder="Password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                      
+                      {/* Fields for both user and provider */}
+                      <Input id="whatsapp-up" type="tel" placeholder="WhatsApp Number" required value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
+                      <Input id="phone-up" type="tel" placeholder="Cellphone Number" required value={phone} onChange={(e) => setPhone(e.target.value)} />
+                      
                       {userType === 'provider' && (
                         <>
                           <Input id="business-name" type="text" placeholder="Business Name" required value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
                           <Input id="reg-no" type="text" placeholder="Registration Number" value={regNo} onChange={(e) => setRegNo(e.target.value)} />
                           <Input id="office-email" type="email" placeholder="Office Email" value={officeEmail} onChange={(e) => setOfficeEmail(e.target.value)} />
-                          <Input id="whatsapp" type="tel" placeholder="WhatsApp Number" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
-                          <Input id="location" type="text" placeholder="Business Location" value={location} onChange={(e) => setLocation(e.target.value)} />
                         </>
                       )}
                       <Button type="submit" className="w-full" disabled={loading}>
