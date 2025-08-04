@@ -4,30 +4,41 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
-import { useStore } from '@/lib/store'; // Import the store
+import { useStore } from '@/lib/store';
+import BackButton from '@/components/BackButton';
+import Spinner from '@/components/ui/Spinner';
 
 type Profile = {
   id: string;
   full_name: string;
   role: string;
+  email: string;
+  whatsapp: string;
 };
 
 const AdminUsersPage = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
-  const { addToast } = useStore(); // Get the addToast function
+  const { addToast } = useStore();
 
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('id, full_name, role')
-      .order('full_name', { ascending: true });
+    
+    // Fetch data from our new secure API route
+    try {
+      const response = await fetch('/api/admin/users');
+      if (!response.ok) {
+        throw new Error('Failed to fetch user data.');
+      }
+      const data = await response.json();
+      setProfiles(data);
+    } catch (error: any) {
+      console.error("Error fetching profiles:", error);
+      addToast(error.message || 'An unknown error occurred.', 'error');
+    }
 
-    if (error) console.error("Error fetching profiles:", error);
-    else setProfiles(data || []);
     setLoading(false);
-  }, []);
+  }, [addToast]);
 
   useEffect(() => {
     fetchProfiles();
@@ -54,15 +65,18 @@ const AdminUsersPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <BackButton />
       <h1 className="text-3xl font-bold mb-6">Manage Users</h1>
       {loading ? (
-        <p>Loading users...</p>
+        <Spinner />
       ) : (
         <div className="overflow-x-auto rounded-lg border bg-white">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Full Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">WhatsApp</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Role</th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
               </tr>
@@ -71,6 +85,8 @@ const AdminUsersPage = () => {
               {profiles.map((profile) => (
                 <tr key={profile.id}>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{profile.full_name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{profile.email || 'N/A'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{profile.whatsapp || 'N/A'}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{profile.role}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                     {profile.role === 'user' ? (
