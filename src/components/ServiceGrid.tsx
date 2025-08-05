@@ -1,5 +1,5 @@
 // src/components/ServiceGrid.tsx
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/utils/supabase/server';
 import CategoryRow from './CategoryRow';
 
 type ServiceLocation = {
@@ -25,12 +25,13 @@ type ServiceWithProvider = {
 };
 
 const ServiceGrid = async () => {
+  const supabase = await createClient();
   // CORRECTED: The query now filters by status = 'approved' and fetches business_name
   const { data: services, error } = await supabase
     .from('service_with_ratings')
     .select('*, profiles(business_name)')
     .eq('status', 'approved') // Use the new status column
-    .limit(280); 
+    .limit(280);
 
   if (error) {
     console.error("Error fetching services:", error.message);
