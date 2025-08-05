@@ -38,10 +38,10 @@ const CategoryRow: React.FC<CategoryRowProps> = ({ category, services }) => {
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
       const { scrollLeft, clientWidth } = scrollRef.current;
-      const scrollTo = direction === 'left' 
-        ? scrollLeft - clientWidth * 0.8 
+      const scrollTo = direction === 'left'
+        ? scrollLeft - clientWidth * 0.8
         : scrollLeft + clientWidth * 0.8;
-      
+
       scrollRef.current.scrollTo({ left: scrollTo, behavior: 'smooth' });
     }
   };
@@ -66,7 +66,7 @@ const CategoryRow: React.FC<CategoryRowProps> = ({ category, services }) => {
           {services.map((service) => (
             <div key={service.id} className="flex-shrink-0 w-64 sm:w-72">
               <ServiceCard
-                id={service.id}
+                id={String(service.id)}
                 providerId={service.user_id}
                 title={service.title}
                 providerName={service.provider_name ?? 'Anonymous'}

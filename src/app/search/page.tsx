@@ -1,7 +1,7 @@
 // src/app/search/page.tsx
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import ServiceCard from '@/components/ServiceCard';
@@ -20,6 +20,7 @@ type ServiceWithProvider = {
   id: number;
   title: string;
   price: number;
+  call_out_fee: number;
   user_id: string;
   image_urls: string[] | null;
   status: string;
@@ -33,9 +34,9 @@ type ServiceWithProvider = {
   profiles: { business_name: string } | null;
 };
 
-const SearchPage = () => {
+const Search = () => {
   const searchParams = useSearchParams();
-  
+
   const [services, setServices] = useState<ServiceWithProvider[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -61,7 +62,7 @@ const SearchPage = () => {
     if (selectedCategory) {
       queryBuilder = queryBuilder.eq('category', selectedCategory);
     }
-    
+
     if (selectedProvince && selectedCity) {
       queryBuilder = queryBuilder.contains('locations', [{ province: selectedProvince, city: selectedCity }]);
     } else if (selectedProvince) {
@@ -84,7 +85,7 @@ const SearchPage = () => {
     }
     setLoading(false);
   }, [query, selectedCategory, selectedProvince, selectedCity, minPrice, maxPrice]);
-  
+
   useEffect(() => {
     fetchServices();
   }, [fetchServices]);
@@ -126,7 +127,7 @@ const SearchPage = () => {
               {provinces.map(prov => <option key={prov} value={prov}>{prov}</option>)}
             </select>
           </div>
-          
+
           <div>
             <label htmlFor="city-filter" className="text-sm font-medium">City</label>
             <select id="city-filter" value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)} disabled={!selectedProvince} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm disabled:bg-gray-100">
@@ -145,7 +146,7 @@ const SearchPage = () => {
               <input type="number" id="max-price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} placeholder="R 10k" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
             </div>
           </div>
-          
+
           <div className="flex items-end">
             <Button onClick={handleResetFilters} variant="outline" className="w-full">Reset</Button>
           </div>
@@ -154,7 +155,7 @@ const SearchPage = () => {
 
       {loading ? <Spinner /> : services.length > 0 ? (
         <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {services.map((service) => <ServiceCard key={service.id} {...service} businessName={service.profiles?.business_name} providerId={service.user_id} providerName={service.provider_name} rating={service.average_rating} reviewCount={service.review_count} imageUrls={service.image_urls} />)}
+          {services.map((service) => <ServiceCard key={service.id} {...service} id={String(service.id)} businessName={service.profiles?.business_name} providerId={service.user_id} providerName={service.provider_name} rating={service.average_rating} reviewCount={service.review_count} imageUrls={service.image_urls} />)}
         </div>
       ) : (
         <p>No services found matching your criteria.</p>
@@ -162,5 +163,13 @@ const SearchPage = () => {
     </div>
   );
 };
+
+const SearchPage = () => {
+  return (
+    <Suspense fallback={<Spinner />}>
+      <Search />
+    </Suspense>
+  )
+}
 
 export default SearchPage;

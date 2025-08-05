@@ -27,7 +27,7 @@ interface Service {
   image_urls: string[] | null;
   status: string;
   locations: { city: string, province: string }[] | null;
-  availability: any;
+  availability: { [key: string]: { start: string; end: string; is24Hours: boolean } };
 }
 
 const ProviderProfilePage = async ({ params }: ProviderProfilePageProps) => {

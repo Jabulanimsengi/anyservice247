@@ -44,7 +44,7 @@ const LikedServicesGrid: React.FC<LikedServicesGridProps> = ({ initialServices }
       {services.map((service) => (
         <ServiceCard
           key={service.id}
-          id={service.id}
+          id={String(service.id)}
           providerId={service.user_id}
           title={service.title}
           providerName={service.provider_name}
