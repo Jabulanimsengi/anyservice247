@@ -18,10 +18,10 @@ const ImageGallery = ({ imageUrls, itemName }: ImageGalleryProps) => {
             {/* Thumbnails */}
             <div className="flex flex-row md:flex-col gap-3">
                 {images.map((url: string, index: number) => (
-                    <div 
-                        key={index} 
+                    <div
+                        key={index}
                         className={`relative h-16 w-16 cursor-pointer border-2 rounded-md overflow-hidden hover:border-brand-teal
-                                    ${mainImage === url ? 'border-brand-teal' : 'border-gray-200'}`} 
+                                    ${mainImage === url ? 'border-brand-teal' : 'border-gray-200'}`}
                         onClick={() => setMainImage(url)}
                     >
                         <Image

@@ -28,9 +28,9 @@ const MessageProviderButton: React.FC<MessageProviderButtonProps> = ({ providerI
     };
 
     return (
-        <Button onClick={handleStartChat} variant="outline" size="lg" className="h-11 px-8">
+        <Button onClick={handleStartChat} variant="default" size="lg" className="h-11 px-8 flex-1 md:flex-none">
             <MessageSquare size={18} className="mr-2" />
-            Message Provider
+            Send Message
         </Button>
     );
 };

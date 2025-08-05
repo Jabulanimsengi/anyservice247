@@ -12,9 +12,10 @@ type ServiceInteractionProps = {
   serviceId: string;
   serviceProviderId: string;
   onReviewSubmitted: () => void;
+  availability: { [key: string]: { start: string; end: string; is24Hours: boolean } } | null | undefined;
 };
 
-const ServiceInteraction = ({ serviceId, serviceProviderId, onReviewSubmitted }: ServiceInteractionProps) => {
+const ServiceInteraction = ({ serviceId, serviceProviderId, onReviewSubmitted, availability }: ServiceInteractionProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [bookingMessage, setBookingMessage] = useState<string | null>(null);
   const [bookingError, setBookingError] = useState<string | null>(null);
@@ -70,23 +71,32 @@ const ServiceInteraction = ({ serviceId, serviceProviderId, onReviewSubmitted }:
         return;
     }
 
-    const { error } = await supabase.from('bookings').insert({
+    const { data: newBooking, error } = await supabase.from('bookings').insert({
         user_id: user.id,
         service_id: parseInt(serviceId),
         provider_id: serviceProviderId,
         appointment_time: selectedDateTime
-    });
+    }).select().single();
 
     if (error) {
         setBookingError(`Failed to create booking: ${error.message}`);
     } else {
         setBookingMessage('Booking request sent successfully! The provider will confirm shortly.');
+        
+        // ADDED: Send notification to the provider
+        if (newBooking) {
+            await supabase.from('notifications').insert({
+                user_id: serviceProviderId,
+                message: `You have a new booking request from ${user.user_metadata?.full_name || 'a client'}.`,
+                link: '/account/provider/bookings'
+            });
+        }
     }
   };
 
   return (
     <div>
-      <BookingCalendar providerId={serviceProviderId} onDateTimeSelected={setSelectedDateTime} />
+      <BookingCalendar availability={availability} onDateTimeSelected={setSelectedDateTime} />
       <div className="mt-4">
         <Button size="lg" onClick={handleRequestQuote} disabled={!selectedDateTime}>
           Request Quote

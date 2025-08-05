@@ -1,12 +1,12 @@
+// src/components/ServicePageContent.tsx
 import { createClient } from '@/lib/utils/supabase/server';
-import { Star, Phone, MessageCircle, Building, MapPin } from 'lucide-react';
+import { Star, MapPin } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import ServiceInteraction from '@/components/ServiceInteraction';
 import { revalidatePath } from 'next/cache';
 import ImageGallery from './ImageGallery';
 import Link from 'next/link';
 import MessageProviderButton from './MessageProviderButton';
-import WhatsAppButton from './WhatsAppButton';
 import ReportButton from './ReportButton';
 
 const maskNumber = (number: string | null) => {
@@ -14,9 +14,7 @@ const maskNumber = (number: string | null) => {
     return number.substring(0, 4) + '... (Sign in to view)';
 }
 
-// CORRECTED: params is a Promise
 const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> }) => {
-  // CORRECTED: await the params promise
   const { id } = await params;
   const supabase = await createClient();
 
@@ -94,7 +92,12 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
                         </div>
                     )}
                     
-                    <ServiceInteraction serviceId={id} serviceProviderId={service.user_id} onReviewSubmitted={handleReviewSubmitted} />
+                    <ServiceInteraction 
+                      serviceId={id} 
+                      serviceProviderId={service.user_id} 
+                      onReviewSubmitted={handleReviewSubmitted}
+                      availability={providerProfile?.availability}
+                    />
 
                     <div className="flex flex-wrap gap-2 mt-4">
                         <MessageProviderButton
@@ -102,32 +105,13 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
                             providerName={service.provider_name ?? 'Anonymous'}
                             user={user ?? null}
                         />
-                        {providerProfile?.whatsapp && (
-                           <WhatsAppButton isLoggedIn={isLoggedIn} whatsappNumber={providerProfile.whatsapp} />
-                        )}
                         <ReportButton serviceId={parseInt(id)} isLoggedIn={isLoggedIn} />
                     </div>
                 </div>
             </div>
 
             <div className="mt-12 border-t pt-8">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                        <h3 className="text-2xl font-bold mb-4">Contact Provider</h3>
-                        {providerProfile ? (
-                             <ul className="space-y-3 text-gray-700">
-                                <li className="flex items-center"><Phone size={20} className="mr-3 text-gray-500"/>{isLoggedIn ? providerProfile.phone || 'Not Provided' : maskNumber(providerProfile.phone)}</li>
-                                <li className="flex items-center"><Building size={20} className="mr-3 text-gray-500"/>{isLoggedIn ? providerProfile.office_number || 'Not Provided' : maskNumber(providerProfile.office_number)}</li>
-                                <li className="flex items-center"><MessageCircle size={20} className="mr-3 text-green-500"/> 
-                                {isLoggedIn && providerProfile.whatsapp ? (
-                                    <a href={`https://wa.me/${providerProfile.whatsapp.replace(/[^0-9]/g, '')}`} className="text-green-600 hover:underline">{providerProfile.whatsapp}</a>
-                                ) : (
-                                    <span>{isLoggedIn ? 'Not Provided' : maskNumber(providerProfile.whatsapp)}</span>
-                                )}
-                                </li>
-                            </ul>
-                        ) : <p className="text-sm text-gray-500">Contact details not provided.</p>}
-                    </div>
+                 <div className="grid grid-cols-1 gap-8">
                     <div>
                         <h2 className="text-2xl font-bold mb-4">Availability</h2>
                         {providerProfile?.availability ? (

@@ -8,16 +8,18 @@ import { User } from '@supabase/supabase-js';
 import BackButton from '@/components/BackButton';
 
 // --- Type Definitions ---
+// CORRECTED: The types for services and profiles are now single objects,
+// as they are fetched individually for each booking.
 type Booking = {
   id: number;
   created_at: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   services: {
     title: string;
-  }[] | null; // Corrected: This is an array
+  } | null;
   profiles: {
     full_name: string;
-  }[] | null; // Corrected: This is an array
+  } | null;
 };
 
 // --- Component ---
@@ -29,23 +31,50 @@ const ManageBookingsPage = () => {
   // --- Data Fetching ---
   const fetchBookings = useCallback(async (providerId: string) => {
     setLoading(true);
-    const { data, error } = await supabase
+
+    // 1. Fetch the basic booking information first.
+    const { data: rawBookings, error: bookingsError } = await supabase
       .from('bookings')
-      .select(`
-        id,
-        created_at,
-        status,
-        services ( title ),
-        profiles:user_id ( full_name ) 
-      `)
+      .select('id, created_at, status, service_id, user_id')
       .eq('provider_id', providerId)
       .order('created_at', { ascending: false });
 
-    if (error && error.message) {
-      console.error('Error fetching bookings:', error.message);
-    } else {
-      setBookings((data as Booking[]) || []);
+    if (bookingsError) {
+      console.error("Error fetching bookings:", bookingsError.message);
+      setLoading(false);
+      return;
     }
+
+    if (!rawBookings) {
+      setBookings([]);
+      setLoading(false);
+      return;
+    }
+
+    // 2. For each booking, fetch the related service and profile details separately.
+    const detailedBookings = await Promise.all(
+      rawBookings.map(async (booking) => {
+        const { data: serviceData } = await supabase
+          .from('services')
+          .select('title')
+          .eq('id', booking.service_id)
+          .single();
+
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('full_name')
+          .eq('id', booking.user_id)
+          .single();
+
+        return {
+          ...booking,
+          services: serviceData,
+          profiles: profileData,
+        };
+      })
+    );
+
+    setBookings(detailedBookings as Booking[]);
     setLoading(false);
   }, []);
 
@@ -81,7 +110,7 @@ const ManageBookingsPage = () => {
   // --- Render Logic ---
   return (
     <div className="container mx-auto px-4 py-8">
-      <BackButton /> {/* Added the BackButton */}
+      <BackButton />
       <h1 className="mb-6 text-3xl font-bold">Manage Your Bookings</h1>
 
       {loading ? (
@@ -94,9 +123,9 @@ const ManageBookingsPage = () => {
             <div key={booking.id} className="rounded-lg border bg-white p-4 shadow-sm">
               <div className="flex flex-col justify-between sm:flex-row">
                 <div>
-                  <h3 className="text-lg font-semibold">{booking.services?.[0]?.title || 'Service Not Available'}</h3>
+                  <h3 className="text-lg font-semibold">{booking.services?.title || 'Service Not Available'}</h3>
                   <p className="text-sm text-gray-600">
-                    Booked by: {booking.profiles?.[0]?.full_name ?? 'A customer'}
+                    Booked by: {booking.profiles?.full_name ?? 'A customer'}
                   </p>
                   <p className="text-xs text-gray-400">
                     Requested on: {new Date(booking.created_at).toLocaleDateString()}

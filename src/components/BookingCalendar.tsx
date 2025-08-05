@@ -1,67 +1,88 @@
 // src/components/BookingCalendar.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useState } from 'react';
 import { Button } from './ui/Button';
 
+type Availability = { [key: string]: { start: string; end: string; is24Hours: boolean } };
+
 interface BookingCalendarProps {
-    providerId: string;
+    availability: Availability | null | undefined;
     onDateTimeSelected: (dateTime: string) => void;
 }
 
-const BookingCalendar = ({ providerId, onDateTimeSelected }: BookingCalendarProps) => {
-    const [availabilities, setAvailabilities] = useState<{ day_of_week: number; start_time: string; end_time: string }[]>([]);
+const dayOfWeekMap = [
+    'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
+];
+
+const BookingCalendar = ({ availability, onDateTimeSelected }: BookingCalendarProps) => {
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [timeSlots, setTimeSlots] = useState<string[]>([]);
-
-    useEffect(() => {
-        const fetchAvailabilities = async () => {
-            const { data } = await supabase
-                .from('availabilities')
-                .select('*')
-                .eq('provider_id', providerId);
-            setAvailabilities(data || []);
-        };
-        fetchAvailabilities();
-    }, [providerId]);
+    const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
     const handleDateChange = (date: Date) => {
         setSelectedDate(date);
-        const dayOfWeek = date.getDay();
-        const availabilityForDay = availabilities.find(a => a.day_of_week === dayOfWeek);
+        setSelectedTime(null); // Reset selected time when date changes
+        onDateTimeSelected(''); // Clear selection in parent
+        
+        if (!availability) {
+            setTimeSlots([]);
+            return;
+        }
+
+        const dayName = dayOfWeekMap[date.getDay()];
+        const availabilityForDay = availability[dayName];
 
         if (availabilityForDay) {
-            // Generate time slots (this is a simplified example)
-            const slots: string[] = [];
-            const currentTime = new Date(`${date.toDateString()} ${availabilityForDay.start_time}`);
-            const endTime = new Date(`${date.toDateString()} ${availabilityForDay.end_time}`);
-
-            while (currentTime < endTime) {
-                slots.push(currentTime.toTimeString().substring(0, 5));
-                currentTime.setHours(currentTime.getHours() + 1);
+            if (availabilityForDay.is24Hours) {
+                // Generate 24 hourly slots for 24-hour services
+                const slots = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
+                setTimeSlots(slots);
+                return;
             }
-            setTimeSlots(slots);
-        } else {
-            setTimeSlots([]);
+
+            if (availabilityForDay.start && availabilityForDay.end) {
+                const slots: string[] = [];
+                const startTime = new Date(`${date.toDateString()} ${availabilityForDay.start}`);
+                const endTime = new Date(`${date.toDateString()} ${availabilityForDay.end}`);
+
+                let currentTime = startTime;
+                while (currentTime < endTime) {
+                    slots.push(currentTime.toTimeString().substring(0, 5));
+                    currentTime.setHours(currentTime.getHours() + 1);
+                }
+                setTimeSlots(slots);
+                return;
+            }
         }
+
+        setTimeSlots([]);
     };
+
+    const handleTimeSelect = (slot: string) => {
+        if (selectedDate) {
+            setSelectedTime(slot);
+            const dateTime = new Date(`${selectedDate.toDateString()} ${slot}`);
+            onDateTimeSelected(dateTime.toISOString());
+        }
+    }
 
     return (
         <div className="mt-4 p-4 border rounded-lg">
             <h4 className="font-semibold mb-2">Select a Date and Time</h4>
-            <input 
-                type="date" 
+            <input
+                type="date"
                 onChange={(e) => handleDateChange(new Date(e.target.value))}
                 className="p-2 border rounded"
+                min={new Date().toISOString().split('T')[0]} // Prevent selecting past dates
             />
             {selectedDate && (
                 <div className="mt-4 grid grid-cols-3 gap-2">
                     {timeSlots.length > 0 ? timeSlots.map(slot => (
-                        <Button 
-                            key={slot} 
-                            variant="outline"
-                            onClick={() => onDateTimeSelected(new Date(`${selectedDate.toDateString()} ${slot}`).toISOString())}
+                        <Button
+                            key={slot}
+                            variant={selectedTime === slot ? 'default' : 'outline'}
+                            onClick={() => handleTimeSelect(slot)}
                         >
                             {slot}
                         </Button>
