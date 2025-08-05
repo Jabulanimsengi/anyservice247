@@ -11,7 +11,7 @@ interface BookingCalendarProps {
 }
 
 const BookingCalendar = ({ providerId, onDateTimeSelected }: BookingCalendarProps) => {
-    const [availabilities, setAvailabilities] = useState<any[]>([]);
+    const [availabilities, setAvailabilities] = useState<{ day_of_week: number; start_time: string; end_time: string }[]>([]);
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [timeSlots, setTimeSlots] = useState<string[]>([]);
 
@@ -34,7 +34,7 @@ const BookingCalendar = ({ providerId, onDateTimeSelected }: BookingCalendarProp
         if (availabilityForDay) {
             // Generate time slots (this is a simplified example)
             const slots: string[] = [];
-            let currentTime = new Date(`${date.toDateString()} ${availabilityForDay.start_time}`);
+            const currentTime = new Date(`${date.toDateString()} ${availabilityForDay.start_time}`);
             const endTime = new Date(`${date.toDateString()} ${availabilityForDay.end_time}`);
 
             while (currentTime < endTime) {

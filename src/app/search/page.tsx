@@ -29,7 +29,7 @@ type ServiceWithProvider = {
   review_count: number;
   category: string;
   description: string;
-  availability: any;
+  availability: { [key: string]: { start: string; end: string; is24Hours: boolean } };
   profiles: { business_name: string } | null;
 };
 

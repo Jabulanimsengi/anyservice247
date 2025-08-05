@@ -19,7 +19,7 @@ const StatusFeed = async () => {
     <div className="container mx-auto px-4 py-8">
         <h2 className="text-2xl font-bold mb-4">Recent Work</h2>
         <div className="flex overflow-x-auto space-x-4 pb-4 scrollbar-hide">
-            {statuses.map((status: any) => (
+            {statuses.map((status: { id: string; image_urls: string[]; caption: string; profiles: { business_name: string; full_name: string; } }) => (
                 <Link key={status.id} href={`/status/${status.id}`}>
                     <div className="flex-shrink-0 w-24 text-center cursor-pointer group">
                         <div className="relative h-24 w-24 rounded-full border-4 border-green-500 p-1 transition-transform group-hover:scale-105">

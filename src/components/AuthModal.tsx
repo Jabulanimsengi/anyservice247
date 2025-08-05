@@ -80,7 +80,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
     if (error) {
       setError(error.message);
     } else if (data.user) {
-        let profileData: any = {
+        let profileData: {
+            whatsapp: string;
+            phone: string;
+            business_name?: string;
+            registration_number?: string;
+            office_email?: string;
+        } = {
             whatsapp,
             phone,
         };

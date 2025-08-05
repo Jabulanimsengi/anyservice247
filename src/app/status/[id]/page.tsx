@@ -45,7 +45,7 @@ const StatusPage = ({ params }: StatusPageProps) => {
       if (error || !data) {
         return notFound();
       }
-      setStatus(data as any);
+      setStatus(data as Status);
       setLoading(false);
     };
 

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 
-const ProductCard = ({ product }: { product: any }) => {
+const ProductCard = ({ product }: { product: { id: string; image_urls: string[] | null; name: string; stores: { name: string }; price: number } }) => {
   const displayImage = product.image_urls && product.image_urls.length > 0 ? product.image_urls[0] : '/placeholder.png';
 
   return (

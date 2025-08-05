@@ -31,7 +31,7 @@ const ChatWindow = ({ providerId, providerName }: ChatWindowProps) => {
     const [user, setUser] = useState<User | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState('');
-    const [conversation, setConversation] = useState<any>(null);
+    const [conversation, setConversation] = useState<{ id: string; client_id: string; provider_id: string } | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -157,7 +157,7 @@ const ChatWindow = ({ providerId, providerName }: ChatWindowProps) => {
         
         if (!error && messageData) {
             // Replace optimistic message with real one
-            setMessages(prev => prev.map(msg => msg.id === tempId ? { ...messageData, status: 'sent' } : msg));
+            setMessages(prev => prev.map(msg => msg.id === tempId ? { ...(messageData as Message), status: 'sent' } : msg));
             
             const recipientId = user.id === conversation.client_id ? conversation.provider_id : conversation.client_id;
             await supabase.from('notifications').insert({

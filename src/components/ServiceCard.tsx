@@ -9,7 +9,6 @@ import VerifiedBadge from './VerifiedBadge';
 import { useStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
 import { useEffect, useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import { User } from '@supabase/supabase-js';
 
 type ServiceLocation = {
@@ -31,7 +30,7 @@ interface ServiceCardProps {
   call_out_fee?: number; // Added call_out_fee as an optional prop
   status: string;
   locations: ServiceLocation[] | null;
-  availability: any;
+  availability: { [key: string]: { start: string; end: string; is24Hours: boolean } };
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({
@@ -39,7 +38,6 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
 }) => {
   const { likedServiceIds, addLike, removeLike, addToast, openChat } = useStore();
   const [user, setUser] = useState<User | null>(null);
-  const [guestId, setGuestId] = useState<string | null>(null);
   const [isLiking, setIsLiking] = useState(false);
 
   const displayImage = imageUrls && imageUrls.length > 0 ? imageUrls[0] : '/placeholder.png';
@@ -55,13 +53,6 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
       setUser(session?.user ?? null);
     });
     
-    let currentGuestId = localStorage.getItem('guestId');
-    if (!currentGuestId) {
-      currentGuestId = uuidv4();
-      localStorage.setItem('guestId', currentGuestId);
-    }
-    setGuestId(currentGuestId);
-
     return () => {
       authListener.subscription.unsubscribe();
     };

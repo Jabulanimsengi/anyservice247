@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from './ui/Button';
 
-const CourseCard = ({ course }: { course: any }) => {
+const CourseCard = ({ course }: { course: { id: string, image_url: string, title: string, description: string } }) => {
   return (
     <div className="border rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300">
       <div className="relative h-48 w-full">

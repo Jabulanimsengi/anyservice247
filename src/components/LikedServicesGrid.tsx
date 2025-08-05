@@ -14,11 +14,11 @@ type Service = {
   user_id: string;
   image_urls: string[] | null;
   status: string;
-  locations: any[] | null;
+  locations: { city: string, province: string }[] | null;
   provider_name: string;
   average_rating: number;
   review_count: number;
-  availability: any; // Added availability to the type
+  availability: { [key: string]: { start: string; end: string; is24Hours: boolean } };
   profiles: { business_name: string } | null;
 };
 
@@ -36,7 +36,7 @@ const LikedServicesGrid: React.FC<LikedServicesGridProps> = ({ initialServices }
   }, [likedServiceIds, initialServices]);
 
   if (services.length === 0) {
-    return <p>You haven't liked any services yet. Start Browse to find services you love!</p>;
+    return <p>You haven&apos;t liked any services yet. Start Browse to find services you love!</p>;
   }
 
   return (

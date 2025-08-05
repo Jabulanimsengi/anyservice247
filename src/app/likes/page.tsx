@@ -15,11 +15,11 @@ interface Service {
   user_id: string;
   image_urls: string[] | null;
   status: string;
-  locations: any[] | null;
+  locations: { city: string; province: string }[] | null;
   provider_name: string;
   average_rating: number;
   review_count: number;
-  availability: any;
+  availability: { [key: string]: { start: string; end: string; is24Hours: boolean } };
   profiles: { business_name: string } | null;
 }
 
@@ -51,7 +51,7 @@ const LikesPage = async () => {
     if (error) {
         console.error('Error fetching liked services:', error);
     } else {
-        initialServices = services || [];
+        initialServices = services as Service[] || [];
     }
   }
 

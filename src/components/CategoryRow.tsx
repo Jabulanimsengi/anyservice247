@@ -23,7 +23,7 @@ type Service = {
   average_rating: number;
   review_count: number;
   category: string;
-  availability: any; // Added
+  availability: { [key: string]: { start: string; end: string; is24Hours: boolean } };
   profiles: { business_name: string } | null;
 };
 

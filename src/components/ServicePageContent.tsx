@@ -1,6 +1,6 @@
 // src/components/ServicePageContent.tsx
 import { createClient } from '@/lib/utils/supabase/server';
-import { Star, Phone, MessageCircle, Building, MapPin, Flag } from 'lucide-react';
+import { Star, Phone, MessageCircle, Building, MapPin } from 'lucide-react';
 import BackButton from '@/components/BackButton';
 import ServiceInteraction from '@/components/ServiceInteraction';
 import { revalidatePath } from 'next/cache';
@@ -41,7 +41,7 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
 
   const handleReviewSubmitted = async () => { 'use server'; revalidatePath(`/service/${id}`); };
 
-  const providerProfile = service.profiles;
+  const providerProfile = service.profiles as { phone: string; office_number: string; whatsapp: string; availability: { [key: string]: { start: string; end: string; is24Hours: boolean } }; business_name: string; } | null
 
   return (
     <div className="bg-white">
@@ -132,7 +132,7 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
                         <h2 className="text-2xl font-bold mb-4">Availability</h2>
                         {providerProfile?.availability ? (
                             <div className="space-y-2 text-sm">
-                                {Object.entries(providerProfile.availability).map(([day, times]: any) => (
+                                {Object.entries(providerProfile.availability).map(([day, times]) => (
                                     (times.start && times.end || times.is24Hours) &&
                                     <div key={day} className="grid grid-cols-3">
                                         <span className="font-semibold capitalize">{day}</span>
@@ -148,7 +148,7 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
              <div className="mt-12 border-t pt-8" id="reviews">
                 <h2 className="text-2xl font-bold">Reviews</h2>
                  {reviews && reviews.length > 0 ? (
-                    reviews.map((review: any) => (
+                    reviews.map((review: { id: string; profiles: { full_name: string; }; rating: number; comment: string; created_at: string; }) => (
                     <div key={review.id} className="border-b py-4 last:border-b-0">
                         <div className="flex items-center justify-between">
                         <p className="font-semibold">{review.profiles?.full_name ?? 'Anonymous'}</p>

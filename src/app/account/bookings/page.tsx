@@ -3,7 +3,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
 import BackButton from '@/components/BackButton';
 import Link from 'next/link';
 
@@ -23,7 +22,6 @@ type Booking = {
 };
 
 const ClientBookingsPage = () => {
-  const [user, setUser] = useState<User | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -50,7 +48,6 @@ const ClientBookingsPage = () => {
   useEffect(() => {
     const getUserAndBookings = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
       if (user) {
         fetchBookings(user.id);
       } else {

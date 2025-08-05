@@ -84,7 +84,7 @@ const ProviderProfilePage = async ({ params }: ProviderProfilePageProps) => {
               providerId={service.user_id}
               title={service.title}
               providerName={service.provider_name ?? 'Anonymous'}
-              businessName={(service.profiles as any)?.business_name}
+              businessName={service.profiles?.business_name}
               rating={service.average_rating}
               reviewCount={service.review_count}
               price={service.price}
