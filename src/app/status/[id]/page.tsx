@@ -1,7 +1,7 @@
 // src/app/status/[id]/page.tsx
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -11,7 +11,7 @@ import Spinner from '@/components/ui/Spinner';
 import StatusProgressBar from '@/components/StatusProgressBar';
 
 interface StatusPageProps {
-  params: Promise<{ id: string }>; // The type indicates params is a Promise
+  params: { id: string };
 }
 
 type Status = {
@@ -27,7 +27,7 @@ type Status = {
 
 const StatusPage = ({ params }: StatusPageProps) => {
   const router = useRouter();
-  const { id } = use(params); // Correctly use the 'use' hook for client components
+  const { id } = params;
   const [status, setStatus] = useState<Status | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);

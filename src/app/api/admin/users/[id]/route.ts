@@ -1,11 +1,11 @@
 // src/app/api/admin/users/[id]/route.ts
 
 import { createClient } from '@/lib/utils/supabase/server';
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
 
 export async function PATCH(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const targetUserId = params.id;

@@ -4,7 +4,7 @@ import Spinner from '@/components/ui/Spinner';
 import { Suspense } from 'react';
 
 interface ServiceDetailPageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 const ServiceDetailPage = ({ params }: ServiceDetailPageProps) => {

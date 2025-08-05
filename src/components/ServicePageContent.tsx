@@ -15,8 +15,8 @@ const maskNumber = (number: string | null) => {
     return number.substring(0, 4) + '... (Sign in to view)';
 }
 
-const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> }) => {
-  const { id } = await params;
+const ServicePageContent = async ({ params }: { params: { id: string } }) => {
+  const { id } = params;
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();

@@ -8,11 +8,11 @@ import { Twitter, Linkedin, Globe } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 interface ProviderProfilePageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 const ProviderProfilePage = async ({ params }: ProviderProfilePageProps) => {
-  const { id } = await params;
+  const { id } = params;
   if (!id) notFound();
 
   const profilePromise = supabase

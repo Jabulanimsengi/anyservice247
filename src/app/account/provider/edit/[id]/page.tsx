@@ -1,8 +1,8 @@
 // src/app/account/provider/edit/[id]/page.tsx
 'use client';
 
-import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -21,12 +21,10 @@ const categories = [
   "Cleaning", "Appliance Repair", "Roofing", "Pest Control", "Other"
 ];
 
-interface EditServicePageProps {
-  params: Promise<{ id: string; }>;
-}
+const EditServicePage = () => {
+  const params = useParams();
+  const id = params?.id as string;
 
-const EditServicePage = ({ params }: EditServicePageProps) => {
-  const { id } = use(params);
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
