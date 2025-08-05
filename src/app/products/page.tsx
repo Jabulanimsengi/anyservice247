@@ -1,5 +1,5 @@
 // src/app/products/page.tsx
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/utils/supabase/server';
 import ProductCard from '@/components/ProductCard';
 import ProductCardSkeleton from '@/components/ProductCardSkeleton';
 import { Suspense } from 'react';
@@ -18,6 +18,7 @@ interface Product {
 }
 
 const ProductGrid = async () => {
+  const supabase = await createClient();
   const { data: products, error } = await supabase
     .from('products')
     .select(`

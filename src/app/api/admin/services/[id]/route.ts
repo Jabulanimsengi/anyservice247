@@ -6,10 +6,10 @@ import { createClient as createAdminClient } from '@supabase/supabase-js';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const serviceId = params.id;
+    const { id: serviceId } = await params;
     const { status, rejection_reason } = await request.json();
 
     if (!serviceId || !status) {

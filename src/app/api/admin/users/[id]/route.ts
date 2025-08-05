@@ -6,9 +6,9 @@ import { createClient as createAdminClient } from '@supabase/supabase-js';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const targetUserId = params.id;
+  const { id: targetUserId } = await params;
   const { role: newRole } = await request.json();
 
   if (!targetUserId || !newRole) {

@@ -1,7 +1,7 @@
 // src/app/status/[id]/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { supabase } from '@/lib/supabase';
 import { notFound, useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -11,7 +11,7 @@ import Spinner from '@/components/ui/Spinner';
 import StatusProgressBar from '@/components/StatusProgressBar';
 
 interface StatusPageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>; 
 }
 
 type Status = {
@@ -27,7 +27,7 @@ type Status = {
 
 const StatusPage = ({ params }: StatusPageProps) => {
   const router = useRouter();
-  const { id } = params;
+  const { id } = use(params); 
   const [status, setStatus] = useState<Status | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);

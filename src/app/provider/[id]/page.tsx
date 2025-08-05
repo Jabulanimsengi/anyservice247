@@ -1,5 +1,5 @@
 // src/app/provider/[id]/page.tsx
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/utils/supabase/server';
 import ServiceCard from '@/components/ServiceCard';
 import BackButton from '@/components/BackButton';
 import { notFound } from 'next/navigation';
@@ -8,12 +8,33 @@ import { Twitter, Linkedin, Globe } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 interface ProviderProfilePageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
+}
+
+// CORRECTED: This interface now accurately reflects the data from the database
+interface Service {
+  id: number; // ID from Supabase is a number
+  user_id: string;
+  title: string;
+  provider_name: string | null;
+  profiles: {
+    business_name: string | null;
+  } | null;
+  average_rating: number;
+  review_count: number;
+  price: number;
+  call_out_fee: number;
+  image_urls: string[] | null;
+  status: string;
+  locations: { city: string, province: string }[] | null;
+  availability: any;
 }
 
 const ProviderProfilePage = async ({ params }: ProviderProfilePageProps) => {
-  const { id } = params;
+  const { id } = await params;
   if (!id) notFound();
+
+  const supabase = await createClient();
 
   const profilePromise = supabase
     .from('profiles')
@@ -77,17 +98,18 @@ const ProviderProfilePage = async ({ params }: ProviderProfilePageProps) => {
       <h2 className="text-2xl font-bold mb-6">Services offered by {profile.business_name || profile.full_name}</h2>
       {services && services.length > 0 ? (
         <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {services.map((service) => (
+          {services.map((service: Service) => (
             <ServiceCard
               key={service.id}
-              id={service.id}
+              id={String(service.id)} // CORRECTED: Convert number to string here
               providerId={service.user_id}
               title={service.title}
               providerName={service.provider_name ?? 'Anonymous'}
-              businessName={service.profiles?.business_name}
+              businessName={service.profiles?.business_name ?? undefined} // CORRECTED: Handle null case
               rating={service.average_rating}
               reviewCount={service.review_count}
               price={service.price}
+              call_out_fee={service.call_out_fee}
               imageUrls={service.image_urls}
               status={service.status}
               locations={service.locations}

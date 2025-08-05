@@ -16,9 +16,8 @@ type ServiceLocation = {
   city: string;
 };
 
-// This interface is now updated to accept the call_out_fee
 interface ServiceCardProps {
-  id: number;
+  id: string; // CORRECTED: Changed from number to string
   providerId: string;
   imageUrls: string[] | null;
   title: string;
@@ -27,7 +26,7 @@ interface ServiceCardProps {
   rating: number;
   reviewCount: number;
   price: number;
-  call_out_fee?: number; // Added call_out_fee as an optional prop
+  call_out_fee?: number;
   status: string;
   locations: ServiceLocation[] | null;
   availability: { [key: string]: { start: string; end: string; is24Hours: boolean } };
@@ -58,7 +57,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
     };
   }, []);
 
-  const isLiked = likedServiceIds.has(id);
+  const isLiked = likedServiceIds.has(Number(id)); // Convert id to number for Set operations
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -71,16 +70,17 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
     setIsLiking(true);
 
     try {
+      const serviceIdNumber = Number(id);
       if (isLiked) {
-        const { error } = await supabase.from('likes').delete().eq('service_id', id).eq('user_id', user.id);
+        const { error } = await supabase.from('likes').delete().eq('service_id', serviceIdNumber).eq('user_id', user.id);
         if (!error) {
-            removeLike(id);
+            removeLike(serviceIdNumber);
             addToast('Service removed from likes.', 'success');
         }
       } else {
-        const { error } = await supabase.from('likes').insert({ service_id: id, user_id: user.id });
+        const { error } = await supabase.from('likes').insert({ service_id: serviceIdNumber, user_id: user.id });
         if (!error) {
-            addLike(id);
+            addLike(serviceIdNumber);
             addToast('Service added to likes!', 'success');
         }
       }

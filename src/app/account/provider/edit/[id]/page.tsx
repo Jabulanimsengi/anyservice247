@@ -1,8 +1,8 @@
 // src/app/account/provider/edit/[id]/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useState, useEffect, use } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -21,10 +21,12 @@ const categories = [
   "Cleaning", "Appliance Repair", "Roofing", "Pest Control", "Other"
 ];
 
-const EditServicePage = () => {
-  const params = useParams();
-  const id = params?.id as string;
+interface EditServicePageProps {
+  params: Promise<{ id: string; }>;
+}
 
+const EditServicePage = ({ params }: EditServicePageProps) => {
+  const { id } = use(params);
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -224,14 +226,14 @@ const EditServicePage = () => {
         <div className="space-y-4 rounded-md border p-4">
           <h3 className="font-medium text-gray-800">Service Locations</h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="sm:col-span-1">
+            <div className="sm-col-span-1">
               <label htmlFor="province" className="text-sm">Province</label>
               <select id="province" value={currentProvince} onChange={(e) => { setCurrentProvince(e.target.value); setCurrentCity(''); }} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                 <option value="">Select Province</option>
                 {provinces.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
-            <div className="sm:col-span-1">
+            <div className="sm-col-span-1">
               <label htmlFor="city" className="text-sm">City / Town</label>
               <select id="city" value={currentCity} onChange={(e) => setCurrentCity(e.target.value)} disabled={!currentProvince} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm disabled:bg-gray-100">
                 <option value="">Select City</option>

@@ -1,4 +1,3 @@
-// src/components/ServicePageContent.tsx
 import { createClient } from '@/lib/utils/supabase/server';
 import { Star, Phone, MessageCircle, Building, MapPin } from 'lucide-react';
 import BackButton from '@/components/BackButton';
@@ -15,8 +14,10 @@ const maskNumber = (number: string | null) => {
     return number.substring(0, 4) + '... (Sign in to view)';
 }
 
-const ServicePageContent = async ({ params }: { params: { id: string } }) => {
-  const { id } = params;
+// CORRECTED: params is a Promise
+const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> }) => {
+  // CORRECTED: await the params promise
+  const { id } = await params;
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -54,7 +55,6 @@ const ServicePageContent = async ({ params }: { params: { id: string } }) => {
                     <p className="mt-1 text-lg">by <Link href={`/provider/${service.user_id}`} className="font-semibold text-blue-600 hover:underline">{(providerProfile?.business_name || service.provider_name) ?? 'Anonymous'}</Link></p>
                     <div className="my-6 border-t"></div>
                     
-                    {/* --- NEW APPLICABLE FEES SECTION --- */}
                     <div className="mb-6 rounded-lg border bg-gray-50 p-4">
                         <h3 className="text-xl font-semibold mb-2">Applicable Fees</h3>
                         <div className="space-y-2">
