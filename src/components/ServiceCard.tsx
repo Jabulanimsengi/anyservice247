@@ -10,6 +10,7 @@ import { useStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
 import { useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
+import { useRouter } from 'next/navigation';
 
 type ServiceLocation = {
   province: string;
@@ -30,11 +31,13 @@ interface ServiceCardProps {
   status: string;
   locations: ServiceLocation[] | null;
   availability: { [key: string]: { start: string; end: string; is24Hours: boolean } };
+  variant?: 'default' | 'compact';
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({
-  id, providerId, imageUrls, title, providerName, businessName, rating, reviewCount, price, status, locations, availability
+  id, providerId, imageUrls, title, providerName, businessName, rating, reviewCount, price, status, locations, availability, variant = 'default'
 }) => {
+  const router = useRouter();
   const { likedServiceIds, addLike, removeLike, addToast, openChat } = useStore();
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -81,16 +84,10 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
       const serviceIdNumber = Number(id);
       if (isLiked) {
         const { error } = await supabase.from('likes').delete().eq('service_id', serviceIdNumber).eq('user_id', user.id);
-        if (!error) {
-            removeLike(serviceIdNumber);
-            addToast('Service removed from likes.', 'success');
-        }
+        if (!error) removeLike(serviceIdNumber);
       } else {
         const { error } = await supabase.from('likes').insert({ service_id: serviceIdNumber, user_id: user.id });
-        if (!error) {
-            addLike(serviceIdNumber);
-            addToast('Service added to likes!', 'success');
-        }
+        if (!error) addLike(serviceIdNumber);
       }
     } finally {
       setIsLiking(false);
@@ -111,6 +108,73 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
     openChat(providerId, providerName);
   };
 
+  const handleProviderClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    router.push(`/provider/${providerId}`);
+  };
+
+  // Compact Card Variant
+  if (variant === 'compact') {
+    return (
+      <Link href={`/service/${id}`} passHref>
+        <div className="group relative flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-all duration-300 hover:shadow-xl hover:ring-2 hover:ring-brand-teal h-full">
+          <div className="absolute top-1 right-1 z-20 flex flex-col gap-1.5">
+            <button
+              onClick={handleLike}
+              disabled={isLiking}
+              className="rounded-full bg-white/70 p-1.5 text-gray-600 backdrop-blur-sm transition-colors hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Like service"
+            >
+              <Heart size={16} fill={isLiked ? '#ef4444' : 'none'} className={isLiked ? 'text-red-500' : ''} />
+            </button>
+            {userRole !== 'provider' && userRole !== 'admin' && (
+              <button
+                onClick={handleStartChat}
+                className="rounded-full bg-white/70 p-1.5 text-gray-600 backdrop-blur-sm transition-colors hover:text-brand-blue"
+                aria-label="Message provider"
+              >
+                <MessageSquare size={16} />
+              </button>
+            )}
+          </div>
+
+          <div className="relative aspect-square w-full cursor-pointer overflow-hidden">
+            <div className="absolute top-2 left-2 z-10 flex flex-col items-start gap-1">
+                {status === 'approved' && <VerifiedBadge />}
+                <div className="flex items-center text-xs bg-white/70 backdrop-blur-sm rounded-full px-2 py-0.5">
+                    <Star className="h-3 w-3 text-yellow-400" fill="currentColor" />
+                    <span className="ml-1 font-semibold text-gray-800">{rating.toFixed(1)}</span>
+                    <span className="ml-1 text-gray-600">({reviewCount})</span>
+                </div>
+            </div>
+            <Image
+              src={displayImage}
+              alt={`Image for ${title}`}
+              fill
+              sizes="(max-width: 768px) 33vw, 12vw"
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                <Button size="sm">View Details</Button>
+            </div>
+          </div>
+          <div className="p-2 flex-grow flex flex-col">
+            <h3 className="text-sm font-bold tracking-tight text-gray-900 line-clamp-1">{title}</h3>
+            <p onClick={handleProviderClick} className="text-xs text-blue-500 line-clamp-1 hover:underline cursor-pointer">by {businessName || providerName}</p>
+            {locations && locations.length > 0 && (
+              <div className="mt-auto pt-1 flex items-center gap-1 text-xs text-gray-500">
+                <MapPin size={12} />
+                <span className="line-clamp-1">{locations[0].city}{locations.length > 1 ? ', ...' : ''}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
+  // Default (Larger) Card Variant
   return (
     <div className="group relative flex max-w-sm flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md transition-all duration-300 hover:shadow-xl hover:ring-2 hover:ring-brand-teal h-full">
       {status === 'approved' && (
@@ -159,11 +223,9 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
             {title}
           </Link>
         </h3>
-        <Link href={`/provider/${providerId}`} passHref>
-          <p className="cursor-pointer text-sm text-blue-500 hover:underline">
+        <p onClick={handleProviderClick} className="cursor-pointer text-sm text-blue-500 hover:underline">
             by {businessName || providerName}
-          </p>
-        </Link>
+        </p>
         
         {locations && locations.length > 0 && (
           <div className="mt-2 flex items-center gap-1 text-xs text-gray-500">

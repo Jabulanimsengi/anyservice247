@@ -14,7 +14,7 @@ type Service = {
   id: number;
   title: string;
   price: number;
-  call_out_fee: number; // Added
+  call_out_fee: number;
   user_id: string;
   image_urls: string[] | null;
   status: string;
@@ -49,7 +49,7 @@ const CategoryRow: React.FC<CategoryRowProps> = ({ category, services }) => {
   return (
     <div>
       <div className="flex justify-between items-center mb-4 bg-gray-200 p-2 rounded-md">
-        <a href={`/search?category=${encodeURIComponent(category)}`} className="text-2xl font-bold hover:underline">{category}</a>
+        <a href={`/search?category=${encodeURIComponent(category)}`} className="text-xl font-bold hover:underline">{category}</a>
         <a href={`/search?category=${encodeURIComponent(category)}`} className="text-sm text-brand-teal hover:underline font-semibold">View All</a>
       </div>
       <div className="relative group">
@@ -64,8 +64,9 @@ const CategoryRow: React.FC<CategoryRowProps> = ({ category, services }) => {
           className="flex overflow-x-auto space-x-4 pb-4 scrollbar-hide"
         >
           {services.map((service) => (
-            <div key={service.id} className="flex-shrink-0 w-64 sm:w-72">
+            <div key={service.id} className="flex-shrink-0 w-48 sm:w-56">
               <ServiceCard
+                variant="compact"
                 id={String(service.id)}
                 providerId={service.user_id}
                 title={service.title}
@@ -74,11 +75,11 @@ const CategoryRow: React.FC<CategoryRowProps> = ({ category, services }) => {
                 rating={service.average_rating}
                 reviewCount={service.review_count}
                 price={service.price}
-                call_out_fee={service.call_out_fee} // Added this line
+                call_out_fee={service.call_out_fee}
                 imageUrls={service.image_urls}
                 status={service.status}
                 locations={service.locations}
-                availability={service.availability} // Added this line
+                availability={service.availability}
               />
             </div>
           ))}
