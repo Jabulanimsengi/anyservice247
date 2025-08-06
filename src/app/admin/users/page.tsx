@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/Button';
 import { useStore } from '@/lib/store';
 import BackButton from '@/components/BackButton';
 import Spinner from '@/components/ui/Spinner';
+import ConfirmActionModal from '@/components/ConfirmActionModal';
+import { Input } from '@/components/ui/Input';
+import { supabase } from '@/lib/supabase'; // <-- IMPORT ADDED HERE
 
 type Role = 'user' | 'provider' | 'admin';
 
@@ -17,11 +20,18 @@ type Profile = {
   whatsapp: string;
 };
 
+type MessageModalState = {
+    isOpen: boolean;
+    user: Profile | null;
+};
+
 const AdminUsersPage = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
   const { addToast } = useStore();
   const [newRoles, setNewRoles] = useState<{ [key: string]: Role }>({});
+  const [messageModal, setMessageModal] = useState<MessageModalState>({ isOpen: false, user: null });
+  const [messageContent, setMessageContent] = useState('');
 
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
@@ -80,62 +90,104 @@ const AdminUsersPage = () => {
     }
   };
 
+  const handleSendMessage = async () => {
+    if (!messageModal.user || !messageContent.trim()) {
+        addToast('Please enter a message.', 'error');
+        return;
+    }
+
+    const { error } = await supabase.from('notifications').insert({
+        user_id: messageModal.user.id,
+        message: messageContent,
+        link: '/account/notifications',
+    });
+
+    if (error) {
+        addToast(`Failed to send message: ${error.message}`, 'error');
+    } else {
+        addToast('Message sent successfully!', 'success');
+        setMessageModal({ isOpen: false, user: null });
+        setMessageContent('');
+    }
+  };
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <BackButton />
-      <h1 className="text-3xl font-bold mb-6">Manage Users</h1>
-      {loading ? (
-        <Spinner />
-      ) : (
-        <div className="overflow-x-auto rounded-lg border bg-white shadow-md">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Full Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">WhatsApp</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Current Role</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {profiles.map((profile) => (
-                <tr key={profile.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{profile.full_name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{profile.email || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{profile.whatsapp || 'N/A'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{profile.role}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                        <select
-                            value={newRoles[profile.id] || profile.role}
-                            onChange={(e) => handleRoleSelection(profile.id, e.target.value as Role)}
-                            className="block w-32 rounded-md border-gray-300 shadow-sm p-2 text-sm"
-                        >
-                            <option value="user">User</option>
-                            <option value="provider">Provider</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleRoleChange(profile.id, newRoles[profile.id] || profile.role)}
-                            disabled={!newRoles[profile.id] || newRoles[profile.id] === profile.role}
-                        >
-                            Save
-                        </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleDeleteUser(profile.id, profile.full_name)}>
-                            Delete
-                        </Button>
-                    </div>
-                  </td>
+    <>
+      <ConfirmActionModal
+        isOpen={messageModal.isOpen}
+        onClose={() => setMessageModal({ isOpen: false, user: null })}
+        onConfirm={handleSendMessage}
+        title={`Send Message to ${messageModal.user?.full_name}`}
+        confirmButtonText="Send Message"
+      >
+        <textarea
+            value={messageContent}
+            onChange={(e) => setMessageContent(e.target.value)}
+            placeholder="Type your message here..."
+            rows={4}
+            className="w-full rounded-md border border-gray-300 p-2 text-sm"
+        />
+      </ConfirmActionModal>
+
+      <div className="container mx-auto px-4 py-8">
+        <BackButton />
+        <h1 className="text-3xl font-bold mb-6">Manage Users</h1>
+        {loading ? (
+          <Spinner />
+        ) : (
+          <div className="overflow-x-auto rounded-lg border bg-white shadow-md">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Full Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">WhatsApp</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Current Role</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {profiles.map((profile) => (
+                  <tr key={profile.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{profile.full_name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{profile.email || 'N/A'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{profile.whatsapp || 'N/A'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">{profile.role}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex items-center space-x-2">
+                          <select
+                              value={newRoles[profile.id] || profile.role}
+                              onChange={(e) => handleRoleSelection(profile.id, e.target.value as Role)}
+                              className="block w-32 rounded-md border-gray-300 shadow-sm p-2 text-sm"
+                          >
+                              <option value="user">User</option>
+                              <option value="provider">Provider</option>
+                              <option value="admin">Admin</option>
+                          </select>
+                          <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleRoleChange(profile.id, newRoles[profile.id] || profile.role)}
+                              disabled={!newRoles[profile.id] || newRoles[profile.id] === profile.role}
+                          >
+                              Save
+                          </Button>
+                          <Button size="sm" onClick={() => setMessageModal({ isOpen: true, user: profile })}>
+                              Message
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleDeleteUser(profile.id, profile.full_name)}>
+                              Delete
+                          </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 

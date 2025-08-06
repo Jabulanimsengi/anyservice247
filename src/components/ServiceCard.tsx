@@ -17,7 +17,7 @@ type ServiceLocation = {
 };
 
 interface ServiceCardProps {
-  id: string; // CORRECTED: Changed from number to string
+  id: string;
   providerId: string;
   imageUrls: string[] | null;
   title: string;
@@ -37,6 +37,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
 }) => {
   const { likedServiceIds, addLike, removeLike, addToast, openChat } = useStore();
   const [user, setUser] = useState<User | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [isLiking, setIsLiking] = useState(false);
 
   const displayImage = imageUrls && imageUrls.length > 0 ? imageUrls[0] : '/placeholder.png';
@@ -48,8 +49,15 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
   }
 
   useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', currentUser.id).single();
+        setUserRole(profile?.role || null);
+      } else {
+        setUserRole(null);
+      }
     });
     
     return () => {
@@ -57,7 +65,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
     };
   }, []);
 
-  const isLiked = likedServiceIds.has(Number(id)); // Convert id to number for Set operations
+  const isLiked = likedServiceIds.has(Number(id));
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -124,13 +132,15 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
         >
           <Heart size={20} fill={isLiked ? '#ef4444' : 'none'} className={isLiked ? 'text-red-500' : ''} />
         </button>
-        <button
-          onClick={handleStartChat}
-          className="rounded-full bg-white/70 p-2 text-gray-600 backdrop-blur-sm transition-colors hover:text-brand-blue"
-          aria-label="Message provider"
-        >
-          <MessageSquare size={20} />
-        </button>
+        {userRole !== 'provider' && userRole !== 'admin' && (
+            <button
+            onClick={handleStartChat}
+            className="rounded-full bg-white/70 p-2 text-gray-600 backdrop-blur-sm transition-colors hover:text-brand-blue"
+            aria-label="Message provider"
+            >
+            <MessageSquare size={20} />
+            </button>
+        )}
       </div>
       <Link href={`/service/${id}`} passHref>
         <div className="relative h-48 w-full cursor-pointer overflow-hidden">
@@ -170,10 +180,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
           <span className="text-xs text-gray-600">({reviewCount} reviews)</span>
         </div>
 
-        <div className="mt-auto pt-4 flex items-center justify-between">
-          <span className="text-xl font-bold text-gray-900">
-            from R{Number(price).toFixed(2)}/hr
-          </span>
+        <div className="mt-auto pt-4 flex items-center justify-start">
           <Link href={`/service/${id}`} passHref>
             <Button size="sm">View Details</Button>
           </Link>

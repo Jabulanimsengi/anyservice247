@@ -70,12 +70,15 @@ const BookingCalendar = ({ availability, onDateTimeSelected }: BookingCalendarPr
     return (
         <div className="mt-4 p-4 border rounded-lg">
             <h4 className="font-semibold mb-2">Select a Date and Time</h4>
-            <input
-                type="date"
-                onChange={(e) => handleDateChange(new Date(e.target.value))}
-                className="p-2 border rounded"
-                min={new Date().toISOString().split('T')[0]} // Prevent selecting past dates
-            />
+            <div className="flex items-center gap-4">
+                <input
+                    type="date"
+                    onChange={(e) => handleDateChange(new Date(e.target.value))}
+                    className="p-2 border rounded"
+                    min={new Date().toISOString().split('T')[0]} // Prevent selecting past dates
+                />
+                <p className="text-sm text-gray-500">Please select a booking date for the quote.</p>
+            </div>
             {selectedDate && (
                 <div className="mt-4 grid grid-cols-3 gap-2">
                     {timeSlots.length > 0 ? timeSlots.map(slot => (

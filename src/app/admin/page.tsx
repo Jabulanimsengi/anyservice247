@@ -1,7 +1,7 @@
 // src/app/admin/page.tsx
 'use client';
 
-import { Users, MessageSquare, Edit, Flag, Server, ThumbsUp } from 'lucide-react';
+import { Users, MessageSquare, Edit, Flag, Server, ThumbsUp, FileText } from 'lucide-react';
 import Link from 'next/link';
 import BackButton from '@/components/BackButton';
 import React from 'react';
@@ -66,6 +66,12 @@ const AdminDashboardPage = () => {
           icon={MessageSquare} 
           title="User Suggestions" 
           description="View feedback and suggestions from users." 
+        />
+        <AdminCard 
+          href="/admin/multiple-quote-requests" 
+          icon={FileText} 
+          title="Multiple Quote Requests" 
+          description="Approve and manage multiple quote requests." 
         />
       </div>
     </div>

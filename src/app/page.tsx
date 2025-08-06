@@ -5,6 +5,9 @@ import ServiceGrid from '@/components/ServiceGrid';
 import ServiceCardSkeleton from '@/components/ServiceCardSkeleton';
 import SearchFilters from '@/components/SearchFilters';
 import StatusFeed from '@/components/StatusFeed'; // Import the new component
+import EmergencyServices from '@/components/EmergencyServices';
+import Link from 'next/link';
+import { Button } from '@/components/ui/Button';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,10 +29,18 @@ export default function Home() {
       <div className="sticky top-0 z-40 bg-gray-100/95 backdrop-blur-sm py-4">
         <div className="container mx-auto px-4">
           <SearchFilters />
+          <div className="mt-4 text-center">
+            <Link href="/request-multiple-quotes">
+                <Button>Request Multiple Quotes</Button>
+            </Link>
+          </div>
         </div>
       </div>
       <section className="bg-gray-50 py-12">
         <div className="container mx-auto px-4">
+          <Suspense fallback={<LoadingSkeleton />}>
+            <EmergencyServices />
+          </Suspense>
           <Suspense fallback={<LoadingSkeleton />}>
             <ServiceGrid />
           </Suspense>

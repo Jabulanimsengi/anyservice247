@@ -76,8 +76,8 @@ const EditServicePage = ({ params }: EditServicePageProps) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
-      if (imagePreviews.length + files.length > 6) {
-        setError('You can upload a maximum of 6 images.');
+      if (imagePreviews.length + files.length > 10) {
+        setError('You can upload a maximum of 10 images.');
         return;
       }
       setImageFiles((prevFiles) => [...prevFiles, ...files]);
@@ -190,7 +190,7 @@ const EditServicePage = ({ params }: EditServicePageProps) => {
         </div>
 
         <div>
-          <label htmlFor="image" className="mb-2 block text-sm font-medium text-gray-700">Service Images (up to 6)</label>
+          <label htmlFor="image" className="mb-2 block text-sm font-medium text-gray-700">Service Images (up to 10)</label>
           <Input id="image" type="file" onChange={handleFileChange} accept="image/*" multiple className="pt-2" />
           <div className="mt-4 grid grid-cols-3 gap-4">
             {imagePreviews.map((preview, index) => (

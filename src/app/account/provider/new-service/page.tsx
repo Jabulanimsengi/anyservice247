@@ -39,6 +39,8 @@ const NewServicePage = () => {
   const [locations, setLocations] = useState<ServiceLocation[]>([]);
   const [currentProvince, setCurrentProvince] = useState('');
   const [currentCity, setCurrentCity] = useState('');
+  const [availableForEmergencies, setAvailableForEmergencies] = useState(false);
+
 
   // State for provider details
   const [phone, setPhone] = useState('');
@@ -87,8 +89,8 @@ const NewServicePage = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
-      if (imageFiles.length + files.length > 6) {
-        setError('You can upload a maximum of 6 images.');
+      if (imageFiles.length + files.length > 10) {
+        setError('You can upload a maximum of 10 images.');
         return;
       }
       setImageFiles((prevFiles) => [...prevFiles, ...files]);
@@ -157,7 +159,8 @@ const NewServicePage = () => {
       image_urls: imageUrls,
       locations: locations,
       category: category,
-      status: 'pending'
+      status: 'pending',
+      available_for_emergencies: availableForEmergencies,
     }).select().single();
 
     if (insertError) {
@@ -224,6 +227,16 @@ const NewServicePage = () => {
                 <label htmlFor="callOutFee" className="mb-2 block text-sm font-medium text-gray-700">Call-Out Fee (R) (Optional)</label>
                 <Input id="callOutFee" type="number" value={callOutFee} onChange={(e) => setCallOutFee(e.target.value)} placeholder="e.g., 150.00" step="0.01" />
             </div>
+             <div className="flex items-center">
+                <input
+                    id="emergency"
+                    type="checkbox"
+                    checked={availableForEmergencies}
+                    onChange={(e) => setAvailableForEmergencies(e.target.checked)}
+                    className="h-4 w-4 text-brand-teal border-gray-300 rounded focus:ring-brand-teal"
+                />
+                <label htmlFor="emergency" className="ml-2 block text-sm font-medium text-gray-700">Available for urgent services</label>
+            </div>
         </div>
 
         <div className="space-y-4 rounded-md border p-4">
@@ -259,7 +272,7 @@ const NewServicePage = () => {
         </div>
 
         <div>
-          <label htmlFor="image" className="mb-2 block text-sm font-medium text-gray-700">Service Images (up to 6)</label>
+          <label htmlFor="image" className="mb-2 block text-sm font-medium text-gray-700">Service Images (up to 10)</label>
           <Input id="image" type="file" onChange={handleFileChange} accept="image/*" multiple className="pt-2" />
           <div className="mt-4 grid grid-cols-3 gap-4">
             {imagePreviews.map((preview, index) => (

@@ -11,9 +11,8 @@ interface ProviderProfilePageProps {
   params: Promise<{ id: string }>;
 }
 
-// CORRECTED: This interface now accurately reflects the data from the database
 interface Service {
-  id: number; // ID from Supabase is a number
+  id: number;
   user_id: string;
   title: string;
   provider_name: string | null;
@@ -47,13 +46,14 @@ const ProviderProfilePage = async ({ params }: ProviderProfilePageProps) => {
     .select('*, profiles(business_name)')
     .eq('user_id', id);
 
+  // Supabase returns the related 'services' table as an array
   const completedJobsPromise = supabase
     .from('bookings')
-    .select('id', { count: 'exact' })
+    .select('id, services(title)', { count: 'exact' })
     .eq('provider_id', id)
     .eq('status', 'completed');
 
-  const [{ data: profile, error: profileError }, { data: services, error: servicesError }, { count: completedJobsCount }] = await Promise.all([
+  const [{ data: profile, error: profileError }, { data: services, error: servicesError }, { data: completedJobs, count: completedJobsCount }] = await Promise.all([
     profilePromise,
     servicesPromise,
     completedJobsPromise,
@@ -95,17 +95,30 @@ const ProviderProfilePage = async ({ params }: ProviderProfilePageProps) => {
           </div>
       )}
 
+      {completedJobs && completedJobs.length > 0 && (
+        <div className="mb-8 rounded-lg border bg-white p-6 shadow-sm">
+          <h2 className="text-2xl font-bold mb-4">Completed Work</h2>
+          <ul className="list-disc list-inside space-y-2">
+            {completedJobs.map((job) => {
+              // **FIXED:** Correctly access the title from the services array
+              const serviceTitle = job.services && job.services[0] ? job.services[0].title : 'Service Name Unavailable';
+              return <li key={job.id}>{serviceTitle}</li>;
+            })}
+          </ul>
+        </div>
+      )}
+
       <h2 className="text-2xl font-bold mb-6">Services offered by {profile.business_name || profile.full_name}</h2>
       {services && services.length > 0 ? (
         <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {services.map((service: Service) => (
             <ServiceCard
               key={service.id}
-              id={String(service.id)} // CORRECTED: Convert number to string here
+              id={String(service.id)}
               providerId={service.user_id}
               title={service.title}
               providerName={service.provider_name ?? 'Anonymous'}
-              businessName={service.profiles?.business_name ?? undefined} // CORRECTED: Handle null case
+              businessName={service.profiles?.business_name ?? undefined}
               rating={service.average_rating}
               reviewCount={service.review_count}
               price={service.price}
