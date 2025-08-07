@@ -13,7 +13,7 @@ type ServiceWithProvider = {
   price: number;
   user_id: string;
   image_urls: string[] | null;
-  status: string; // Changed from is_approved
+  status: string;
   locations: ServiceLocation[] | null;
   provider_name: string;
   average_rating: number;
@@ -31,7 +31,7 @@ const ServiceGrid = async () => {
     .from('service_with_ratings')
     .select('*, profiles(business_name)')
     .eq('status', 'approved') // Use the new status column
-    .limit(280);
+    .limit(40); // REDUCED: Fetches a more reasonable number of services for the homepage
 
   if (error) {
     console.error("Error fetching services:", error.message);
@@ -44,7 +44,8 @@ const ServiceGrid = async () => {
       if (!servicesByCategory[service.category]) {
         servicesByCategory[service.category] = [];
       }
-      if (servicesByCategory[service.category].length < 40) {
+      // This limit can be adjusted or removed as the main query limit is now lower
+      if (servicesByCategory[service.category].length < 10) { 
         servicesByCategory[service.category].push(service as ServiceWithProvider);
       }
     }

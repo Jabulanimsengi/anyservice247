@@ -8,6 +8,10 @@ import { Button } from '@/components/ui/Button';
 import LeaveReview from '@/components/LeaveReview';
 import BookingCalendar from './BookingCalendar';
 import { Input } from './ui/Input';
+import Spinner from './ui/Spinner';
+import Image from 'next/image';
+import { X } from 'lucide-react';
+import { useStore } from '@/lib/store';
 
 type ServiceInteractionProps = {
   serviceId: string;
@@ -17,6 +21,7 @@ type ServiceInteractionProps = {
 };
 
 const ServiceInteraction = ({ serviceId, serviceProviderId, onReviewSubmitted, availability }: ServiceInteractionProps) => {
+  const { addToast } = useStore();
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [bookingMessage, setBookingMessage] = useState<string | null>(null);
@@ -25,6 +30,8 @@ const ServiceInteraction = ({ serviceId, serviceProviderId, onReviewSubmitted, a
   const [selectedDateTime, setSelectedDateTime] = useState<string | null>(null);
   const [quoteDescription, setQuoteDescription] = useState('');
   const [quoteAttachments, setQuoteAttachments] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [isRequesting, setIsRequesting] = useState(false);
 
   useEffect(() => {
     const checkUserAndBookingStatus = async () => {
@@ -63,28 +70,52 @@ const ServiceInteraction = ({ serviceId, serviceProviderId, onReviewSubmitted, a
     checkUserAndBookingStatus();
   }, [serviceId]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+        const files = Array.from(e.target.files);
+        if (quoteAttachments.length + files.length > 5) {
+            addToast('You can upload a maximum of 5 images.', 'error');
+            return;
+        }
+        setQuoteAttachments(prev => [...prev, ...files]);
+        const newPreviews = files.map(file => URL.createObjectURL(file));
+        setImagePreviews(prev => [...prev, ...newPreviews]);
+    }
+  };
+
+  const handleRemoveImage = (indexToRemove: number) => {
+      setQuoteAttachments(quoteAttachments.filter((_, index) => index !== indexToRemove));
+      setImagePreviews(imagePreviews.filter((_, index) => index !== indexToRemove));
+  };
+
   const handleRequestQuote = async () => {
+    setIsRequesting(true);
     setBookingMessage(null);
     setBookingError(null);
 
     if (!user) {
       setBookingError('You must be logged in to book a service.');
+      setIsRequesting(false);
       return;
     }
     if (user.id === serviceProviderId) {
         setBookingError('You cannot book your own service.');
+        setIsRequesting(false);
         return;
     }
     if (userRole === 'provider' || userRole === 'admin') {
         setBookingError('Service providers cannot request quotes from other providers.');
+        setIsRequesting(false);
         return;
     }
     if (!selectedDateTime) {
         setBookingError('Please select a date and time for the appointment.');
+        setIsRequesting(false);
         return;
     }
     if (!quoteDescription) {
         setBookingError('Please provide a brief description of what you are looking for.');
+        setIsRequesting(false);
         return;
     }
 
@@ -98,6 +129,7 @@ const ServiceInteraction = ({ serviceId, serviceProviderId, onReviewSubmitted, a
 
             if (uploadError) {
                 setBookingError(`Attachment upload failed: ${uploadError.message}`);
+                setIsRequesting(false);
                 return;
             }
             const { data: { publicUrl } } = supabase.storage.from('quote-attachments').getPublicUrl(uploadData.path);
@@ -127,6 +159,7 @@ const ServiceInteraction = ({ serviceId, serviceProviderId, onReviewSubmitted, a
             });
         }
     }
+    setIsRequesting(false);
   };
 
   return (
@@ -144,18 +177,29 @@ const ServiceInteraction = ({ serviceId, serviceProviderId, onReviewSubmitted, a
             />
         </div>
         <div className="mt-4">
-            <label htmlFor="quoteAttachments" className="mb-2 block text-sm font-medium text-gray-700">Attachments</label>
+            <label htmlFor="quoteAttachments" className="mb-2 block text-sm font-medium text-gray-700">Attachments (up to 5 images)</label>
             <Input
                 id="quoteAttachments"
                 type="file"
                 multiple
-                onChange={(e) => setQuoteAttachments(Array.from(e.target.files || []))}
+                onChange={handleFileChange}
                 className="pt-2"
+                accept="image/*"
             />
+            {imagePreviews.length > 0 && (
+                <div className="mt-4 grid grid-cols-5 gap-4">
+                    {imagePreviews.map((preview, index) => (
+                        <div key={index} className="relative">
+                            <Image src={preview} alt="Image preview" width={100} height={100} className="h-20 w-20 object-cover rounded-md" />
+                            <button type="button" onClick={() => handleRemoveImage(index)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 leading-none"><X size={12} /></button>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
       <div className="mt-4">
-        <Button size="lg" onClick={handleRequestQuote} disabled={!selectedDateTime || !quoteDescription}>
-          Request Quote
+        <Button size="lg" onClick={handleRequestQuote} disabled={!selectedDateTime || !quoteDescription || isRequesting}>
+          {isRequesting ? <Spinner /> : 'Request Quote'}
         </Button>
         {bookingMessage && <p className="mt-2 text-sm text-green-600">{bookingMessage}</p>}
         {bookingError && <p className="mt-2 text-sm text-red-600">{bookingError}</p>}

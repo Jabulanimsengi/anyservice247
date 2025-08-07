@@ -13,7 +13,7 @@ type Quotation = {
   id: number;
   amount: number;
   status: string;
-  attachment_url: string | null;
+  attachment_urls: string[] | null;
   rejection_reason: string | null;
 };
 
@@ -23,7 +23,7 @@ type Booking = {
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'quote-provided';
   appointment_time: string | null;
   services: { id: number; title: string; }[] | null;
-  profiles: { id: string; full_name: string; }[] | null;
+  provider: { id: string; full_name: string; } | null;
   quotations: Quotation[];
 };
 
@@ -42,16 +42,21 @@ const ClientBookingsPage = () => {
       .select(`
         id, created_at, status, appointment_time,
         services ( id, title ),
-        profiles ( id, full_name ),
+        provider:profiles!provider_id ( id, full_name ),
         quotations ( * )
       `)
       .eq('user_id', clientId)
       .order('created_at', { ascending: false });
 
     if (error) {
+      console.error("Error fetching client bookings:", JSON.stringify(error, null, 2));
       addToast(`Error fetching bookings: ${error.message}`, 'error');
     } else {
-      setBookings((data as Booking[]) || []);
+      const formattedData = data?.map(booking => ({
+        ...booking,
+        provider: booking.provider ? (Array.isArray(booking.provider) ? booking.provider[0] : booking.provider) : null,
+      })) || [];
+      setBookings(formattedData as any);
     }
     setLoading(false);
   }, [addToast]);
@@ -68,7 +73,7 @@ const ClientBookingsPage = () => {
     getUserAndBookings();
   }, [fetchBookings]);
 
-  const handleQuoteDecision = async (quoteId: number, decision: 'approved' | 'rejected', reason?: string) => {
+  const handleQuoteDecision = async (booking: Booking, quoteId: number, decision: 'approved' | 'rejected', reason?: string) => {
     const { error } = await supabase
       .from('quotations')
       .update({ status: decision, rejection_reason: reason })
@@ -79,7 +84,16 @@ const ClientBookingsPage = () => {
     } else {
       addToast(`Quote has been ${decision}.`, 'success');
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) fetchBookings(user.id);
+      if (user) {
+          if (decision === 'approved' && booking.provider) {
+              await supabase.from('notifications').insert({
+                  user_id: booking.provider.id,
+                  message: `Your quote for "${booking.services?.[0]?.title}" has been approved. Please arrange a time with the client.`,
+                  link: '/account/provider/bookings'
+              });
+          }
+          fetchBookings(user.id);
+      }
     }
     setShowRejectionFor(null);
   };
@@ -95,7 +109,7 @@ const ClientBookingsPage = () => {
               <div className="flex flex-col justify-between sm:flex-row">
                 <div>
                   <Link href={`/service/${booking.services?.[0]?.id}`} className="text-lg font-semibold hover:underline">{booking.services?.[0]?.title}</Link>
-                  <p className="text-sm text-gray-600">Provider: <Link href={`/provider/${booking.profiles?.[0]?.id}`} className="text-blue-500 hover:underline">{booking.profiles?.[0]?.full_name}</Link></p>
+                  <p className="text-sm text-gray-600">Provider: <Link href={`/provider/${booking.provider?.id}`} className="text-blue-500 hover:underline">{booking.provider?.full_name}</Link></p>
                   {booking.appointment_time && <p className="text-sm font-semibold text-gray-800">Appointment: {new Date(booking.appointment_time).toLocaleString()}</p>}
                   <p className="text-xs text-gray-400">Booked on: {new Date(booking.created_at).toLocaleDateString()}</p>
                 </div>
@@ -115,19 +129,28 @@ const ClientBookingsPage = () => {
               {booking.status === 'quote-provided' && booking.quotations.map(quote => (
                 <div key={quote.id} className="mt-4 border-t pt-4">
                   <p className="text-sm font-semibold">Quote Received:</p>
-                  <p className="text-lg font-bold">R{quote.amount.toFixed(2)}</p>
-                  {quote.attachment_url && <a href={quote.attachment_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">View Attached Quote</a>}
+                  <p className="text-lg font-bold">R{Number(quote.amount).toFixed(2)}</p>
+                  {quote.attachment_urls && quote.attachment_urls.length > 0 && (
+                      <div className="mt-2">
+                          <h4 className="text-sm font-semibold">Attachments from Provider:</h4>
+                          <ul className="list-disc list-inside">
+                              {quote.attachment_urls.map((url, index) => (
+                                  <li key={index}><a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">View Attachment {index + 1}</a></li>
+                              ))}
+                          </ul>
+                      </div>
+                  )}
                   
                   {quote.status === 'pending' && (
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <Button size="sm" onClick={() => handleQuoteDecision(quote.id, 'approved')}>Approve Quote</Button>
+                      <Button size="sm" onClick={() => handleQuoteDecision(booking, quote.id, 'approved')}>Approve Quote</Button>
                       <Button size="sm" variant="destructive" onClick={() => setShowRejectionFor(quote.id)}>Reject Quote</Button>
                     </div>
                   )}
 
                   {showRejectionFor === quote.id && (
                     <div className="mt-2 space-y-2">
-                        <select onChange={(e) => handleQuoteDecision(quote.id, 'rejected', e.target.value)} className="rounded-md border-gray-300 shadow-sm">
+                        <select onChange={(e) => handleQuoteDecision(booking, quote.id, 'rejected', e.target.value)} className="rounded-md border-gray-300 shadow-sm">
                             <option value="">Select a reason for rejection...</option>
                             {rejectionReasons.map((reason) => (<option key={reason} value={reason}>{reason}</option>))}
                         </select>

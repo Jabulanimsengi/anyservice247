@@ -4,11 +4,14 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
-import AuthModal from './AuthModal';
 import Link from 'next/link';
 import { Heart, Bell, Home, Menu, X } from 'lucide-react';
 import ConfirmLogoutModal from './ConfirmLogoutModal';
 import { useRouter, usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
+
+// Dynamically import the AuthModal component
+const AuthModal = dynamic(() => import('./AuthModal'), { ssr: false });
 
 type Profile = {
   role: string;
@@ -199,11 +202,13 @@ const Header = () => {
             </div>
         )}
       </header>
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => setIsAuthModalOpen(false)}
-        initialView={initialAuthView}
-      />
+      {isAuthModalOpen && (
+        <AuthModal 
+          isOpen={isAuthModalOpen} 
+          onClose={() => setIsAuthModalOpen(false)}
+          initialView={initialAuthView}
+        />
+      )}
       <ConfirmLogoutModal isOpen={isLogoutModalOpen} onClose={() => setIsLogoutModalOpen(false)} onConfirm={confirmSignOut} />
     </>
   );

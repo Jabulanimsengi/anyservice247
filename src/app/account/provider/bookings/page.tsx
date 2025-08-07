@@ -9,21 +9,22 @@ import BackButton from '@/components/BackButton';
 import { Input } from '@/components/ui/Input';
 import Spinner from '@/components/ui/Spinner';
 import { useStore } from '@/lib/store';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, X } from 'lucide-react';
+import Image from 'next/image';
 
 type Quotation = {
   id: number;
   amount: number;
   status: string;
-  attachment_url: string | null;
+  attachment_urls: string[] | null;
 };
 
 type Booking = {
   id: number;
   created_at: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'quote-provided';
-  services: { title: string }[] | null;
-  client: { id: string; full_name: string }[] | null; // Corrected to be an array
+  services: { id: number; title: string; } | null; // Corrected: Was an array type
+  client: { id: string; full_name: string; } | null;
   quote_description: string;
   quote_attachments: string[];
   quotations: Quotation[];
@@ -34,8 +35,12 @@ const ManageBookingsPage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // State for the active quote form
+  const [quoteFormFor, setQuoteFormFor] = useState<number | null>(null);
   const [quoteAmount, setQuoteAmount] = useState<number | ''>('');
-  const [quoteAttachment, setQuoteAttachment] = useState<File | null>(null);
+  const [quoteAttachments, setQuoteAttachments] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [submittingQuoteFor, setSubmittingQuoteFor] = useState<number | null>(null);
 
   const fetchBookings = useCallback(async (providerId: string) => {
@@ -44,17 +49,18 @@ const ManageBookingsPage = () => {
       .from('bookings')
       .select(`
         id, created_at, status, service_id, user_id, quote_description, quote_attachments,
-        services ( title ),
-        client:profiles!bookings_user_id_fkey ( id, full_name ),
-        quotations ( id, amount, status, attachment_url )
+        services ( id, title ),
+        client:profiles!user_id ( id, full_name ),
+        quotations ( id, amount, status, attachment_urls )
       `)
       .eq('provider_id', providerId)
       .order('created_at', { ascending: false });
 
     if (error) {
+      console.error("Error fetching provider bookings:", JSON.stringify(error, null, 2));
       addToast(`Error fetching bookings: ${error.message}`, 'error');
     } else {
-      setBookings((data as Booking[]) || []);
+      setBookings((data as any) || []);
     }
     setLoading(false);
   }, [addToast]);
@@ -71,15 +77,42 @@ const ManageBookingsPage = () => {
     };
     getUserAndBookings();
   }, [fetchBookings]);
-
-  const handleUpdateBookingStatus = async (bookingId: number, newStatus: Booking['status']) => {
-    const { error } = await supabase.from('bookings').update({ status: newStatus }).eq('id', bookingId);
+  
+  const handleUpdateBookingStatus = async (booking: Booking, newStatus: Booking['status']) => {
+    const { error } = await supabase.from('bookings').update({ status: newStatus }).eq('id', booking.id);
     if (error) {
       addToast(`Failed to update status: ${error.message}`, 'error');
     } else {
       addToast('Booking status updated!', 'success');
-      if (user) fetchBookings(user.id);
+      if (user) {
+        if (newStatus === 'completed' && booking.client) {
+            await supabase.from('notifications').insert({
+                user_id: booking.client.id,
+                message: `Your booking for "${booking.services?.title}" has been completed. Please leave a review!`,
+                link: `/service/${booking.services?.id}`
+            });
+        }
+        fetchBookings(user.id);
+      }
     }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+        const files = Array.from(e.target.files);
+        if (quoteAttachments.length + files.length > 5) {
+            addToast('You can upload a maximum of 5 images.', 'error');
+            return;
+        }
+        setQuoteAttachments(prev => [...prev, ...files]);
+        const newPreviews = files.map(file => URL.createObjectURL(file));
+        setImagePreviews(prev => [...prev, ...newPreviews]);
+    }
+  };
+
+  const handleRemoveImage = (indexToRemove: number) => {
+      setQuoteAttachments(quoteAttachments.filter((_, index) => index !== indexToRemove));
+      setImagePreviews(imagePreviews.filter((_, index) => index !== indexToRemove));
   };
 
   const handleProvideQuote = async (booking: Booking) => {
@@ -90,39 +123,54 @@ const ManageBookingsPage = () => {
     if (!user) return;
 
     setSubmittingQuoteFor(booking.id);
-    let attachmentUrl: string | null = null;
-    if (quoteAttachment) {
-      const fileName = `${user.id}/${booking.id}/${Date.now()}_${quoteAttachment.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage.from('quotations').upload(fileName, quoteAttachment);
-      if (uploadError) {
-        addToast(`Quotation upload failed: ${uploadError.message}`, 'error');
-        setSubmittingQuoteFor(null);
-        return;
-      }
-      const { data: { publicUrl } } = supabase.storage.from('quotations').getPublicUrl(uploadData.path);
-      attachmentUrl = publicUrl;
+    const attachmentUrls: string[] = [];
+    if (quoteAttachments.length > 0) {
+        for (const file of quoteAttachments) {
+            const fileName = `${user.id}/${booking.id}/${Date.now()}_${file.name}`;
+            const { data: uploadData, error: uploadError } = await supabase.storage.from('quotations').upload(fileName, file);
+            if (uploadError) {
+                addToast(`Quotation upload failed: ${uploadError.message}`, 'error');
+                setSubmittingQuoteFor(null);
+                return;
+            }
+            const { data: { publicUrl } } = supabase.storage.from('quotations').getPublicUrl(uploadData.path);
+            attachmentUrls.push(publicUrl);
+        }
     }
 
     const { error: quoteError } = await supabase.from('quotations').insert({
       booking_id: booking.id,
       provider_id: user.id,
       amount: quoteAmount,
-      attachment_url: attachmentUrl,
+      attachment_urls: attachmentUrls,
     });
 
     if (quoteError) {
       addToast(`Failed to submit quote: ${quoteError.message}`, 'error');
     } else {
-      await handleUpdateBookingStatus(booking.id, 'quote-provided');
+      await handleUpdateBookingStatus(booking, 'quote-provided');
+      if (booking.client) {
+        await supabase.from('notifications').insert({
+          user_id: booking.client.id,
+          message: `You have received a new quote for "${booking.services?.title}".`,
+          link: '/account/bookings'
+        });
+      }
       addToast('Quote submitted successfully!', 'success');
-      setQuoteAmount('');
-      setQuoteAttachment(null);
+      setQuoteFormFor(null);
     }
     setSubmittingQuoteFor(null);
   };
 
+  const openQuoteForm = (bookingId: number) => {
+    setQuoteFormFor(bookingId);
+    setQuoteAmount('');
+    setQuoteAttachments([]);
+    setImagePreviews([]);
+  };
+
   const handleStartChat = (booking: Booking) => {
-    const client = booking.client?.[0]; // Access the first element of the array
+    const client = booking.client;
     if (client) {
       openChat(client.id, client.full_name);
     } else {
@@ -140,13 +188,13 @@ const ManageBookingsPage = () => {
             <div key={booking.id} className="rounded-lg border bg-white p-4 shadow-sm">
               <div className="flex flex-col justify-between sm:flex-row">
                 <div>
-                  <h3 className="text-lg font-semibold">{booking.services?.[0]?.title || 'Service Not Available'}</h3>
-                  <p className="text-sm text-gray-600">Booked by: {booking.client?.[0]?.full_name ?? 'A customer'}</p>
+                  <h3 className="text-lg font-semibold">{booking.services?.title || 'Service Not Available'}</h3>
+                  <p className="text-sm text-gray-600">Booked by: {booking.client?.full_name ?? 'A customer'}</p>
                   <p className="text-xs text-gray-400">Requested on: {new Date(booking.created_at).toLocaleDateString()}</p>
                   <p className="text-sm text-gray-600 mt-2">Description: {booking.quote_description}</p>
                   {booking.quote_attachments && booking.quote_attachments.length > 0 && (
                     <div className="mt-2">
-                      <h4 className="text-sm font-semibold">Attachments:</h4>
+                      <h4 className="text-sm font-semibold">Attachments from Client:</h4>
                       <ul className="list-disc list-inside">
                         {booking.quote_attachments.map((url, index) => (
                           <li key={index}><a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">Attachment {index + 1}</a></li>
@@ -173,21 +221,40 @@ const ManageBookingsPage = () => {
               
               {booking.status === 'pending' && (
                 <div className="mt-4 border-t pt-4 flex space-x-2">
-                  <Button size="sm" onClick={() => handleUpdateBookingStatus(booking.id, 'confirmed')}>Accept Request</Button>
-                  <Button size="sm" variant="destructive" onClick={() => handleUpdateBookingStatus(booking.id, 'cancelled')}>Decline Request</Button>
+                  <Button size="sm" onClick={() => handleUpdateBookingStatus(booking, 'confirmed')}>Accept Request</Button>
+                  <Button size="sm" variant="destructive" onClick={() => handleUpdateBookingStatus(booking, 'cancelled')}>Decline Request</Button>
                 </div>
               )}
 
               {booking.status === 'confirmed' && booking.quotations.length === 0 && (
                 <div className="mt-4 border-t pt-4">
-                  <p className="text-sm font-semibold">Provide a Quote:</p>
-                  <div className="mt-2 space-y-2">
-                    <Input type="number" placeholder="Quote Amount (R)" onChange={(e) => setQuoteAmount(Number(e.target.value))} />
-                    <Input type="file" onChange={(e) => setQuoteAttachment(e.target.files ? e.target.files[0] : null)} />
-                    <Button size="sm" onClick={() => handleProvideQuote(booking)} disabled={submittingQuoteFor === booking.id}>
-                      {submittingQuoteFor === booking.id ? <Spinner /> : 'Submit Quote'}
-                    </Button>
-                  </div>
+                  {quoteFormFor === booking.id ? (
+                    <>
+                      <p className="text-sm font-semibold">Provide a Quote:</p>
+                      <div className="mt-2 space-y-2">
+                        <Input type="number" placeholder="Quote Amount (R)" onChange={(e) => setQuoteAmount(Number(e.target.value))} />
+                        <Input type="file" multiple onChange={handleFileChange} accept="image/*" className="pt-2" />
+                        {imagePreviews.length > 0 && (
+                            <div className="mt-2 grid grid-cols-5 gap-2">
+                                {imagePreviews.map((preview, index) => (
+                                    <div key={index} className="relative">
+                                        <Image src={preview} alt="Preview" width={80} height={80} className="h-20 w-20 object-cover rounded-md"/>
+                                        <button onClick={() => handleRemoveImage(index)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 leading-none"><X size={12} /></button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        <div className="flex gap-2">
+                            <Button size="sm" onClick={() => handleProvideQuote(booking)} disabled={submittingQuoteFor === booking.id}>
+                                {submittingQuoteFor === booking.id ? <Spinner /> : 'Submit Quote'}
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => setQuoteFormFor(null)}>Cancel</Button>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <Button size="sm" onClick={() => openQuoteForm(booking.id)}>Provide Quote</Button>
+                  )}
                 </div>
               )}
 
@@ -196,7 +263,7 @@ const ManageBookingsPage = () => {
                     <h4 className="text-sm font-semibold">Quote Details:</h4>
                     {booking.quotations.map(q => (
                         <div key={q.id} className="text-sm text-gray-700">
-                            <p>Amount: R{q.amount.toFixed(2)}</p>
+                            <p>Amount: R{Number(q.amount).toFixed(2)}</p>
                             <p>Status: <span className="font-medium capitalize">{q.status}</span></p>
                         </div>
                     ))}
@@ -205,7 +272,7 @@ const ManageBookingsPage = () => {
 
               {booking.status === 'quote-provided' && booking.quotations.some(q => q.status === 'approved') && (
                 <div className="mt-4 border-t pt-4">
-                  <Button size="sm" className="bg-green-500 hover:bg-green-600" onClick={() => handleUpdateBookingStatus(booking.id, 'completed')}>Mark as Completed</Button>
+                  <Button size="sm" className="bg-green-500 hover:bg-green-600" onClick={() => handleUpdateBookingStatus(booking, 'completed')}>Mark as Completed</Button>
                 </div>
               )}
             </div>
