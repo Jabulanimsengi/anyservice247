@@ -42,7 +42,6 @@ const Header = () => {
 
   useEffect(() => {
     const getCurrentUser = async () => {
-      // Initially, we don't know the user's status, so we start in a loading state.
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
