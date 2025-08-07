@@ -8,10 +8,10 @@ import ImageGallery from './ImageGallery';
 import Link from 'next/link';
 import MessageProviderButton from './MessageProviderButton';
 import ReportButton from './ReportButton';
-import Image from 'next/image';
+import CategoryRow from './CategoryRow';
 
-const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> }) => {
-  const { id } = await params;
+const ServicePageContent = async ({ params }: { params: { id: string } }) => {
+  const { id } = params;
   const supabase = await createClient();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -27,7 +27,7 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
     return <div className="text-center py-12">Service not found.</div>;
   }
   
-  const { data: recommendedServices, error: recommendedServicesError } = await supabase
+  const { data: recommendedServices } = await supabase
     .from('service_with_ratings')
     .select('*, profiles(business_name)')
     .eq('category', service.category)
@@ -50,41 +50,7 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
         <div className="container mx-auto max-w-6xl px-4 py-8">
             <BackButton />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 mt-4">
-                {/* --- LEFT COLUMN --- */}
-                <div className="flex flex-col gap-8">
-                    <ImageGallery imageUrls={service.image_urls} itemName={service.title} />
-
-                    {/* --- RECOMMENDED SERVICES (MOVED HERE) --- */}
-                    {recommendedServices && recommendedServices.length > 0 && (
-                        <div>
-                            <h3 className="text-2xl font-bold mb-4">Other Recommended Service Providers</h3>
-                            <div className="space-y-4">
-                                {recommendedServices.map((recService) => (
-                                    <Link key={recService.id} href={`/service/${recService.id}`} className="block">
-                                        <div className="flex items-center gap-4 rounded-lg border p-3 hover:bg-gray-50 transition-colors">
-                                            <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md">
-                                                <Image
-                                                    src={recService.image_urls?.[0] || '/placeholder.png'}
-                                                    alt={recService.title}
-                                                    fill
-                                                    sizes="64px"
-                                                    className="object-cover"
-                                                />
-                                            </div>
-                                            <div>
-                                                <p className="font-semibold text-gray-800">{recService.title}</p>
-                                                <p className="text-sm text-gray-500">by {recService.profiles?.business_name || recService.provider_name}</p>
-                                                <p className="text-sm font-bold text-gray-900">from R{Number(recService.price).toFixed(2)}/hr</p>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* --- RIGHT COLUMN --- */}
+                <ImageGallery imageUrls={service.image_urls} itemName={service.title} />
                 <div className="flex flex-col">
                     <h1 className="text-2xl lg:text-3xl font-bold text-gray-800">{service.title}</h1>
                     <p className="mt-1 text-lg">by <Link href={`/provider/${service.user_id}`} className="font-semibold text-blue-600 hover:underline">{(providerProfile?.business_name || service.provider_name) ?? 'Anonymous'}</Link></p>
@@ -170,6 +136,15 @@ const ServicePageContent = async ({ params }: { params: Promise<{ id: string }> 
                 </div>
             </div>
         </div>
+
+        {recommendedServices && recommendedServices.length > 0 && (
+          <div className="container mx-auto max-w-6xl px-4 py-8 mt-12 border-t">
+            <CategoryRow 
+              category="Other Recommended Service Providers" 
+              services={recommendedServices} 
+            />
+          </div>
+        )}
     </div>
   );
 };

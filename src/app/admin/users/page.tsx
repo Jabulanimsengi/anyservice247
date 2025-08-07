@@ -7,8 +7,7 @@ import { useStore } from '@/lib/store';
 import BackButton from '@/components/BackButton';
 import Spinner from '@/components/ui/Spinner';
 import ConfirmActionModal from '@/components/ConfirmActionModal';
-import { Input } from '@/components/ui/Input';
-import { supabase } from '@/lib/supabase'; // <-- IMPORT ADDED HERE
+import { supabase } from '@/lib/supabase';
 
 type Role = 'user' | 'provider' | 'admin';
 

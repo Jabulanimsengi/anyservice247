@@ -35,7 +35,6 @@ const BookingCalendar = ({ availability, onDateTimeSelected }: BookingCalendarPr
 
         if (availabilityForDay) {
             if (availabilityForDay.is24Hours) {
-                // Generate 24 hourly slots for 24-hour services
                 const slots = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
                 setTimeSlots(slots);
                 return;
@@ -46,10 +45,8 @@ const BookingCalendar = ({ availability, onDateTimeSelected }: BookingCalendarPr
                 const startTime = new Date(`${date.toDateString()} ${availabilityForDay.start}`);
                 const endTime = new Date(`${date.toDateString()} ${availabilityForDay.end}`);
 
-                let currentTime = startTime;
-                while (currentTime < endTime) {
-                    slots.push(currentTime.toTimeString().substring(0, 5));
-                    currentTime.setHours(currentTime.getHours() + 1);
+                for (let dt = new Date(startTime); dt < endTime; dt.setHours(dt.getHours() + 1)) {
+                    slots.push(dt.toTimeString().substring(0, 5));
                 }
                 setTimeSlots(slots);
                 return;
@@ -75,7 +72,7 @@ const BookingCalendar = ({ availability, onDateTimeSelected }: BookingCalendarPr
                     type="date"
                     onChange={(e) => handleDateChange(new Date(e.target.value))}
                     className="p-2 border rounded"
-                    min={new Date().toISOString().split('T')[0]} // Prevent selecting past dates
+                    min={new Date().toISOString().split('T')[0]}
                 />
                 <p className="text-sm text-gray-500">Please select a booking date for the quote.</p>
             </div>

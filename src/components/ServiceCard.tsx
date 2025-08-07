@@ -35,7 +35,7 @@ interface ServiceCardProps {
 }
 
 const ServiceCard: React.FC<ServiceCardProps> = ({
-  id, providerId, imageUrls, title, providerName, businessName, rating, reviewCount, price, status, locations, availability, variant = 'default'
+  id, providerId, imageUrls, title, providerName, businessName, rating, reviewCount, status, locations, availability, variant = 'default'
 }) => {
   const router = useRouter();
   const { likedServiceIds, addLike, removeLike, addToast, openChat } = useStore();
@@ -140,7 +140,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
           </div>
 
           <div className="relative aspect-square w-full cursor-pointer overflow-hidden">
-            <div className="absolute top-2 left-2 z-10 flex flex-col items-start gap-1">
+            <div className="absolute top-2 left-2 right-2 z-10 flex justify-between items-center">
                 {status === 'approved' && <VerifiedBadge />}
                 <div className="flex items-center text-xs bg-white/70 backdrop-blur-sm rounded-full px-2 py-0.5">
                     <Star className="h-3 w-3 text-yellow-400" fill="currentColor" />

@@ -8,7 +8,7 @@ import { Twitter, Linkedin, Globe } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 interface ProviderProfilePageProps {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 interface Service {
@@ -29,8 +29,13 @@ interface Service {
   availability: { [key: string]: { start: string; end: string; is24Hours: boolean } };
 }
 
+interface CompletedJob {
+    id: number;
+    services: { title: string }[] | null;
+}
+
 const ProviderProfilePage = async ({ params }: ProviderProfilePageProps) => {
-  const { id } = await params;
+  const { id } = params;
   if (!id) notFound();
 
   const supabase = await createClient();
@@ -46,7 +51,6 @@ const ProviderProfilePage = async ({ params }: ProviderProfilePageProps) => {
     .select('*, profiles(business_name)')
     .eq('user_id', id);
 
-  // Supabase returns the related 'services' table as an array
   const completedJobsPromise = supabase
     .from('bookings')
     .select('id, services(title)', { count: 'exact' })
@@ -99,8 +103,7 @@ const ProviderProfilePage = async ({ params }: ProviderProfilePageProps) => {
         <div className="mb-8 rounded-lg border bg-white p-6 shadow-sm">
           <h2 className="text-2xl font-bold mb-4">Completed Work</h2>
           <ul className="list-disc list-inside space-y-2">
-            {completedJobs.map((job) => {
-              // **FIXED:** Correctly access the title from the services array
+            {completedJobs.map((job: CompletedJob) => {
               const serviceTitle = job.services && job.services[0] ? job.services[0].title : 'Service Name Unavailable';
               return <li key={job.id}>{serviceTitle}</li>;
             })}

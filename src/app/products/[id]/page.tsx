@@ -6,11 +6,11 @@ import ImageGallery from '@/components/ImageGallery'
 import { Button } from '@/components/ui/Button'
 
 interface ProductPageProps {
-  params: Promise<{ id: string }>
+  params: { id: string }
 }
 
 const ProductPage = async ({ params }: ProductPageProps) => {
-  const { id } = await params
+  const { id } = params;
   if (!id) {
     notFound()
   }
