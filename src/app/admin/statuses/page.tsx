@@ -7,6 +7,9 @@ import Spinner from '@/components/ui/Spinner';
 import BackButton from '@/components/BackButton';
 import { useStore } from '@/lib/store';
 import Image from 'next/image';
+import { Button } from '@/components/ui/Button';
+import ConfirmActionModal from '@/components/ConfirmActionModal';
+import { deleteStatus } from '@/app/actions';
 
 type Status = {
   id: number;
@@ -22,11 +25,13 @@ const AdminStatusesPage = () => {
     const [statuses, setStatuses] = useState<Status[]>([]);
     const [loading, setLoading] = useState(true);
     const { addToast } = useStore();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedStatus, setSelectedStatus] = useState<Status | null>(null);
 
     const fetchStatuses = useCallback(async () => {
         setLoading(true);
         const { data, error } = await supabase
-            .from('status_updates') // Corrected table name from 'statuses'
+            .from('status_updates')
             .select(`
                 *,
                 profiles ( full_name )
@@ -45,39 +50,79 @@ const AdminStatusesPage = () => {
     useEffect(() => {
         fetchStatuses();
     }, [fetchStatuses]);
+
+    const handleDeleteClick = (status: Status) => {
+        setSelectedStatus(status);
+        setIsModalOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!selectedStatus) return;
+
+        const result = await deleteStatus(selectedStatus.id, selectedStatus.image_urls);
+        if (result.error) {
+            addToast(result.error, 'error');
+        } else {
+            addToast(result.success!, 'success');
+            fetchStatuses(); // Refresh the list
+        }
+        setIsModalOpen(false);
+        setSelectedStatus(null);
+    };
     
     return (
-        <div className="container mx-auto px-4 py-8">
-            <BackButton />
-            <h1 className="mb-6 text-3xl font-bold">Manage Provider Statuses</h1>
-            {loading ? <Spinner /> : statuses.length === 0 ? <p>No statuses have been posted yet.</p> : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {statuses.map((status) => (
-                        <div key={status.id} className="rounded-lg border bg-white shadow-sm overflow-hidden">
-                            {status.image_urls && status.image_urls.length > 0 && (
-                                <div className="relative w-full h-64">
-                                    <Image 
-                                        src={status.image_urls[0]} 
-                                        alt={status.caption || 'Status update'} 
-                                        layout="fill"
-                                        objectFit="cover"
-                                    />
+        <>
+            <ConfirmActionModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onConfirm={handleConfirmDelete}
+                title="Confirm Status Deletion"
+                confirmButtonText="Delete"
+                confirmButtonVariant="destructive"
+            >
+                <p>Are you sure you want to permanently delete this status? This action cannot be undone.</p>
+            </ConfirmActionModal>
+
+            <div className="container mx-auto px-4 py-8">
+                <BackButton />
+                <h1 className="mb-6 text-3xl font-bold">Manage Provider Statuses</h1>
+                {loading ? <Spinner /> : statuses.length === 0 ? <p>No statuses have been posted yet.</p> : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                        {statuses.map((status) => (
+                            <div key={status.id} className="group flex flex-col rounded-lg border bg-white shadow-sm overflow-hidden">
+                                {status.image_urls && status.image_urls.length > 0 && (
+                                    <div className="relative aspect-square w-full">
+                                        <Image 
+                                            src={status.image_urls[0]} 
+                                            alt={status.caption || 'Status update'} 
+                                            layout="fill"
+                                            objectFit="cover"
+                                        />
+                                    </div>
+                                )}
+                                <div className="p-3 flex flex-col flex-grow">
+                                    <p className="text-xs text-gray-700 flex-grow">{status.caption || <i>No caption</i>}</p>
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        By: <span className="font-medium">{status.profiles?.full_name || 'Unknown'}</span>
+                                    </p>
+                                    <p className="text-[10px] text-gray-400">
+                                        {new Date(status.created_at).toLocaleString()}
+                                    </p>
+                                    <Button 
+                                        variant="destructive" 
+                                        size="sm" 
+                                        className="w-full mt-3"
+                                        onClick={() => handleDeleteClick(status)}
+                                    >
+                                        Delete
+                                    </Button>
                                 </div>
-                            )}
-                            <div className="p-4">
-                                <p className="text-sm text-gray-800">{status.caption || <i>No caption</i>}</p>
-                                <p className="text-xs text-gray-500 mt-2">
-                                    Posted by: <span className="font-medium">{status.profiles?.full_name || 'Unknown'}</span>
-                                </p>
-                                <p className="text-xs text-gray-400">
-                                    {new Date(status.created_at).toLocaleString()}
-                                </p>
                             </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </>
     );
 };
 
