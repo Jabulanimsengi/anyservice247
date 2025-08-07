@@ -6,7 +6,6 @@ import { supabase } from '@/lib/supabase';
 import Spinner from '@/components/ui/Spinner';
 import BackButton from '@/components/BackButton';
 import { useStore } from '@/lib/store';
-import Link from 'next/link';
 
 type Quote = {
     id: number;
@@ -20,7 +19,6 @@ type Quote = {
     } | null;
 };
 
-// This type represents the raw data shape from Supabase before we clean it up.
 type RawQuoteData = {
     id: number;
     created_at: string;
@@ -60,7 +58,6 @@ const AdminQuotesPage = () => {
             addToast(`Error fetching quotes: ${error.message}`, 'error');
             console.error(error);
         } else {
-            // Transform the raw data to match our clean 'Quote' type
             const formattedData = data.map((rawQuote: RawQuoteData) => {
                 const bookingData = rawQuote.bookings ? rawQuote.bookings[0] : null;
                 return {
