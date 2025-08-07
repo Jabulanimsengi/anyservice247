@@ -22,10 +22,9 @@ const Header = () => {
   const [loading, setLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
-  const [isSigningOut, setIsSigningOut] = useState(false); // New state for logout spinner
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const [initialAuthView, setInitialAuthView] = useState<'signIn' | 'signUp'>('signIn');
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [hasHydrated, setHasHydrated] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -42,9 +41,9 @@ const Header = () => {
   };
 
   useEffect(() => {
-    setHasHydrated(true);
-
     const getCurrentUser = async () => {
+      // Initially, we don't know the user's status, so we start in a loading state.
+      setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
       setLoading(false);
@@ -90,7 +89,7 @@ const Header = () => {
   };
 
   const confirmSignOut = async () => {
-    setIsSigningOut(true); // Start loading
+    setIsSigningOut(true);
     try {
       await supabase.auth.signOut();
       setIsLogoutModalOpen(false);
@@ -99,7 +98,7 @@ const Header = () => {
     } catch (error) {
       console.error("Error signing out:", error);
     } finally {
-      setIsSigningOut(false); // Stop loading
+      setIsSigningOut(false);
     }
   };
 
@@ -133,34 +132,30 @@ const Header = () => {
             </Link>
 
             <div className="flex items-center gap-x-2">
-                {hasHydrated && (
-                    <>
-                        {loading ? (
-                          <div className="h-9 w-40 animate-pulse rounded-md bg-gray-700"></div>
-                        ) : user ? (
-                          <div className="flex items-center gap-x-2">
-                              {profile?.role === 'admin' && (
-                              <Link href="/admin" className="whitespace-nowrap rounded-md bg-yellow-400 px-4 py-2 text-sm font-bold text-black hover:bg-yellow-500 transition-colors">
-                                  Admin Panel
-                              </Link>
-                              )}
-                              <Link href="/account" className="whitespace-nowrap rounded-md bg-gray-600 px-4 py-2 text-sm text-white hover:bg-gray-700 transition-colors">
-                              Account
-                              </Link>
-                              <button
-                              onClick={handleSignOut}
-                              className="whitespace-nowrap rounded-md bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600 transition-colors"
-                              >
-                              Sign Out
-                              </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-x-2">
-                              <button onClick={() => openAuthModal('signIn')} className="whitespace-nowrap rounded-md px-4 py-2 text-sm text-gray-300 transition-colors hover:bg-gray-700 hover:text-white">Sign In</button>
-                              <button onClick={() => openAuthModal('signUp')} className="whitespace-nowrap rounded-md bg-brand-teal px-4 py-2 text-sm text-white hover:bg-brand-teal/90 transition-colors">Sign Up</button>
-                          </div>
-                        )}
-                    </>
+                {loading ? (
+                  <div className="h-9 w-40 animate-pulse rounded-md bg-gray-700"></div>
+                ) : user ? (
+                  <div className="flex items-center gap-x-2">
+                      {profile?.role === 'admin' && (
+                      <Link href="/admin" className="whitespace-nowrap rounded-md bg-yellow-400 px-4 py-2 text-sm font-bold text-black hover:bg-yellow-500 transition-colors">
+                          Admin Panel
+                      </Link>
+                      )}
+                      <Link href="/account" className="whitespace-nowrap rounded-md bg-gray-600 px-4 py-2 text-sm text-white hover:bg-gray-700 transition-colors">
+                      Account
+                      </Link>
+                      <button
+                      onClick={handleSignOut}
+                      className="whitespace-nowrap rounded-md bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600 transition-colors"
+                      >
+                      Sign Out
+                      </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-x-2">
+                      <button onClick={() => openAuthModal('signIn')} className="whitespace-nowrap rounded-md px-4 py-2 text-sm text-gray-300 transition-colors hover:bg-gray-700 hover:text-white">Sign In</button>
+                      <button onClick={() => openAuthModal('signUp')} className="whitespace-nowrap rounded-md bg-brand-teal px-4 py-2 text-sm text-white hover:bg-brand-teal/90 transition-colors">Sign Up</button>
+                  </div>
                 )}
             </div>
           </div>
