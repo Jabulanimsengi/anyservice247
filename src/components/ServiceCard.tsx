@@ -140,7 +140,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
           </div>
 
           <div className="relative aspect-square w-full cursor-pointer overflow-hidden">
-            <div className="absolute top-2 left-2 right-2 z-10 flex justify-between items-center">
+            <div className="absolute top-2 left-2 z-10 flex flex-col items-start gap-1">
                 {status === 'approved' && <VerifiedBadge />}
                 <div className="flex items-center text-xs bg-white/70 backdrop-blur-sm rounded-full px-2 py-0.5">
                     <Star className="h-3 w-3 text-yellow-400" fill="currentColor" />
