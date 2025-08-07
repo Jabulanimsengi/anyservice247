@@ -10,7 +10,6 @@ import ConfirmLogoutModal from './ConfirmLogoutModal';
 import { useRouter, usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
-// Dynamically import the AuthModal component
 const AuthModal = dynamic(() => import('./AuthModal'), { ssr: false });
 
 type Profile = {
@@ -23,6 +22,7 @@ const Header = () => {
   const [loading, setLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false); // New state for logout spinner
   const [initialAuthView, setInitialAuthView] = useState<'signIn' | 'signUp'>('signIn');
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [hasHydrated, setHasHydrated] = useState(false);
@@ -90,10 +90,17 @@ const Header = () => {
   };
 
   const confirmSignOut = async () => {
-    await supabase.auth.signOut();
-    setIsLogoutModalOpen(false);
-    router.push('/');
-    router.refresh();
+    setIsSigningOut(true); // Start loading
+    try {
+      await supabase.auth.signOut();
+      setIsLogoutModalOpen(false);
+      router.push('/');
+      router.refresh();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    } finally {
+      setIsSigningOut(false); // Stop loading
+    }
   };
 
   return (
@@ -209,7 +216,12 @@ const Header = () => {
           initialView={initialAuthView}
         />
       )}
-      <ConfirmLogoutModal isOpen={isLogoutModalOpen} onClose={() => setIsLogoutModalOpen(false)} onConfirm={confirmSignOut} />
+      <ConfirmLogoutModal 
+        isOpen={isLogoutModalOpen} 
+        onClose={() => setIsLogoutModalOpen(false)} 
+        onConfirm={confirmSignOut} 
+        isSigningOut={isSigningOut} 
+      />
     </>
   );
 };

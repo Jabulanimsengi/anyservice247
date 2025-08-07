@@ -5,14 +5,16 @@ import { Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Button } from './ui/Button';
 import { LogOut, X } from 'lucide-react';
+import Spinner from './ui/Spinner';
 
 interface ConfirmLogoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  isSigningOut: boolean;
 }
 
-const ConfirmLogoutModal: React.FC<ConfirmLogoutModalProps> = ({ isOpen, onClose, onConfirm }) => {
+const ConfirmLogoutModal: React.FC<ConfirmLogoutModalProps> = ({ isOpen, onClose, onConfirm, isSigningOut }) => {
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
@@ -49,6 +51,7 @@ const ConfirmLogoutModal: React.FC<ConfirmLogoutModalProps> = ({ isOpen, onClose
                  <button
                   onClick={onClose}
                   className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+                  disabled={isSigningOut}
                 >
                   <X size={24} />
                 </button>
@@ -59,12 +62,18 @@ const ConfirmLogoutModal: React.FC<ConfirmLogoutModalProps> = ({ isOpen, onClose
                 </div>
 
                 <div className="mt-6 flex justify-end space-x-3">
-                  <Button variant="outline" onClick={onClose}>
+                  <Button variant="outline" onClick={onClose} disabled={isSigningOut}>
                     Cancel
                   </Button>
-                  <Button variant="destructive" onClick={onConfirm}>
-                    <LogOut size={16} className="mr-2"/>
-                    Sign Out
+                  <Button variant="destructive" onClick={onConfirm} disabled={isSigningOut}>
+                    {isSigningOut ? (
+                      <Spinner />
+                    ) : (
+                      <>
+                        <LogOut size={16} className="mr-2"/>
+                        Sign Out
+                      </>
+                    )}
                   </Button>
                 </div>
               </Dialog.Panel>

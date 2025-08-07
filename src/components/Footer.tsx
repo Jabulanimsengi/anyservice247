@@ -2,10 +2,11 @@
 'use client'
 
 import React, { useState } from 'react';
-import { Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { Facebook, Twitter, Instagram, Linkedin, MessageSquare } from 'lucide-react';
 import { Button } from './ui/Button';
 import { supabase } from '@/lib/supabase';
 import { useStore } from '@/lib/store';
+import Link from 'next/link';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -37,18 +38,21 @@ const Footer = () => {
               Connecting you with trusted local professionals for all your home service needs.
             </p>
             <div className="mt-6 flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-white"><Facebook size={20} /></a>
-              <a href="#" className="text-gray-400 hover:text-white"><Twitter size={20} /></a>
-              <a href="#" className="text-gray-400 hover:text-white"><Instagram size={20} /></a>
-              <a href="#" className="text-gray-400 hover:text-white"><Linkedin size={20} /></a>
+              <a href="#" className="text-gray-400 hover:text-white" aria-label="Facebook"><Facebook size={20} /></a>
+              <a href="#" className="text-gray-400 hover:text-white" aria-label="Twitter"><Twitter size={20} /></a>
+              <a href="#" className="text-gray-400 hover:text-white" aria-label="Instagram"><Instagram size={20} /></a>
+              <a href="#" className="text-gray-400 hover:text-white" aria-label="LinkedIn"><Linkedin size={20} /></a>
+              <a href="https://wa.me/27787770524" target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp" className="text-gray-400 hover:text-white">
+                <MessageSquare size={20} />
+              </a>
             </div>
           </div>
           <div>
             <h3 className="text-lg font-semibold">Quick Links</h3>
             <ul className="mt-4 space-y-2 text-sm">
-              <li><a href="#" className="text-gray-400 hover:text-white">About Us</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white">Services</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white">For Providers</a></li>
+              <li><Link href="/about" className="text-gray-400 hover:text-white">About Us</Link></li>
+              <li><Link href="/explore" className="text-gray-400 hover:text-white">Services</Link></li>
+              <li><Link href="/for-providers" className="text-gray-400 hover:text-white">For Providers</Link></li>
               <li><a href="#" className="text-gray-400 hover:text-white">Contact</a></li>
             </ul>
           </div>

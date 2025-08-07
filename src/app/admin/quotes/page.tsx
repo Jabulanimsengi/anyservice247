@@ -19,19 +19,6 @@ type Quote = {
     } | null;
 };
 
-type RawQuoteData = {
-    id: number;
-    created_at: string;
-    amount: number;
-    status: 'pending' | 'approved' | 'rejected';
-    bookings: {
-        services: { title: string }[] | null;
-        client: { full_name: string }[] | null;
-        provider: { full_name: string }[] | null;
-    }[] | null;
-};
-
-
 const AdminQuotesPage = () => {
     const [quotes, setQuotes] = useState<Quote[]>([]);
     const [loading, setLoading] = useState(true);
@@ -39,42 +26,52 @@ const AdminQuotesPage = () => {
 
     const fetchQuotes = useCallback(async () => {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('quotations')
-            .select(`
-                id,
-                created_at,
-                amount,
-                status,
-                bookings (
-                    services ( title ),
-                    client:profiles!user_id ( full_name ),
-                    provider:profiles!provider_id ( full_name )
-                )
-            `)
-            .order('created_at', { ascending: false });
+        try {
+            const { data, error } = await supabase
+                .from('quotations')
+                .select(`
+                    id,
+                    created_at,
+                    amount,
+                    status,
+                    bookings!inner (
+                        services ( title ),
+                        client:profiles!user_id ( full_name ),
+                        provider:profiles!provider_id ( full_name )
+                    )
+                `)
+                .order('created_at', { ascending: false });
 
-        if (error) {
+            if (error) {
+                // Throw the error to be caught by the catch block
+                throw error;
+            }
+
+            if (data) {
+                // Safely transform the data, now inside a try block
+                const formattedData = (data as any[]).map((rawQuote) => {
+                    const bookingData = rawQuote.bookings;
+                    return {
+                        id: rawQuote.id,
+                        created_at: rawQuote.created_at,
+                        amount: rawQuote.amount,
+                        status: rawQuote.status,
+                        bookings: bookingData ? {
+                            services: bookingData.services ? (Array.isArray(bookingData.services) ? bookingData.services[0] : bookingData.services) : null,
+                            client: bookingData.client ? (Array.isArray(bookingData.client) ? bookingData.client[0] : bookingData.client) : null,
+                            provider: bookingData.provider ? (Array.isArray(bookingData.provider) ? bookingData.provider[0] : bookingData.provider) : null,
+                        } : null,
+                    };
+                });
+                setQuotes(formattedData);
+            }
+        } catch (error: any) {
             addToast(`Error fetching quotes: ${error.message}`, 'error');
-            console.error(error);
-        } else {
-            const formattedData = data.map((rawQuote: RawQuoteData) => {
-                const bookingData = rawQuote.bookings ? rawQuote.bookings[0] : null;
-                return {
-                    id: rawQuote.id,
-                    created_at: rawQuote.created_at,
-                    amount: rawQuote.amount,
-                    status: rawQuote.status,
-                    bookings: bookingData ? {
-                        services: bookingData.services ? bookingData.services[0] : null,
-                        client: bookingData.client ? bookingData.client[0] : null,
-                        provider: bookingData.provider ? bookingData.provider[0] : null
-                    } : null
-                };
-            });
-            setQuotes(formattedData);
+            console.error("A critical error occurred while fetching quotes:", error);
+        } finally {
+            // This will run regardless of whether there was an error or not
+            setLoading(false);
         }
-        setLoading(false);
     }, [addToast]);
 
     useEffect(() => {
