@@ -154,8 +154,26 @@ const Search = () => {
       </div>
 
       {loading ? <Spinner /> : services.length > 0 ? (
-        <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {services.map((service) => <ServiceCard key={service.id} {...service} id={String(service.id)} businessName={service.profiles?.business_name} providerId={service.user_id} providerName={service.provider_name} rating={service.average_rating} reviewCount={service.review_count} imageUrls={service.image_urls} />)}
+        <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+          {services.map((service) => (
+            <ServiceCard
+              key={service.id}
+              variant="compact"
+              id={String(service.id)}
+              businessName={service.profiles?.business_name}
+              providerId={service.user_id}
+              title={service.title}
+              providerName={service.provider_name}
+              rating={service.average_rating}
+              reviewCount={service.review_count}
+              price={service.price}
+              call_out_fee={service.call_out_fee}
+              imageUrls={service.image_urls}
+              status={service.status}
+              locations={service.locations}
+              availability={service.availability}
+            />
+          ))}
         </div>
       ) : (
         <p>No services found matching your criteria.</p>
