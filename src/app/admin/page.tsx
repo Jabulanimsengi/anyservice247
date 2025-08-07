@@ -1,7 +1,7 @@
 // src/app/admin/page.tsx
 'use client';
 
-import { Users, MessageSquare, Edit, Flag, Server, ThumbsUp, FileText, FileBadge } from 'lucide-react';
+import { Users, MessageSquare, Edit, Flag, Server, ThumbsUp, FileText, FileBadge, Clapperboard } from 'lucide-react';
 import Link from 'next/link';
 import BackButton from '@/components/BackButton';
 import React from 'react';
@@ -77,6 +77,12 @@ const AdminDashboardPage = () => {
           icon={FileBadge} 
           title="Manage Quotes" 
           description="View all quotes sent between users and providers." 
+        />
+        <AdminCard 
+          href="/admin/statuses" 
+          icon={Clapperboard} 
+          title="Manage Statuses" 
+          description="View all statuses posted by providers." 
         />
       </div>
     </div>
