@@ -4,13 +4,12 @@ import { createClient } from '@/lib/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import EditServiceForm from '@/components/EditServiceForm';
 
-// Define the props for the Server Component page
-interface EditServicePageProps {
-  params: { id: string };
-}
-
 // This is an async Server Component that fetches data.
-export default async function EditServicePage({ params }: EditServicePageProps) {
+export default async function EditServicePage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const { id } = params;
   const supabase = await createClient();
 
