@@ -6,7 +6,8 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { useStore } from '@/lib/store';
 import Spinner from '@/components/ui/Spinner';
-import { handleProfileUpdateApproval } from '@/app/actions'; // Import the server action
+import { handleProfileUpdateApproval } from '@/app/actions';
+import BackButton from '@/components/BackButton';
 
 type ProfileUpdateRequest = {
   id: string;
@@ -54,13 +55,13 @@ const AdminProfileEditsPage = () => {
         addToast(result.error, 'error');
     } else {
         addToast(result.success || 'Action completed.', 'success');
-        // Refresh the list of pending requests
         fetchRequests();
     }
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <BackButton />
       <h1 className="text-3xl font-bold mb-6">Profile Edit Requests</h1>
       {loading ? <Spinner /> : requests.length === 0 ? (
         <p>No pending profile edit requests.</p>

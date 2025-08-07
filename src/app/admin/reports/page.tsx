@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import Spinner from '@/components/ui/Spinner';
 import Link from 'next/link';
+import BackButton from '@/components/BackButton';
 
 type Report = {
   id: number;
@@ -12,10 +13,10 @@ type Report = {
   reason: string;
   reporter_id: string;
   service_id: number;
-  services: { // Corrected: Expecting an array
+  services: {
     title: string;
   }[] | null;
-  profiles: { // Corrected: Expecting an array
+  profiles: {
     full_name: string;
   }[] | null;
 };
@@ -53,6 +54,7 @@ const AdminReportsPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <BackButton />
       <h1 className="text-3xl font-bold mb-6">User Reports</h1>
       {loading ? (
         <Spinner />

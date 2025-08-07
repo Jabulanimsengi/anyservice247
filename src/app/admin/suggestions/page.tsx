@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import Spinner from '@/components/ui/Spinner';
+import BackButton from '@/components/BackButton';
 
 type Suggestion = {
   id: number;
@@ -36,6 +37,7 @@ const AdminSuggestionsPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <BackButton />
       <h1 className="text-3xl font-bold mb-6">User Suggestions</h1>
       {loading ? (
         <Spinner />
