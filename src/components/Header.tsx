@@ -5,10 +5,11 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 import Link from 'next/link';
-import { Heart, Bell, Home, Menu, X } from 'lucide-react';
+import { Heart, Bell, Home, Menu, X, ChevronDown, ChevronRight } from 'lucide-react';
 import ConfirmLogoutModal from './ConfirmLogoutModal';
 import { useRouter, usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { locationsData } from '@/lib/locations'; // Import all location data
 
 const AuthModal = dynamic(() => import('./AuthModal'), { ssr: false });
 
@@ -26,11 +27,13 @@ const Header = () => {
   const [initialAuthView, setInitialAuthView] = useState<'signIn' | 'signUp'>('signIn');
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLocationDropdownOpen, setIsLocationDropdownOpen] = useState(false);
+  const [mobileSubMenu, setMobileSubMenu] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
   const getLinkClass = (path: string) => {
-    return pathname === path 
+    return pathname.startsWith(path) 
       ? "text-white bg-gray-700 rounded-md px-3 py-2 text-sm font-medium" 
       : "text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium transition-colors";
   };
@@ -101,6 +104,8 @@ const Header = () => {
     }
   };
 
+  const slugify = (text: string) => text.toLowerCase().replace(/\s+/g, '-');
+
   return (
     <>
       <header className="bg-brand-dark text-white shadow-md relative z-50">
@@ -116,6 +121,45 @@ const Header = () => {
           {/* --- DESKTOP NAVIGATION --- */}
           <div className="hidden md:flex items-center gap-x-6">
             <Link href="/explore" className={getLinkClass("/explore")}>Explore</Link>
+            
+            {/* Location Dropdown - FIX: Wrap button and menu in a div for hover */}
+            <div 
+              className="relative"
+              onMouseEnter={() => setIsLocationDropdownOpen(true)}
+              onMouseLeave={() => setIsLocationDropdownOpen(false)}
+            >
+              <button className={`${getLinkClass("/browse")} flex items-center gap-1`}>
+                Browse 
+                <ChevronDown size={16} />
+              </button>
+              {isLocationDropdownOpen && (
+                <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-50">
+                  {Object.entries(locationsData).map(([province, cities]) => (
+                    <div key={province} className="relative group/province">
+                       <div className="px-4 py-2 text-sm text-gray-700 flex justify-between items-center">
+                          <span>{province}</span>
+                          <ChevronRight size={16} />
+                       </div>
+                       {/* Sub-menu for cities */}
+                       <div className="absolute top-0 left-full ml-1 w-56 bg-white rounded-md shadow-lg py-1 hidden group-hover/province:block">
+                          {cities.map(city => (
+                            <Link 
+                              key={city} 
+                              href={`/browse/${slugify(province)}/${slugify(city)}`}
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              onClick={() => setIsLocationDropdownOpen(false)}
+                            >
+                              {city}
+                            </Link>
+                          ))}
+                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <Link href="/blog" className={getLinkClass("/blog")}>Blog</Link>
             <Link href="/academy" className={getLinkClass("/academy")}>Academy</Link>
             <Link href="/products" className={getLinkClass("/products")}>Products</Link>
             <Link href="/likes" className={getLinkClass("/likes")}>
@@ -172,6 +216,37 @@ const Header = () => {
             <div className="md:hidden absolute top-full left-0 w-full bg-brand-dark border-t border-gray-700 p-6 z-50">
                 <nav className="flex flex-col gap-y-4">
                     <Link href="/explore" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Explore</Link>
+                    
+                    {/* Mobile Location Sub-menu */}
+                    <div>
+                      <button onClick={() => setMobileSubMenu(mobileSubMenu === 'browse' ? null : 'browse')} className="w-full text-left text-gray-300 hover:text-white flex justify-between items-center">
+                        <span>Browse Locations</span>
+                        <ChevronDown size={16} className={`transition-transform ${mobileSubMenu === 'browse' ? 'rotate-180' : ''}`} />
+                      </button>
+                      {mobileSubMenu === 'browse' && (
+                        <div className="mt-2 pl-4 border-l-2 border-gray-700">
+                          {Object.entries(locationsData).map(([province, cities]) => (
+                            <div key={province} className="mt-2">
+                               <p className="text-gray-400 font-semibold">{province}</p>
+                               <div className="flex flex-col gap-y-2 mt-2 pl-2">
+                                  {cities.map(city => (
+                                    <Link 
+                                      key={city} 
+                                      href={`/browse/${slugify(province)}/${slugify(city)}`}
+                                      className="text-gray-300 hover:text-white"
+                                      onClick={() => setIsMobileMenuOpen(false)}
+                                    >
+                                      {city}
+                                    </Link>
+                                  ))}
+                               </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <Link href="/blog" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Blog</Link>
                     <Link href="/academy" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Academy</Link>
                     <Link href="/products" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Products</Link>
                     <Link href="/likes" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Liked Services</Link>

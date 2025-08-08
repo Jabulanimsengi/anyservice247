@@ -11,8 +11,12 @@ import { Inter } from 'next/font/google';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "HomeServices24/7 - Find Trusted Service Providers",
-  description: "Your one-stop marketplace for trusted home service providers.",
+  title: {
+    default: 'HomeService24/7 - Find Trusted Local Service Pros in South Africa',
+    template: '%s | HomeService24/7',
+  },
+  description: "Your one-stop marketplace for trusted, verified, and reviewed home service providers across South Africa. Get quotes for plumbing, electrical, and more.",
+  keywords: "home services, plumbers, electricians, handymen, local pros, South Africa, quotes",
 };
 
 export default function RootLayout({

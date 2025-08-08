@@ -1,63 +1,24 @@
-// src/middleware.ts
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { createClient } from '@/lib/utils/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  })
+  try {
+    // This `createClient` uses the request and response objects to handle cookies
+    const { supabase, response } = createClient(request)
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          })
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
-        },
+    // Refresh session if expired - required for Server Components
+    await supabase.auth.getSession()
+
+    return response
+  } catch (e) {
+    // If you are here, a Supabase client could not be created!
+    // This is likely because you have not set up environment variables.
+    return NextResponse.next({
+      request: {
+        headers: request.headers,
       },
-    }
-  )
-
-  await supabase.auth.getUser()
-
-  return response
+    })
+  }
 }
 
 export const config = {

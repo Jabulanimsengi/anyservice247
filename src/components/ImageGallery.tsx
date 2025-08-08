@@ -26,7 +26,7 @@ const ImageGallery = ({ imageUrls, itemName }: ImageGalleryProps) => {
                     >
                         <Image
                             src={url}
-                            alt={`${itemName} thumbnail ${index + 1}`}
+                            alt={`${itemName} - image ${index + 1}`}
                             fill
                             sizes="64px"
                             className="object-cover"

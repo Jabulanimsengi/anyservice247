@@ -4,9 +4,46 @@ import { notFound } from 'next/navigation'
 import BackButton from '@/components/BackButton'
 import ImageGallery from '@/components/ImageGallery'
 import { Button } from '@/components/ui/Button'
+import { Metadata } from 'next';
 
 interface ProductPageProps {
   params: { id: string }
+}
+
+// Type assertion for Supabase relationships
+type Store = { name: string };
+type ProductWithStore = {
+    name: string;
+    description: string | null;
+    stores: Store | Store[] | null; // Can be object or array
+};
+
+
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+    const { id } = params;
+    const supabase = await createClient();
+
+    const { data: product } = await supabase
+        .from('products')
+        .select('name, description, stores ( name )')
+        .eq('id', id)
+        .single<ProductWithStore>();
+
+    if (!product) {
+        return {
+            title: 'Product Not Found',
+            description: 'This product is no longer available.',
+        };
+    }
+    
+    // Safely access the store name
+    const store = Array.isArray(product.stores) ? product.stores[0] : product.stores;
+    const storeName = store?.name || 'a trusted supplier';
+
+    return {
+        title: `${product.name} | HomeService24/7`,
+        description: `Find ${product.name} from ${storeName} on our marketplace. ${product.description?.substring(0, 120)}...`,
+    };
 }
 
 const ProductPage = async ({ params }: ProductPageProps) => {
@@ -18,13 +55,16 @@ const ProductPage = async ({ params }: ProductPageProps) => {
   const supabase = await createClient()
   const { data: product, error } = await supabase
     .from('products')
-    .select('*')
+    .select('*, stores ( name )')
     .eq('id', id)
     .single()
 
   if (error || !product) {
     notFound()
   }
+
+  // Safely access the store name for rendering
+  const store = Array.isArray(product.stores) ? product.stores[0] : product.stores;
 
   return (
     <div className="bg-white">
@@ -34,6 +74,8 @@ const ProductPage = async ({ params }: ProductPageProps) => {
           <ImageGallery imageUrls={product.image_urls} itemName={product.name} />
           <div className="flex flex-col">
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-800">{product.name}</h1>
+             {/* Display the store name */}
+            <p className="mt-1 text-lg">from <span className="font-semibold text-blue-600">{store?.name || 'Supplier'}</span></p>
             <div className="my-6 border-t"></div>
             <div className="mb-6 rounded-lg border bg-gray-50 p-4">
               <div className="flex justify-between items-baseline">
