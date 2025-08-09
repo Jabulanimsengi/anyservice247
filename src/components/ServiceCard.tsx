@@ -114,9 +114,9 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
     router.push(`/provider/${providerId}`);
   };
 
-  // The 'variant' prop now primarily controls the layout on larger screens,
-  // while mobile will always use a compact, stacked layout.
   if (variant === 'compact') {
+    // This is the compact card used on the homepage, likes page, etc.
+    // It is already designed to be compact, so we'll keep it as is.
     return (
       <Link href={`/service/${id}`} passHref>
         <div className="group relative flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-all duration-300 hover:shadow-xl hover:ring-2 hover:ring-brand-teal h-full">
@@ -172,18 +172,17 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
     );
   }
 
-  // --- RESPONSIVE DEFAULT CARD ---
-  // This card will stack vertically on mobile and horizontally on screens `sm` and larger.
+  // --- NEW RESPONSIVE DEFAULT CARD (for Search Page, etc.) ---
   return (
-    <div className="group relative flex flex-col sm:flex-row max-w-sm sm:max-w-none w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md transition-all duration-300 hover:shadow-xl hover:ring-2 hover:ring-brand-teal h-full">
-      {/* Top Section - Image and Buttons */}
-      <div className="relative w-full sm:w-2/5 flex-shrink-0">
-        <Link href={`/service/${id}`} passHref className="relative block h-48 sm:h-full w-full">
+    <div className="group relative flex flex-col w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md transition-all duration-300 hover:shadow-xl hover:ring-2 hover:ring-brand-teal h-full">
+      {/* Image Section */}
+      <div className="relative w-full">
+        <Link href={`/service/${id}`} passHref className="relative block w-full aspect-video">
           <Image
             src={displayImage}
             alt={`Image for ${title}`}
             fill
-            sizes="(max-width: 640px) 100vw, 40vw"
+            sizes="100vw"
             className="object-cover"
           />
         </Link>
@@ -218,9 +217,9 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
         </div>
       </div>
       
-      {/* Bottom Section - Details */}
-      <div className="flex flex-grow flex-col p-4">
-        <h3 className="text-md font-bold tracking-tight text-gray-900 line-clamp-2">
+      {/* Details Section */}
+      <div className="flex flex-grow flex-col p-3"> {/* Reduced padding */}
+        <h3 className="text-base font-bold tracking-tight text-gray-900 line-clamp-2">
           <Link href={`/service/${id}`} className="hover:underline">
             {title}
           </Link>
@@ -230,13 +229,13 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
         </p>
         
         {locations && locations.length > 0 && (
-          <div className="mt-2 flex items-center gap-1 text-xs text-gray-500">
+          <div className="mt-1 flex items-center gap-1 text-xs text-gray-500"> {/* Tighter margin */}
             <MapPin size={14} />
             <span className="line-clamp-1">{locations.map(loc => loc.city).join(', ')}</span>
           </div>
         )}
 
-        <div className="mt-2 flex items-center">
+        <div className="mt-1 flex items-center"> {/* Tighter margin */}
           <Star className="h-4 w-4 text-yellow-400" fill="currentColor" />
           <span className="ml-1 mr-2 rounded bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800">
             {rating.toFixed(1)}
@@ -244,7 +243,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
           <span className="text-xs text-gray-600">({reviewCount} reviews)</span>
         </div>
 
-        <div className="mt-auto pt-4 flex items-center justify-start">
+        <div className="mt-auto pt-3 flex items-center justify-start"> {/* Tighter margin */}
           <Link href={`/service/${id}`} passHref>
             <Button size="sm">View Details</Button>
           </Link>

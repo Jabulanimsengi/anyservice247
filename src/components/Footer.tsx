@@ -7,7 +7,7 @@ import { Button } from './ui/Button';
 import { supabase } from '@/lib/supabase';
 import { useStore } from '@/lib/store';
 import Link from 'next/link';
-import { locationsData } from '@/lib/locations'; // Import all location data
+import { locationsData } from '@/lib/locations';
 
 // Self-contained WhatsApp SVG icon component
 const WhatsAppIcon = ({ size = 20, className = '' }: { size?: number, className?: string }) => (
@@ -45,7 +45,6 @@ const Footer = () => {
 
   const slugify = (text: string) => text.toLowerCase().replace(/\s+/g, '-');
 
-  // Define which provinces to feature in the footer
   const featuredProvinces = ["Gauteng", "Western Cape", "KwaZulu-Natal"];
 
   return (
@@ -66,12 +65,28 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Dynamically create a column for each featured province */}
-          {featuredProvinces.map(province => (
+          {/* --- COMPANY LINKS (UPDATED SECTION) --- */}
+          <div>
+              <h3 className="text-lg font-semibold">Company</h3>
+              <ul className="mt-4 space-y-2 text-sm">
+                  <li>
+                    <Link href="/about" className="text-gray-400 hover:text-white">About Us</Link>
+                  </li>
+                  <li>
+                    <Link href="/for-providers" className="text-gray-400 hover:text-white">For Service Providers</Link>
+                  </li>
+                  <li>
+                    <Link href="/blog" className="text-gray-400 hover:text-white">Blog</Link>
+                  </li>
+              </ul>
+          </div>
+          
+          {/* Browse Locations Section */}
+          {featuredProvinces.slice(0, 1).map(province => (
             <div key={province}>
               <h3 className="text-lg font-semibold">Browse {province}</h3>
               <ul className="mt-4 space-y-2 text-sm">
-                {locationsData[province]?.slice(0, 4).map(city => ( // Show top 4 cities
+                {locationsData[province]?.slice(0, 4).map(city => (
                   <li key={city}>
                     <Link href={`/browse/${slugify(province)}/${slugify(city)}`} className="text-gray-400 hover:text-white">{city}</Link>
                   </li>
@@ -79,10 +94,21 @@ const Footer = () => {
               </ul>
             </div>
           ))}
-
+           {featuredProvinces.slice(1, 2).map(province => (
+            <div key={province}>
+              <h3 className="text-lg font-semibold">Browse {province}</h3>
+              <ul className="mt-4 space-y-2 text-sm">
+                {locationsData[province]?.slice(0, 4).map(city => (
+                  <li key={city}>
+                    <Link href={`/browse/${slugify(province)}/${slugify(city)}`} className="text-gray-400 hover:text-white">{city}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
-        {/* Contact and Suggestions Section - Re-added */}
+        {/* Contact and Suggestions Section */}
         <div className="mt-10 pt-8 border-t border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
                 <h3 className="text-lg font-semibold">Contact Us</h3>

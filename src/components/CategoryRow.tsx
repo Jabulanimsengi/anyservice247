@@ -4,6 +4,7 @@
 import { useRef } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ServiceCard from './ServiceCard';
+import Link from 'next/link'; // Import Link
 
 type ServiceLocation = {
   province: string;
@@ -30,9 +31,10 @@ type Service = {
 interface CategoryRowProps {
   category: string;
   services: Service[];
+  viewAllLink?: string; // <-- Add this new optional prop
 }
 
-const CategoryRow: React.FC<CategoryRowProps> = ({ category, services }) => {
+const CategoryRow: React.FC<CategoryRowProps> = ({ category, services, viewAllLink }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -46,11 +48,15 @@ const CategoryRow: React.FC<CategoryRowProps> = ({ category, services }) => {
     }
   };
 
+  const finalViewAllLink = viewAllLink || `/search?category=${encodeURIComponent(category)}`;
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4 bg-gray-200 p-2 rounded-md">
-        <a href={`/search?category=${encodeURIComponent(category)}`} className="text-xl font-bold hover:underline">{category}</a>
-        <a href={`/search?category=${encodeURIComponent(category)}`} className="text-sm text-brand-teal hover:underline font-semibold">View All</a>
+        <h2 className="text-xl font-bold">{category}</h2>
+        <Link href={finalViewAllLink} className="text-sm text-brand-teal hover:underline font-semibold">
+          View All
+        </Link>
       </div>
       <div className="relative group">
         <button

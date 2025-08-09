@@ -39,7 +39,11 @@ const EmergencyServices = async () => {
   
   return (
     <div className="mb-8">
-        <CategoryRow category="Urgent Services" services={services as ServiceWithProvider[]} />
+        <CategoryRow 
+            category="Urgent Services" 
+            services={services as ServiceWithProvider[]} 
+            viewAllLink="/search?emergency=true" // <-- This is the new custom link
+        />
     </div>
   );
 };

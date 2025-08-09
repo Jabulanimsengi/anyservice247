@@ -11,18 +11,15 @@ import { locationsData, provinces } from '@/lib/locations';
 import { X } from 'lucide-react';
 import Image from 'next/image';
 import Spinner from '@/components/ui/Spinner';
+import { categories } from '@/lib/categories'; // <-- 1. Import the correct categories
 
 type ServiceLocation = {
   province: string;
   city: string;
 };
 
-const categories = [
-  "Plumbing", "Electrical", "Carpentry", "Painting", "Gardening",
-  "Cleaning", "Appliance Repair", "Roofing", "Pest Control", "Other"
-];
+// 2. The old, hardcoded category list has been removed from here.
 
-// Define a type for the initial data prop received from the server component
 type Service = {
     id: number;
     title: string;
@@ -41,7 +38,6 @@ interface EditServiceFormProps {
 const EditServiceForm = ({ initialData }: EditServiceFormProps) => {
   const router = useRouter();
   
-  // Initialize state from the props passed by the Server Component
   const [title, setTitle] = useState(initialData.title);
   const [description, setDescription] = useState(initialData.description || '');
   const [price, setPrice] = useState(String(initialData.price));
