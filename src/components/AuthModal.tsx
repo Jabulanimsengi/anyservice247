@@ -7,7 +7,7 @@ import { X } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { supabase } from '@/lib/supabase';
-import Link from 'next/link'; // Make sure Link is imported
+import Link from 'next/link';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -32,7 +32,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
   
   // State for both user and provider
   const [whatsapp, setWhatsapp] = useState('');
-  const [phone, setPhone] = useState(''); // Added for cellphone number
+  const [phone, setPhone] = useState('');
 
 
   useEffect(() => {
@@ -72,8 +72,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
       options: {
         data: {
           full_name: fullName,
+          // We still pass role here as metadata, which can be useful for triggers
           role: userType,
-          // We can pass metadata here, but profile updates are more robust
         },
       },
     });
@@ -81,13 +81,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
     if (error) {
       setError(error.message);
     } else if (data.user) {
+        // --- FIX IS HERE ---
+        // We now build the profileData object and explicitly include the role.
         let profileData: {
+            role: string; // Add role to the type definition
             whatsapp: string;
             phone: string;
             business_name?: string;
             registration_number?: string;
             office_email?: string;
         } = {
+            role: userType, // Explicitly set the role here
             whatsapp,
             phone,
         };
@@ -135,7 +139,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
         setRegNo('');
         setOfficeEmail('');
         setWhatsapp('');
-        setPhone(''); // Reset phone state
+        setPhone('');
     }, 300); // Delay to allow animation to finish
   }
 
