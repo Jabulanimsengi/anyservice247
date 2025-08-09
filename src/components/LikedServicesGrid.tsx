@@ -36,14 +36,17 @@ const LikedServicesGrid: React.FC<LikedServicesGridProps> = ({ initialServices }
   }, [likedServiceIds, initialServices]);
 
   if (services.length === 0) {
-    return <p>You haven&apos;t liked any services yet. Start Browse to find services you love!</p>;
+    return <p>You haven&apos;t liked any services yet. Start exploring to find services you love!</p>;
   }
 
   return (
-    <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    // --- THIS GRID LAYOUT IS UPDATED ---
+    <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
       {services.map((service) => (
         <ServiceCard
           key={service.id}
+          // --- THIS LINE IS ADDED ---
+          variant="compact"
           id={String(service.id)}
           providerId={service.user_id}
           title={service.title}
@@ -56,7 +59,7 @@ const LikedServicesGrid: React.FC<LikedServicesGridProps> = ({ initialServices }
           imageUrls={service.image_urls}
           status={service.status}
           locations={service.locations}
-          availability={service.availability} // Added the availability prop here
+          availability={service.availability}
         />
       ))}
     </div>
