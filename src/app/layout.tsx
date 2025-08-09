@@ -7,6 +7,7 @@ import LikesInitializer from "@/components/LikesInitializer";
 import ChatManager from "@/components/ChatManager";
 import type { Metadata } from "next";
 import { Inter } from 'next/font/google';
+import { SpeedInsights } from "@vercel/speed-insights/next"; // <-- 1. Add the import here
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -35,6 +36,7 @@ export default function RootLayout({
         </div>
         <ToastContainer />
         <ChatManager />
+        <SpeedInsights /> {/* <-- 2. Add the component here, before the closing </body> tag */}
       </body>
     </html>
   );
