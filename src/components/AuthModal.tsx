@@ -7,6 +7,7 @@ import { X } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { supabase } from '@/lib/supabase';
+import Link from 'next/link'; // Make sure Link is imported
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -183,6 +184,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
                     <form onSubmit={handleSignIn} className="space-y-4">
                       <Input id="email-in" type="email" placeholder="Email Address" required value={email} onChange={(e) => setEmail(e.target.value)} />
                       <Input id="password-in" type="password" placeholder="Password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                      
+                      <div className="text-right">
+                        <Link href="/forgot-password" onClick={handleClose} className="text-sm font-medium text-blue-600 hover:underline">
+                            Forgot Password?
+                        </Link>
+                      </div>
+                      
                       <Button type="submit" className="w-full" disabled={loading}>
                         {loading ? 'Signing In...' : 'Sign In'}
                       </Button>
