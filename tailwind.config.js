@@ -12,7 +12,23 @@ module.exports = {
         'brand-teal': '#00a896', // A vibrant teal/cyan
         'brand-blue': '#0284c7', // A slightly lighter blue for accents
       },
+      typography: (theme) => ({
+        DEFAULT: {
+          css: {
+            'h2, h3': {
+              color: theme('colors.brand-teal'), // Changed this line
+              marginTop: '1.5em', 
+              marginBottom: '0.5em',
+            },
+            strong: {
+              color: theme('colors.brand-dark'), 
+            },
+          },
+        },
+      }),
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/typography'),
+  ],
 };

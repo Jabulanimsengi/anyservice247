@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import BackButton from '@/components/BackButton';
 import Image from 'next/image';
+import ReactMarkdown from 'react-markdown';
 
 interface PostPageProps {
   params: { slug: string };
@@ -49,7 +50,8 @@ const PostPage = async ({ params }: PostPageProps) => {
         <div className="container mx-auto px-4 py-8 max-w-4xl">
             <BackButton />
             <article className="mt-8">
-                <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-4">{post.title}</h1>
+                {/* --- THIS LINE IS UPDATED --- */}
+                <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-4 text-brand-teal">{post.title}</h1>
                 <div className="flex items-center text-gray-500 mb-6">
                     <span>By {authorName}</span>
                     <span className="mx-2">&bull;</span>
@@ -70,7 +72,7 @@ const PostPage = async ({ params }: PostPageProps) => {
 
                 {/* Use prose for nice article formatting */}
                 <div className="prose lg:prose-xl max-w-none">
-                    {post.content}
+                    <ReactMarkdown>{post.content || ''}</ReactMarkdown>
                 </div>
             </article>
         </div>
