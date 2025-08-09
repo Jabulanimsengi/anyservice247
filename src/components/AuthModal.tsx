@@ -3,7 +3,7 @@
 
 import { Fragment, useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { X } from 'lucide-react';
+import { X, Eye, EyeOff } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { supabase } from '@/lib/supabase';
@@ -21,9 +21,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [userType, setUserType] = useState('user');
+  const [showPassword, setShowPassword] = useState(false);
   
   // State for provider fields
   const [businessName, setBusinessName] = useState('');
@@ -55,16 +57,49 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
       setError(error.message);
     } else {
       setMessage('Signed in successfully!');
-      onClose(); // Close modal on success
-      window.location.reload(); // Refresh to update session state
+      onClose();
+      window.location.reload();
     }
     setLoading(false);
   };
 
+  const validatePassword = (password: string) => {
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+    if (password.length < minLength) {
+        return `Password must be at least ${minLength} characters long.`;
+    }
+    if (!hasUpperCase) {
+        return 'Password must contain at least one uppercase letter.';
+    }
+    if (!hasLowerCase) {
+        return 'Password must contain at least one lowercase letter.';
+    }
+    if (!hasNumber) {
+        return 'Password must contain at least one number.';
+    }
+    if (!hasSpecialChar) {
+        return 'Password must contain at least one special character.';
+    }
+    return null;
+  };
+
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+    
+    const passwordValidationError = validatePassword(password);
+    if (passwordValidationError) {
+        setPasswordError(passwordValidationError);
+        return;
+    }
+    setPasswordError(null);
+    
+    setLoading(true);
 
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -72,7 +107,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
       options: {
         data: {
           full_name: fullName,
-          // We still pass role here as metadata, which can be useful for triggers
           role: userType,
         },
       },
@@ -81,17 +115,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
     if (error) {
       setError(error.message);
     } else if (data.user) {
-        // --- FIX IS HERE ---
-        // We now build the profileData object and explicitly include the role.
         let profileData: {
-            role: string; // Add role to the type definition
+            role: string;
             whatsapp: string;
             phone: string;
             business_name?: string;
             registration_number?: string;
             office_email?: string;
         } = {
-            role: userType, // Explicitly set the role here
+            role: userType,
             whatsapp,
             phone,
         };
@@ -122,14 +154,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
   const toggleForm = () => {
     setIsSigningIn(!isSigningIn);
     setError(null);
+    setPasswordError(null);
     setMessage(null);
   };
 
-  // Reset state when modal closes
   const handleClose = () => {
     onClose();
     setTimeout(() => {
         setError(null);
+        setPasswordError(null);
         setMessage(null);
         setEmail('');
         setPassword('');
@@ -140,7 +173,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
         setOfficeEmail('');
         setWhatsapp('');
         setPhone('');
-    }, 300); // Delay to allow animation to finish
+        setShowPassword(false);
+    }, 300);
   }
 
   return (
@@ -187,9 +221,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
                   {isSigningIn ? (
                     <form onSubmit={handleSignIn} className="space-y-4">
                       <Input id="email-in" type="email" placeholder="Email Address" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                      <Input id="password-in" type="password" placeholder="Password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                      <div className="relative">
+                        <Input id="password-in" type={showPassword ? 'text' : 'password'} placeholder="Password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3">
+                          {showPassword ? <EyeOff size={18} className="text-gray-500" /> : <Eye size={18} className="text-gray-500" />}
+                        </button>
+                      </div>
                       
-                      <div className="text-right">
+                      <div className="text-center">
                         <Link href="/forgot-password" onClick={handleClose} className="text-sm font-medium text-blue-600 hover:underline">
                             Forgot Password?
                         </Link>
@@ -214,9 +253,22 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
                       </div>
                       <Input id="name-up" type="text" placeholder="Full Name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
                       <Input id="email-up" type="email" placeholder="Email Address" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                      <Input id="password-up" type="password" placeholder="Password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                      <div className="relative">
+                        <Input id="password-up" type={showPassword ? 'text' : 'password'} placeholder="Password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3">
+                          {showPassword ? <EyeOff size={18} className="text-gray-500" /> : <Eye size={18} className="text-gray-500" />}
+                        </button>
+                      </div>
+
+                      {/* --- THIS IS THE NEW HELPER TEXT SECTION --- */}
+                      {passwordError ? (
+                          <p className="text-xs text-red-600">{passwordError}</p>
+                      ) : (
+                          <p className="text-xs text-gray-500">
+                              Requires 8+ characters, including an uppercase letter, a number, and a special character.
+                          </p>
+                      )}
                       
-                      {/* Fields for both user and provider */}
                       <Input id="whatsapp-up" type="tel" placeholder="WhatsApp Number" required value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
                       <Input id="phone-up" type="tel" placeholder="Cellphone Number" required value={phone} onChange={(e) => setPhone(e.target.value)} />
                       
