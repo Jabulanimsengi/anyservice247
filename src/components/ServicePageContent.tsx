@@ -45,20 +45,26 @@ const ServicePageContent = async ({ params }: { params: { id: string } }) => {
   const { data: { user } } = await supabase.auth.getUser();
   const isLoggedIn = !!user;
 
-  // --- THIS IS THE FIX FOR THE 404 ERROR ---
-  // Call the new RPC function to get a single service
+  // Call the RPC function to get a single service
   const { data: services, error: serviceError } = await supabase
     .rpc('get_service_by_id', {
         service_id_param: parseInt(id)
     });
   
-  const service = services?.[0]; // Get the first item from the returned array
+  const service = services?.[0];
 
   if (serviceError || !service) {
     console.error(`Error or no service found for ID ${id}:`, serviceError?.message);
     notFound();
   }
   
+  // --- FIX IS HERE: Add a second query to get the full provider profile, including availability ---
+  const { data: providerProfile } = await supabase
+    .from('profiles')
+    .select('phone, office_number, whatsapp, availability, business_name')
+    .eq('id', service.user_id)
+    .single();
+
   const { data: recommendedServices } = await supabase
     .from('service_with_ratings')
     .select('*, profiles(business_name)')
@@ -74,8 +80,6 @@ const ServicePageContent = async ({ params }: { params: { id: string } }) => {
     .order('created_at', { ascending: false });
 
   const handleReviewSubmitted = async () => { 'use server'; revalidatePath(`/service/${id}`); };
-
-  const providerProfile = service.profiles as { phone: string; office_number: string; whatsapp: string; availability: { [key: string]: { start: string; end: string; is24Hours: boolean } }; business_name: string; } | null
 
   const serviceSchema: ServiceSchema = {
     '@context': 'https://schema.org',
@@ -178,7 +182,7 @@ const ServicePageContent = async ({ params }: { params: { id: string } }) => {
                           <h2 className="text-2xl font-bold mb-4">Availability</h2>
                           {providerProfile?.availability ? (
                               <div className="space-y-2 text-sm">
-                                  {Object.entries(providerProfile.availability).map(([day, times]) => (
+                                  {Object.entries(providerProfile.availability).map(([day, times]: [string, any]) => (
                                       (times.start && times.end || times.is24Hours) &&
                                       <div key={day} className="grid grid-cols-3">
                                           <span className="font-semibold capitalize">{day}</span>
