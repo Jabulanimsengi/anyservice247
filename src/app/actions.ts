@@ -78,6 +78,57 @@ export async function handleProfileUpdateApproval(request: ProfileUpdateRequest,
 export async function deleteStatus(statusId: number, imageUrls: string[]) {
     const supabase = await createServerClientUtil();
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return { error: 'You must be logged in to perform this action.' };
+    }
+    const { data: adminProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+    
+    if (adminProfile?.role !== 'admin') {
+        return { error: 'Forbidden: You do not have permission.' };
+    }
+
+    if (imageUrls && imageUrls.length > 0) {
+        const supabaseAdmin = createAdminClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.SUPABASE_SERVICE_ROLE_KEY!
+        );
+        
+        const fileNames = imageUrls.map(url => {
+            const parts = url.split('/');
+            return parts.slice(parts.length - 2).join('/'); 
+        });
+        
+        const { error: storageError } = await supabaseAdmin.storage
+            .from('status-images')
+            .remove(fileNames);
+
+        if (storageError) {
+            console.error('Storage Error:', storageError.message);
+        }
+    }
+    
+    const { error: dbError } = await supabase
+        .from('status_updates')
+        .delete()
+        .eq('id', statusId);
+
+    if (dbError) {
+        return { error: `Failed to delete status: ${dbError.message}` };
+    }
+
+    revalidatePath('/admin/statuses');
+    return { success: 'Status deleted successfully!' };
+}
+
+// --- NEW FUNCTION TO DELETE A SERVICE ---
+export async function deleteService(serviceId: number, imageUrls: string[] | null) {
+    const supabase = await createServerClientUtil();
+
     // 1. Check if the current user is an admin
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -93,40 +144,42 @@ export async function deleteStatus(statusId: number, imageUrls: string[]) {
         return { error: 'Forbidden: You do not have permission.' };
     }
 
-    // 2. Delete the images from storage
+    // 2. Delete the images from storage if they exist
     if (imageUrls && imageUrls.length > 0) {
         const supabaseAdmin = createAdminClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
         
-        const fileNames = imageUrls.map(url => {
-            const parts = url.split('/');
-            // This logic assumes the file path in storage is the last two segments of the public URL
-            return parts.slice(parts.length - 2).join('/'); 
-        });
-        
-        const { error: storageError } = await supabaseAdmin.storage
-            .from('status-images') // Make sure this is your correct bucket name
-            .remove(fileNames);
+        // Extract file paths from the full URLs
+        const filePaths = imageUrls.map(url => {
+            const parts = url.split('/service-images/');
+            return parts.length > 1 ? parts[1] : '';
+        }).filter(path => path);
 
-        if (storageError) {
-            console.error('Storage Error:', storageError.message);
-            // We can proceed even if storage deletion fails, to ensure the status is removed from the UI
+        if (filePaths.length > 0) {
+            const { error: storageError } = await supabaseAdmin.storage
+                .from('service-images')
+                .remove(filePaths);
+
+            if (storageError) {
+                console.error('Storage Error:', storageError.message);
+                // Non-fatal error: Log it but proceed with deleting the database record
+            }
         }
     }
     
-    // 3. Delete the status record from the database
+    // 3. Delete the service record from the database
     const { error: dbError } = await supabase
-        .from('status_updates')
+        .from('services')
         .delete()
-        .eq('id', statusId);
+        .eq('id', serviceId);
 
     if (dbError) {
-        return { error: `Failed to delete status: ${dbError.message}` };
+        return { error: `Failed to delete service: ${dbError.message}` };
     }
 
     // 4. Revalidate the path to update the UI
-    revalidatePath('/admin/statuses');
-    return { success: 'Status deleted successfully!' };
+    revalidatePath('/admin/services');
+    return { success: 'Service deleted successfully!' };
 }

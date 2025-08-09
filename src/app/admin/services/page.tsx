@@ -9,22 +9,23 @@ import Spinner from '@/components/ui/Spinner';
 import BackButton from '@/components/BackButton';
 import ConfirmActionModal from '@/components/ConfirmActionModal';
 import { Input } from '@/components/ui/Input';
+import { deleteService } from '@/app/actions'; // <-- Import the new delete action
 
 type Service = {
   id: number;
   title: string;
   status: string;
   user_id: string;
+  image_urls: string[] | null; // <-- Add image_urls to the type
   profiles: {
     full_name: string;
-  }[] | null; // Corrected: Expecting an array
+  }[] | null;
 };
 
-// Define a type for the state that controls the modal
 type ModalState = {
   isOpen: boolean;
   service: Service | null;
-  action: 'approved' | 'rejected' | null;
+  action: 'approved' | 'rejected' | 'deleting' | null; // <-- Add 'deleting' action
 };
 
 const AdminServicesPage = () => {
@@ -35,9 +36,11 @@ const AdminServicesPage = () => {
   const [rejectionReason, setRejectionReason] = useState('');
 
   const fetchServices = useCallback(async () => {
+    setLoading(true);
+    // Select image_urls to pass to the delete function
     const { data, error } = await supabase
       .from('services')
-      .select(`id, title, status, user_id, profiles (full_name)`)
+      .select(`id, title, status, user_id, image_urls, profiles (full_name)`)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -53,20 +56,31 @@ const AdminServicesPage = () => {
     fetchServices();
   }, [fetchServices]);
 
-  // This function now just opens the modal with the correct context
-  const handleApprovalAction = (service: Service, newStatus: 'approved' | 'rejected') => {
-    setModalState({ isOpen: true, service, action: newStatus });
+  const handleActionClick = (service: Service, action: 'approved' | 'rejected' | 'deleting') => {
+    setModalState({ isOpen: true, service, action });
   };
   
   const closeModal = () => {
     setModalState({ isOpen: false, service: null, action: null });
-    setRejectionReason(''); // Reset reason on close
+    setRejectionReason('');
   }
 
-  // This function contains the logic that runs when the admin confirms the action in the modal
   const confirmAndProcessAction = async () => {
     const { service, action } = modalState;
     if (!service || !action) return;
+
+    // --- NEW --- Handle delete action
+    if (action === 'deleting') {
+        const result = await deleteService(service.id, service.image_urls);
+        if (result.error) {
+            addToast(result.error, 'error');
+        } else {
+            addToast(result.success!, 'success');
+            fetchServices(); // Refresh the list
+        }
+        closeModal();
+        return;
+    }
 
     try {
       const response = await fetch(`/api/admin/services/${service.id}`, {
@@ -92,16 +106,30 @@ const AdminServicesPage = () => {
       });
 
       addToast(`Service ${action} successfully!`, 'success');
-      fetchServices(); // Re-fetch data to show the latest status
+      fetchServices();
 
     } catch (err: unknown) {
       const error = err as Error;
       addToast(error.message, 'error');
       console.error(`Failed to ${action} service:`, error);
     } finally {
-      closeModal(); // Close the modal regardless of success or failure
+      closeModal();
     }
   };
+  
+  const getModalTitle = () => {
+    if (modalState.action === 'approved') return 'Confirm Service Approval';
+    if (modalState.action === 'rejected') return 'Confirm Service Rejection';
+    if (modalState.action === 'deleting') return 'Confirm Service Deletion';
+    return 'Confirm Action';
+  };
+
+  const getConfirmButtonText = () => {
+    if (modalState.action === 'approved') return 'Approve';
+    if (modalState.action === 'rejected') return 'Reject Service';
+    if (modalState.action === 'deleting') return 'Delete Permanently';
+    return 'Confirm';
+  }
 
   const getStatusBadge = (status: string) => {
     switch(status) {
@@ -117,11 +145,11 @@ const AdminServicesPage = () => {
         isOpen={modalState.isOpen}
         onClose={closeModal}
         onConfirm={confirmAndProcessAction}
-        title={`Confirm Service ${modalState.action === 'approved' ? 'Approval' : 'Rejection'}`}
-        confirmButtonText={modalState.action === 'approved' ? 'Approve' : 'Reject Service'}
-        confirmButtonVariant={modalState.action === 'rejected' ? 'destructive' : 'default'}
+        title={getModalTitle()}
+        confirmButtonText={getConfirmButtonText()}
+        confirmButtonVariant={modalState.action === 'rejected' || modalState.action === 'deleting' ? 'destructive' : 'default'}
       >
-        <p>Are you sure you want to {modalState.action} the service titled &quot;{modalState.service?.title}&quot;?</p>
+        <p>Are you sure you want to {modalState.action === 'deleting' ? 'permanently delete' : modalState.action} the service titled &quot;{modalState.service?.title}&quot;?</p>
         {modalState.action === 'rejected' && (
           <div className="mt-4">
             <label htmlFor="rejectionReason" className="block text-sm font-medium text-gray-700">Reason for Rejection (Optional)</label>
@@ -163,15 +191,20 @@ const AdminServicesPage = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                        {service.status === 'pending' && (
+                        {service.status === 'pending' ? (
                           <>
-                            <Button size="sm" onClick={() => handleApprovalAction(service, 'approved')}>
+                            <Button size="sm" onClick={() => handleActionClick(service, 'approved')}>
                                 Approve
                             </Button>
-                             <Button size="sm" variant="destructive" onClick={() => handleApprovalAction(service, 'rejected')}>
+                             <Button size="sm" variant="destructive" onClick={() => handleActionClick(service, 'rejected')}>
                                 Reject
                             </Button>
                           </>
+                        ) : (
+                          // --- NEW --- Add the delete button for all non-pending services
+                          <Button size="sm" variant="destructive" onClick={() => handleActionClick(service, 'deleting')}>
+                            Delete
+                          </Button>
                         )}
                     </td>
                   </tr>
