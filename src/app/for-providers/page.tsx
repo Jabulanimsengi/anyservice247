@@ -16,29 +16,28 @@ const ForProvidersPage = () => {
             
             <div className="prose max-w-none text-gray-700">
                 <p>
-                    We believe in a simple, transparent, and mutually beneficial partnership. Our platform is designed to bring you genuine, high-quality leads, allowing you to focus on what you do best: delivering exceptional service.
+                    We believe in a simple, transparent, and mutually beneficial partnership. Our platform is designed to bring you genuine, high-quality leads, allowing you to focus on what you do best: delivering exceptional service. To ensure our platform is sustainable and effectively marketed, we've developed flexible options that work for your business.
                 </p>
 
-                <h3 className="text-xl font-semibold text-brand-dark mt-6">Transparent Pricing</h3>
+                <h3 className="text-xl font-semibold text-brand-dark mt-8">Flexible Partnership Tiers</h3>
                 <p>
-                    To ensure our platform remains active, secure, and is effectively advertised across the country, we have a straightforward service fee structure.
+                    Choose the plan that best suits your business goals. Our tiers are designed to reward our most active and committed partners.
                 </p>
                 <ul>
-                    <li><strong>Initial Setup & First Month:</strong> A once-off payment of **R209** is required to build your professional profile, verify your details, and list your services for the first month.</li>
-                    <li><strong>Monthly Subscription:</strong> After the first month, a flat fee of **R129 per month** keeps your profile active and advertised to thousands of potential clients.</li>
+                    <li>
+                        <strong>Basic Tier:</strong> Perfect for getting started. For a lower monthly fee of <strong>R99</strong>, you get full access to the platform with a standard commission of <strong>18%</strong> on successfully completed jobs.
+                    </li>
+                    <li>
+                        <strong>Premium Tier:</strong> Designed for established businesses. For a monthly fee of <strong>R249</strong>, you benefit from a significantly reduced commission of just <strong>10%</strong> on successfully completed jobs, maximizing your earnings.
+                    </li>
                 </ul>
                 <p>
-                    This monthly contribution is vital for the platform's sustainability. It allows us to pay our dedicated software engineers, maintain the technology, and run extensive marketing campaigns throughout South Africa to bring you a steady stream of job requests.
-                </p>
-
-                <h3 className="text-xl font-semibold text-brand-dark mt-6">Commission on Successful Jobs</h3>
-                <p>
-                    We are committed to a fair partnership. While we are still finalizing our commission structure, our goal is to implement a small, competitive rate on successfully completed jobs. This ensures we only succeed when you do. We are in the process of negotiating these rates with our partners to find a model that works for everyone.
+                    These contributions are vital for the platform's health. They allow us to pay our dedicated software engineers, maintain our technology, and run extensive marketing campaigns across South Africa to bring you a steady stream of job requests.
                 </p>
 
                 <h3 className="text-xl font-semibold text-brand-dark mt-6">Getting Started</h3>
                 <p>
-                    As we are in our early stages, our payment process is direct and personal. Once your account has been created and your services are ready to be listed, we will send our banking details for you to make the initial payment of R209. We accept various payment methods and will work with you to make the process as smooth as possible.
+                    As we are in our early stages, our payment process is direct and personal. Once your account has been created and your services are ready to be listed, we will send our banking details for you to make the initial payment for your chosen tier. We accept various payment methods and will work with you to make the process as smooth as possible.
                 </p>
             </div>
 
