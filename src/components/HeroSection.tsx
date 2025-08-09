@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { categories } from '@/lib/categories';
-import { ShieldCheck, CalendarCheck, MessageSquare, BadgeDollarSign } from 'lucide-react'; // Added BadgeDollarSign
+import { ShieldCheck, CalendarCheck, MessageSquare, BadgeDollarSign } from 'lucide-react';
 import TypingEffect from './TypingEffect';
 
 const HeroSection = () => {
@@ -129,24 +129,25 @@ const HeroSection = () => {
             )}
           </div>
         </div>
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            <div className="p-6 bg-white rounded-lg shadow-md border">
+        
+        {/* --- THIS SECTION IS UPDATED --- */}
+        <div className="mt-8 flex gap-4 overflow-x-auto pb-4 md:grid md:grid-cols-4 md:gap-8 scrollbar-hide">
+            <div className="flex-shrink-0 w-64 md:w-auto p-6 bg-white rounded-lg shadow-md border text-center">
                 <ShieldCheck className="mx-auto h-10 w-10 text-brand-teal" />
                 <h3 className="mt-4 text-lg font-semibold text-brand-dark">Verified Professionals</h3>
                 <p className="mt-2 text-sm text-gray-600">Every service provider is vetted for quality and reliability.</p>
             </div>
-            <div className="p-6 bg-white rounded-lg shadow-md border">
+            <div className="flex-shrink-0 w-64 md:w-auto p-6 bg-white rounded-lg shadow-md border text-center">
                 <CalendarCheck className="mx-auto h-10 w-10 text-brand-teal" />
                 <h3 className="mt-4 text-lg font-semibold text-brand-dark">Easy Scheduling</h3>
                 <p className="mt-2 text-sm text-gray-600">Book and manage appointments directly on our platform.</p>
             </div>
-            <div className="p-6 bg-white rounded-lg shadow-md border">
+            <div className="flex-shrink-0 w-64 md:w-auto p-6 bg-white rounded-lg shadow-md border text-center">
                 <MessageSquare className="mx-auto h-10 w-10 text-brand-teal" />
                 <h3 className="mt-4 text-lg font-semibold text-brand-dark">Direct Communication</h3>
                 <p className="mt-2 text-sm text-gray-600">Chat with providers to get quotes and discuss your needs.</p>
             </div>
-            {/* --- NEW TRANSPARENCY CARD --- */}
-            <div className="p-6 bg-white rounded-lg shadow-md border">
+            <div className="flex-shrink-0 w-64 md:w-auto p-6 bg-white rounded-lg shadow-md border text-center">
                 <BadgeDollarSign className="mx-auto h-10 w-10 text-brand-teal" />
                 <h3 className="mt-4 text-lg font-semibold text-brand-dark">Transparent Pricing</h3>
                 <p className="mt-2 text-sm text-gray-600">No hidden fees. See rates upfront and get clear quotes.</p>
