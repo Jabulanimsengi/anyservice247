@@ -70,7 +70,7 @@ const CategoryRow: React.FC<CategoryRowProps> = ({ category, services, viewAllLi
           className="flex overflow-x-auto space-x-4 pb-4 scrollbar-hide"
         >
           {services.map((service) => (
-            <div key={service.id} className="flex-shrink-0 w-48 sm:w-56">
+            <div key={service.id} className="flex-shrink-0 w-[45%] sm:w-[30%] md:w-[23%] lg:w-[19%]">
               <ServiceCard
                 variant="compact"
                 id={String(service.id)}

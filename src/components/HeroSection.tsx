@@ -74,7 +74,7 @@ const HeroSection = () => {
 
   return (
     <section className="bg-gray-100">
-      <div className="container mx-auto px-4 pt-16 pb-8">
+      <div className="container mx-auto px-4 pt-16 pb-4">
         <div className="rounded-lg bg-brand-dark p-6 text-center text-white md:p-12">
           <h1 className="text-3xl sm:text-5xl font-bold leading-tight h-28 sm:h-auto">
             Find Verified Pros for Your 
@@ -130,7 +130,6 @@ const HeroSection = () => {
           </div>
         </div>
         
-        {/* --- THIS SECTION IS UPDATED --- */}
         <div className="mt-8 flex gap-4 overflow-x-auto pb-4 md:grid md:grid-cols-4 md:gap-8 scrollbar-hide">
             <div className="flex-shrink-0 w-64 md:w-auto p-6 bg-white rounded-lg shadow-md border text-center">
                 <ShieldCheck className="mx-auto h-10 w-10 text-brand-teal" />

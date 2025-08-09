@@ -26,7 +26,7 @@ export default function Home() {
       <Suspense fallback={null}>
         <StatusFeed />
       </Suspense>
-      <div className="sticky top-0 z-40 bg-gray-100/95 backdrop-blur-sm py-4">
+      <div className="sticky top-0 z-40 bg-gray-100/95 backdrop-blur-sm py-2">
         <div className="container mx-auto px-4">
           <SearchFilters />
           <div className="mt-4 text-center">

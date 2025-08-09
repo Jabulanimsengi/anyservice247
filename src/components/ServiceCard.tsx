@@ -4,7 +4,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import { Star, Heart, MapPin, MessageSquare, Clock } from 'lucide-react';
+import { Star, Heart, MapPin, MessageSquare, Clock, Eye } from 'lucide-react';
 import VerifiedBadge from './VerifiedBadge';
 import { useStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
@@ -115,8 +115,6 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
   };
 
   if (variant === 'compact') {
-    // This is the compact card used on the homepage, likes page, etc.
-    // It is already designed to be compact, so we'll keep it as is.
     return (
       <Link href={`/service/${id}`} passHref>
         <div className="group relative flex flex-col overflow-hidden rounded-lg border bg-white shadow-sm transition-all duration-300 hover:shadow-xl hover:ring-2 hover:ring-brand-teal h-full">
@@ -156,6 +154,13 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
               sizes="(max-width: 768px) 33vw, 12vw"
               className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
+            {/* --- HOVER OVERLAY UPDATED HERE --- */}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                <div className="flex items-center gap-2 rounded-md bg-brand-teal px-3 py-1.5 text-xs font-semibold text-white">
+                    <Eye size={16} />
+                    <span>View Details</span>
+                </div>
+            </div>
           </div>
           <div className="p-2 flex-grow flex flex-col">
             <h3 className="text-sm font-bold tracking-tight text-gray-900 line-clamp-1">{title}</h3>
@@ -172,10 +177,8 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
     );
   }
 
-  // --- NEW RESPONSIVE DEFAULT CARD (for Search Page, etc.) ---
   return (
     <div className="group relative flex flex-col w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md transition-all duration-300 hover:shadow-xl hover:ring-2 hover:ring-brand-teal h-full">
-      {/* Image Section */}
       <div className="relative w-full">
         <Link href={`/service/${id}`} passHref className="relative block w-full aspect-video">
           <Image
@@ -185,8 +188,14 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
             sizes="100vw"
             className="object-cover"
           />
+           {/* --- HOVER OVERLAY UPDATED HERE --- */}
+           <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                <div className="flex items-center gap-2 rounded-md bg-brand-teal px-4 py-2 text-sm font-semibold text-white">
+                    <Eye size={18} />
+                    <span>View Details</span>
+                </div>
+            </div>
         </Link>
-        {/* Badges */}
         <div className="absolute top-2 left-2 z-10 flex flex-col gap-y-2">
             {status === 'approved' && <VerifiedBadge />}
             {is24HourService() && (
@@ -195,7 +204,6 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
                 </div>
             )}
         </div>
-        {/* Action Buttons */}
         <div className="absolute top-2 right-2 z-10 flex flex-col gap-2">
             <button
                 onClick={handleLike}
@@ -217,8 +225,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
         </div>
       </div>
       
-      {/* Details Section */}
-      <div className="flex flex-grow flex-col p-3"> {/* Reduced padding */}
+      <div className="flex flex-grow flex-col p-3">
         <h3 className="text-base font-bold tracking-tight text-gray-900 line-clamp-2">
           <Link href={`/service/${id}`} className="hover:underline">
             {title}
@@ -229,13 +236,13 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
         </p>
         
         {locations && locations.length > 0 && (
-          <div className="mt-1 flex items-center gap-1 text-xs text-gray-500"> {/* Tighter margin */}
+          <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
             <MapPin size={14} />
             <span className="line-clamp-1">{locations.map(loc => loc.city).join(', ')}</span>
           </div>
         )}
 
-        <div className="mt-1 flex items-center"> {/* Tighter margin */}
+        <div className="mt-1 flex items-center">
           <Star className="h-4 w-4 text-yellow-400" fill="currentColor" />
           <span className="ml-1 mr-2 rounded bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800">
             {rating.toFixed(1)}
@@ -243,7 +250,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
           <span className="text-xs text-gray-600">({reviewCount} reviews)</span>
         </div>
 
-        <div className="mt-auto pt-3 flex items-center justify-start"> {/* Tighter margin */}
+        <div className="mt-auto pt-3 flex items-center justify-start">
           <Link href={`/service/${id}`} passHref>
             <Button size="sm">View Details</Button>
           </Link>
