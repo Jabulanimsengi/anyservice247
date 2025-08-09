@@ -114,7 +114,8 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
     router.push(`/provider/${providerId}`);
   };
 
-  // Compact Card Variant
+  // --- THIS IS THE COMPACT CARD ---
+  // It is now used as the default on mobile and for the `compact` variant
   if (variant === 'compact') {
     return (
       <Link href={`/service/${id}`} passHref>
@@ -173,10 +174,11 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
       </Link>
     );
   }
-
-  // Default (Larger) Card Variant
+  
+  // --- THIS IS THE FULL-SIZE CARD FOR DESKTOP ---
+  // The layout is now responsive, stacking on mobile and going side-by-side on larger screens.
   return (
-    <div className="group relative flex max-w-sm flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md transition-all duration-300 hover:shadow-xl hover:ring-2 hover:ring-brand-teal h-full">
+    <div className="group relative flex flex-col sm:flex-row max-w-sm sm:max-w-none w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md transition-all duration-300 hover:shadow-xl hover:ring-2 hover:ring-brand-teal h-full">
       {status === 'approved' && (
         <div className="absolute top-2 right-2 z-10">
           <VerifiedBadge />
@@ -187,7 +189,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
             <Clock size={14} className="mr-1"/> 24/7
         </div>
       )}
-      <div className="absolute top-10 left-2 z-10 flex flex-col gap-2">
+      <div className="absolute top-10 left-2 z-10 flex flex-row sm:flex-col gap-2">
         <button
           onClick={handleLike}
           disabled={isLiking}
@@ -206,16 +208,14 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
             </button>
         )}
       </div>
-      <Link href={`/service/${id}`} passHref>
-        <div className="relative h-48 w-full cursor-pointer overflow-hidden">
-          <Image
-            src={displayImage}
-            alt={`Image for ${title}`}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-        </div>
+      <Link href={`/service/${id}`} passHref className="relative h-48 sm:h-auto w-full sm:w-2/5 flex-shrink-0">
+        <Image
+          src={displayImage}
+          alt={`Image for ${title}`}
+          fill
+          sizes="(max-width: 640px) 100vw, 40vw"
+          className="object-cover"
+        />
       </Link>
       <div className="flex flex-grow flex-col p-4">
         <h3 className="text-md font-bold tracking-tight text-gray-900 line-clamp-2">
