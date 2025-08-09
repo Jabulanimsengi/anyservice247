@@ -35,7 +35,8 @@ const AdminUsersPage = () => {
   const fetchProfiles = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/users');
+      // Add cache-busting parameter to ensure fresh data
+      const response = await fetch('/api/admin/users', { cache: 'no-store' });
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to fetch user data.');
@@ -83,9 +84,24 @@ const AdminUsersPage = () => {
   };
 
   const handleDeleteUser = async (userId: string, fullName: string) => {
-    if (window.confirm(`Are you sure you want to PERMANENTLY DELETE the user "${fullName}"?`)) {
-      addToast("User deletion should be handled via a secure server-side function.", 'error');
-      console.log(`Request to delete user: ${userId}`);
+    if (window.confirm(`Are you sure you want to PERMANENTLY DELETE the user "${fullName}"? This will remove their authentication and profile data.`)) {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error("Authentication error. Please log in again.");
+
+            const response = await supabase.functions.invoke('delete-user', {
+                body: { userId },
+            });
+
+            if (response.error) throw response.error;
+            
+            addToast(`User "${fullName}" deleted successfully.`, 'success');
+            fetchProfiles(); // Re-fetch the user list
+        } catch (err: unknown) {
+            const error = err as Error;
+            addToast(`Error deleting user: ${error.message}`, 'error');
+            console.error(error);
+        }
     }
   };
 
