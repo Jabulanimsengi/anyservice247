@@ -1,21 +1,16 @@
 // src/app/blog/page.tsx
-'use client'; // <-- Add this to make it a Client Component
+'use client'; // <-- This makes it a Client Component
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase'; // <-- Use the client-side supabase
+import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import BackButton from '@/components/BackButton';
-import { Metadata } from 'next';
-import { Button } from '@/components/ui/Button'; // <-- Import Button
-import Spinner from '@/components/ui/Spinner';   // <-- Import Spinner
-
-// You can't use generateMetadata in a Client Component,
-// so we manage the title in the RootLayout or a static metadata object.
-// We'll keep this simple for now.
+// import { Metadata } from 'next'; // <-- THIS LINE IS REMOVED
+import { Button } from '@/components/ui/Button';
+import Spinner from '@/components/ui/Spinner';
 
 const POSTS_PER_PAGE = 4;
 
-// Define the type for a single post
 type Post = {
   title: string;
   slug: string;

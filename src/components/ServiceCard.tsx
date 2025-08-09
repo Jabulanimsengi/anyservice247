@@ -114,8 +114,8 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
     router.push(`/provider/${providerId}`);
   };
 
-  // --- THIS IS THE COMPACT CARD ---
-  // It is now used as the default on mobile and for the `compact` variant
+  // The 'variant' prop now primarily controls the layout on larger screens,
+  // while mobile will always use a compact, stacked layout.
   if (variant === 'compact') {
     return (
       <Link href={`/service/${id}`} passHref>
@@ -156,9 +156,6 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
               sizes="(max-width: 768px) 33vw, 12vw"
               className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                <Button size="sm">View Details</Button>
-            </div>
           </div>
           <div className="p-2 flex-grow flex flex-col">
             <h3 className="text-sm font-bold tracking-tight text-gray-900 line-clamp-1">{title}</h3>
@@ -174,49 +171,54 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
       </Link>
     );
   }
-  
-  // --- THIS IS THE FULL-SIZE CARD FOR DESKTOP ---
-  // The layout is now responsive, stacking on mobile and going side-by-side on larger screens.
+
+  // --- RESPONSIVE DEFAULT CARD ---
+  // This card will stack vertically on mobile and horizontally on screens `sm` and larger.
   return (
     <div className="group relative flex flex-col sm:flex-row max-w-sm sm:max-w-none w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-md transition-all duration-300 hover:shadow-xl hover:ring-2 hover:ring-brand-teal h-full">
-      {status === 'approved' && (
-        <div className="absolute top-2 right-2 z-10">
-          <VerifiedBadge />
+      {/* Top Section - Image and Buttons */}
+      <div className="relative w-full sm:w-2/5 flex-shrink-0">
+        <Link href={`/service/${id}`} passHref className="relative block h-48 sm:h-full w-full">
+          <Image
+            src={displayImage}
+            alt={`Image for ${title}`}
+            fill
+            sizes="(max-width: 640px) 100vw, 40vw"
+            className="object-cover"
+          />
+        </Link>
+        {/* Badges */}
+        <div className="absolute top-2 left-2 z-10 flex flex-col gap-y-2">
+            {status === 'approved' && <VerifiedBadge />}
+            {is24HourService() && (
+                <div className="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center w-fit">
+                    <Clock size={14} className="mr-1"/> 24/7
+                </div>
+            )}
         </div>
-      )}
-      {is24HourService() && (
-        <div className="absolute top-2 left-2 z-10 bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full flex items-center">
-            <Clock size={14} className="mr-1"/> 24/7
-        </div>
-      )}
-      <div className="absolute top-10 left-2 z-10 flex flex-row sm:flex-col gap-2">
-        <button
-          onClick={handleLike}
-          disabled={isLiking}
-          className="rounded-full bg-white/70 p-2 text-gray-600 backdrop-blur-sm transition-colors hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
-          aria-label="Like service"
-        >
-          <Heart size={20} fill={isLiked ? '#ef4444' : 'none'} className={isLiked ? 'text-red-500' : ''} />
-        </button>
-        {userRole !== 'provider' && userRole !== 'admin' && (
+        {/* Action Buttons */}
+        <div className="absolute top-2 right-2 z-10 flex flex-col gap-2">
             <button
-            onClick={handleStartChat}
-            className="rounded-full bg-white/70 p-2 text-gray-600 backdrop-blur-sm transition-colors hover:text-brand-blue"
-            aria-label="Message provider"
+                onClick={handleLike}
+                disabled={isLiking}
+                className="rounded-full bg-white/70 p-2 text-gray-600 backdrop-blur-sm transition-colors hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                aria-label="Like service"
             >
-            <MessageSquare size={20} />
+                <Heart size={20} fill={isLiked ? '#ef4444' : 'none'} className={isLiked ? 'text-red-500' : ''} />
             </button>
-        )}
+            {userRole !== 'provider' && userRole !== 'admin' && (
+                <button
+                    onClick={handleStartChat}
+                    className="rounded-full bg-white/70 p-2 text-gray-600 backdrop-blur-sm transition-colors hover:text-brand-blue"
+                    aria-label="Message provider"
+                >
+                    <MessageSquare size={20} />
+                </button>
+            )}
+        </div>
       </div>
-      <Link href={`/service/${id}`} passHref className="relative h-48 sm:h-auto w-full sm:w-2/5 flex-shrink-0">
-        <Image
-          src={displayImage}
-          alt={`Image for ${title}`}
-          fill
-          sizes="(max-width: 640px) 100vw, 40vw"
-          className="object-cover"
-        />
-      </Link>
+      
+      {/* Bottom Section - Details */}
       <div className="flex flex-grow flex-col p-4">
         <h3 className="text-md font-bold tracking-tight text-gray-900 line-clamp-2">
           <Link href={`/service/${id}`} className="hover:underline">
