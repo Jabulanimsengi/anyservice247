@@ -9,7 +9,7 @@ import type { Metadata } from "next";
 import { Inter } from 'next/font/google';
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/react";
-import NavigationSpinner from "@/components/NavigationSpinner"; // Import the new component
+import NavigationSpinner from "@/components/NavigationSpinner";
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -20,6 +20,9 @@ export const metadata: Metadata = {
   },
   description: "Your one-stop marketplace for trusted, verified, and reviewed home service providers across South Africa. Get quotes for plumbing, electrical, and more.",
   keywords: "home services, plumbers, electricians, handymen, local pros, South Africa, quotes",
+  verification: {
+    google: 'yznhIc3wonCMW8Cz5ugA-0SL_i6JRMUiDpbePlm5N7M', // <-- Updated Verification Code
+  },
 };
 
 export default function RootLayout({
@@ -31,7 +34,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} bg-gray-100`}>
         <LikesInitializer />
-        <NavigationSpinner /> {/* Add the spinner component here */}
+        <NavigationSpinner />
         <div className="flex min-h-screen flex-col">
           <Header />
           <main className="flex-grow">{children}</main>
