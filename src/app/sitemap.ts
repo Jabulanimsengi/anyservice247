@@ -4,7 +4,7 @@ import { createClient } from '@/lib/utils/supabase/server';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const supabase = await createClient();
-  const siteUrl = 'https://www.homeservice247.co.za'; // Replace with your actual domain
+  const siteUrl = 'https://homeservice247.vercel.app'; // Updated domain
 
   // Get all services
   const { data: services } = await supabase.from('services').select('id, created_at');

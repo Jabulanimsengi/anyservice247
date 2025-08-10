@@ -2,7 +2,7 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const siteUrl = 'https://www.homeservice247.co.za'; // Replace with your actual domain
+  const siteUrl = 'https://homeservice247.vercel.app'; // Updated domain
 
   return {
     rules: {
