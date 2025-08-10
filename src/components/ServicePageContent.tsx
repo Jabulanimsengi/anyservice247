@@ -10,6 +10,7 @@ import MessageProviderButton from './MessageProviderButton';
 import ReportButton from './ReportButton';
 import CategoryRow from './CategoryRow';
 import { notFound } from 'next/navigation';
+import ExpandableSection from './ExpandableSection';
 
 type ServiceSchema = {
     '@context': string;
@@ -58,7 +59,6 @@ const ServicePageContent = async ({ params }: { params: { id: string } }) => {
     notFound();
   }
   
-  // --- FIX IS HERE: Add a second query to get the full provider profile, including availability ---
   const { data: providerProfile } = await supabase
     .from('profiles')
     .select('phone, office_number, whatsapp, availability, business_name')
@@ -129,57 +129,44 @@ const ServicePageContent = async ({ params }: { params: { id: string } }) => {
                   <div className="flex flex-col">
                       <h1 className="text-2xl lg:text-3xl font-bold text-gray-800">{service.title}</h1>
                       <p className="mt-1 text-lg">by <Link href={`/provider/${service.user_id}`} className="font-semibold text-blue-600 hover:underline">{(providerProfile?.business_name || service.provider_name) ?? 'Anonymous'}</Link></p>
+                      
                       <div className="my-6 border-t"></div>
-                      
-                      <div className="mb-6 rounded-lg border bg-gray-50 p-4">
-                          <h3 className="text-xl font-semibold mb-2">Applicable Fees</h3>
-                          <div className="space-y-2">
-                              <div className="flex justify-between items-baseline">
-                                  <span className="text-gray-600">Hourly Rate (from)</span>
-                                  <span className="text-2xl font-bold text-gray-900">R{Number(service.price).toFixed(2)}</span>
-                              </div>
-                              {service.call_out_fee > 0 && (
-                                  <div className="flex justify-between items-baseline">
-                                      <span className="text-gray-600">Call-Out Fee</span>
-                                      <span className="text-lg font-semibold text-gray-800">R{Number(service.call_out_fee).toFixed(2)}</span>
-                                  </div>
-                              )}
-                          </div>
-                      </div>
 
-                      <div className="prose max-w-none mb-4">
-                          <h2 className="text-xl font-semibold">About this service</h2>
-                          <p>{service.description || 'No description provided.'}</p>
-                      </div>
+                      <div className="space-y-2">
+                        
+                        <ExpandableSection title="About This Service">
+                            <p className="text-sm text-gray-600">{service.description || 'No description provided.'}</p>
+                        </ExpandableSection>
 
-                      {service.locations && service.locations.length > 0 && (
-                          <div className="mb-6">
-                              <h3 className="text-xl font-semibold mb-2">Service Areas</h3>
-                              <div className="flex flex-wrap gap-2">
-                                  {service.locations.map((loc: {city: string, province: string}, index: number) => (
-                                      <div key={`${loc.city}-${index}`} className="flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
-                                          <MapPin size={14} className="mr-2" />
-                                          {loc.city}, {loc.province}
-                                      </div>
-                                  ))}
-                              </div>
-                          </div>
-                      )}
-                      
-                      <ServiceInteraction 
-                        serviceId={id} 
-                        serviceProviderId={service.user_id} 
-                        onReviewSubmitted={handleReviewSubmitted}
-                        availability={providerProfile?.availability}
-                      />
+                        <ExpandableSection title="Applicable Fees">
+                            <div className="space-y-2 text-sm">
+                                <div className="flex justify-between items-baseline">
+                                    <span className="text-gray-600">Hourly Rate (from)</span>
+                                    <span className="font-bold text-gray-900">R{Number(service.price).toFixed(2)}</span>
+                                </div>
+                                {service.call_out_fee > 0 && (
+                                    <div className="flex justify-between items-baseline">
+                                        <span className="text-gray-600">Call-Out Fee</span>
+                                        <span className="font-semibold text-gray-800">R{Number(service.call_out_fee).toFixed(2)}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </ExpandableSection>
+                        
+                        {service.locations && service.locations.length > 0 && (
+                            <ExpandableSection title="Service Areas">
+                                <div className="flex flex-wrap gap-2">
+                                    {service.locations.map((loc: {city: string, province: string}, index: number) => (
+                                        <div key={`${loc.city}-${index}`} className="flex items-center rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
+                                            <MapPin size={14} className="mr-2" />
+                                            {loc.city}, {loc.province}
+                                        </div>
+                                    ))}
+                                </div>
+                            </ExpandableSection>
+                        )}
 
-                      <div className="flex flex-wrap gap-2 mt-4">
-                          <MessageProviderButton providerId={service.user_id} providerName={service.provider_name ?? 'Anonymous'} user={user ?? null} />
-                          <ReportButton serviceId={parseInt(id)} isLoggedIn={isLoggedIn} />
-                      </div>
-
-                      <div className="mt-8 border-t pt-6">
-                          <h2 className="text-2xl font-bold mb-4">Availability</h2>
+                        <ExpandableSection title="Availability">
                           {providerProfile?.availability ? (
                               <div className="space-y-2 text-sm">
                                   {Object.entries(providerProfile.availability).map(([day, times]: [string, any]) => (
@@ -191,10 +178,18 @@ const ServicePageContent = async ({ params }: { params: { id: string } }) => {
                                   ))}
                               </div>
                           ) : <p className="text-sm text-gray-500">Availability not specified.</p>}
-                      </div>
-                      
-                      <div className="mt-8 border-t pt-6" id="reviews">
-                          <h2 className="text-2xl font-bold">Reviews</h2>
+                        </ExpandableSection>
+
+                        <ExpandableSection title="Request a Quote">
+                           <ServiceInteraction 
+                                serviceId={id} 
+                                serviceProviderId={service.user_id} 
+                                onReviewSubmitted={handleReviewSubmitted}
+                                availability={providerProfile?.availability}
+                           />
+                        </ExpandableSection>
+
+                        <ExpandableSection title={`Reviews (${reviews?.length || 0})`}>
                           {reviews && reviews.length > 0 ? (
                               reviews.map((review: { id: string; profiles: { full_name: string; }; rating: number; comment: string; created_at: string; }) => (
                               <div key={review.id} className="border-b py-4 last:border-b-0">
@@ -207,6 +202,13 @@ const ServicePageContent = async ({ params }: { params: { id: string } }) => {
                               </div>
                               ))
                           ) : (<p className="mt-4 text-gray-500">No reviews yet. Be the first to leave one!</p>)}
+                        </ExpandableSection>
+
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 mt-8">
+                          <MessageProviderButton providerId={service.user_id} providerName={service.provider_name ?? 'Anonymous'} user={user ?? null} />
+                          <ReportButton serviceId={parseInt(id)} isLoggedIn={isLoggedIn} />
                       </div>
                   </div>
               </div>
@@ -215,7 +217,7 @@ const ServicePageContent = async ({ params }: { params: { id: string } }) => {
           {recommendedServices && recommendedServices.length > 0 && (
             <div className="container mx-auto max-w-6xl px-4 py-8 mt-12 border-t">
               <CategoryRow 
-                category="Other Recommended Service Providers" 
+                category="Other Recommendations" 
                 services={recommendedServices} 
               />
             </div>

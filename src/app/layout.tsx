@@ -8,7 +8,8 @@ import ChatManager from "@/components/ChatManager";
 import type { Metadata } from "next";
 import { Inter } from 'next/font/google';
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Analytics } from "@vercel/analytics/react"; // <-- 1. Import Analytics
+import { Analytics } from "@vercel/analytics/react";
+import NavigationSpinner from "@/components/NavigationSpinner"; // Import the new component
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -30,6 +31,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} bg-gray-100`}>
         <LikesInitializer />
+        <NavigationSpinner /> {/* Add the spinner component here */}
         <div className="flex min-h-screen flex-col">
           <Header />
           <main className="flex-grow">{children}</main>
@@ -38,7 +40,7 @@ export default function RootLayout({
         <ToastContainer />
         <ChatManager />
         <SpeedInsights />
-        <Analytics /> {/* <-- 2. Add the component here */}
+        <Analytics />
       </body>
     </html>
   );

@@ -16,11 +16,18 @@ const TypingEffect: React.FC<TypingEffectProps> = ({
   deletingSpeed = 100, 
   delay = 2000 
 }) => {
+  const [hasMounted, setHasMounted] = useState(false);
   const [wordIndex, setWordIndex] = useState(0);
   const [text, setText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hasMounted) return; // Don't start the effect until the component has mounted on the client
+
     const currentWord = words[wordIndex];
     
     const handleTyping = () => {
@@ -40,7 +47,7 @@ const TypingEffect: React.FC<TypingEffectProps> = ({
 
     const timeout = setTimeout(handleTyping, isDeleting ? deletingSpeed : typingSpeed);
     return () => clearTimeout(timeout);
-  }, [text, isDeleting, wordIndex, words, typingSpeed, deletingSpeed, delay]);
+  }, [text, isDeleting, wordIndex, words, typingSpeed, deletingSpeed, delay, hasMounted]);
 
   return (
     <span className="typing-effect">

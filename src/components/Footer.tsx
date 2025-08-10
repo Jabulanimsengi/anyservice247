@@ -9,7 +9,6 @@ import { useStore } from '@/lib/store';
 import Link from 'next/link';
 import { locationsData } from '@/lib/locations';
 
-// Self-contained WhatsApp SVG icon component
 const WhatsAppIcon = ({ size = 20, className = '' }: { size?: number, className?: string }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -24,9 +23,9 @@ const WhatsAppIcon = ({ size = 20, className = '' }: { size?: number, className?
 );
 
 const Footer = () => {
+  const { addToast, startNavigating } = useStore(); // Get the action
   const currentYear = new Date().getFullYear();
   const [suggestion, setSuggestion] = useState('');
-  const { addToast } = useStore();
 
   const handleSuggestionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +50,6 @@ const Footer = () => {
     <footer className="bg-brand-dark text-white">
       <div className="container mx-auto px-6 py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-5">
-          {/* About Section */}
           <div className="lg:col-span-2">
             <h3 className="text-lg font-bold">HomeServices24/7</h3>
             <p className="mt-4 text-sm text-gray-400">
@@ -65,7 +63,6 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* --- COMPANY LINKS (UPDATED SECTION) --- */}
           <div>
               <h3 className="text-lg font-semibold">Company</h3>
               <ul className="mt-4 space-y-2 text-sm">
@@ -81,14 +78,13 @@ const Footer = () => {
               </ul>
           </div>
           
-          {/* Browse Locations Section */}
           {featuredProvinces.slice(0, 1).map(province => (
             <div key={province}>
               <h3 className="text-lg font-semibold">Browse {province}</h3>
               <ul className="mt-4 space-y-2 text-sm">
                 {locationsData[province]?.slice(0, 4).map(city => (
                   <li key={city}>
-                    <Link href={`/browse/${slugify(province)}/${slugify(city)}`} className="text-gray-400 hover:text-white">{city}</Link>
+                    <Link href={`/browse/${slugify(province)}/${slugify(city)}`} onClick={startNavigating} className="text-gray-400 hover:text-white">{city}</Link>
                   </li>
                 ))}
               </ul>
@@ -100,7 +96,7 @@ const Footer = () => {
               <ul className="mt-4 space-y-2 text-sm">
                 {locationsData[province]?.slice(0, 4).map(city => (
                   <li key={city}>
-                    <Link href={`/browse/${slugify(province)}/${slugify(city)}`} className="text-gray-400 hover:text-white">{city}</Link>
+                    <Link href={`/browse/${slugify(province)}/${slugify(city)}`} onClick={startNavigating} className="text-gray-400 hover:text-white">{city}</Link>
                   </li>
                 ))}
               </ul>
@@ -108,7 +104,6 @@ const Footer = () => {
           ))}
         </div>
 
-        {/* Contact and Suggestions Section */}
         <div className="mt-10 pt-8 border-t border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
                 <h3 className="text-lg font-semibold">Contact Us</h3>

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { locationsData, provinces } from '@/lib/locations';
 import { categories } from '@/lib/categories';
 import Spinner from '@/components/ui/Spinner';
+import { Search as SearchIcon, X } from 'lucide-react'; // Renamed Search to SearchIcon to avoid conflict
 
 const SERVICES_PER_PAGE = 20; // How many services to load at a time
 
@@ -36,33 +37,34 @@ type ServiceWithProvider = {
   profiles: { business_name: string } | null;
 };
 
-const Search = () => {
+// Renamed component to avoid conflict with the Search icon import
+const SearchComponent = () => {
   const searchParams = useSearchParams();
 
   const [services, setServices] = useState<ServiceWithProvider[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // --- NEW --- State for pagination
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [isFiltersVisible, setIsFiltersVisible] = useState(false);
 
   // Filter States
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
-  const [selectedProvince, setSelectedProvince] = useState('');
-  const [selectedCity, setSelectedCity] = useState('');
+  const [selectedProvince, setSelectedProvince] = useState(searchParams.get('province') || '');
+  const [selectedCity, setSelectedCity] = useState(searchParams.get('city') || '');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [isEmergency, setIsEmergency] = useState(searchParams.get('emergency') === 'true');
 
-  // --- UPDATED --- This function now only fetches the FIRST page of results
   const fetchServices = useCallback(async () => {
     setLoading(true);
-    setPage(1); // Reset page count on new search
+    setPage(1);
+    setServices([]); // Clear previous results for a new search
 
     let queryBuilder = supabase
       .from('service_with_ratings')
-      .select('*, profiles(business_name)', { count: 'exact' }) // Fetch count for pagination
+      .select('*, profiles(business_name)', { count: 'exact' })
       .eq('status', 'approved');
 
     if (query) {
@@ -86,7 +88,6 @@ const Search = () => {
       queryBuilder = queryBuilder.lte('price', parseFloat(maxPrice));
     }
 
-    // Apply pagination
     const from = 0;
     const to = SERVICES_PER_PAGE - 1;
     queryBuilder = queryBuilder.range(from, to);
@@ -102,8 +103,7 @@ const Search = () => {
     }
     setLoading(false);
   }, [query, selectedCategory, selectedProvince, selectedCity, minPrice, maxPrice, isEmergency]);
-
-  // --- NEW --- This function fetches SUBSEQUENT pages
+  
   const loadMoreServices = async () => {
     setLoading(true);
     const nextPage = page + 1;
@@ -156,9 +156,12 @@ const Search = () => {
     setIsEmergency(searchParams.get('emergency') === 'true');
   }, [searchParams]);
 
+  const handleSearch = () => {
+    fetchServices();
+    setIsFiltersVisible(false);
+  };
 
   const handleResetFilters = () => {
-    // This function can be improved to also clear URL params and re-trigger search
     setSelectedCategory('');
     setSelectedProvince('');
     setSelectedCity('');
@@ -172,46 +175,73 @@ const Search = () => {
     <div className="container mx-auto px-4 py-8">
       <BackButton />
       <h1 className="mb-6 text-3xl font-bold">Search Results {query && `for "${query}"`}</h1>
+      
+      <div className="mb-8">
+        {!isFiltersVisible ? (
+            <div className="bg-white p-3 rounded-lg shadow-md border border-gray-200">
+                <Button onClick={() => setIsFiltersVisible(true)} className="w-full flex items-center justify-center gap-2 h-11">
+                    <SearchIcon size={18} />
+                    <span>Search & Filter</span>
+                </Button>
+            </div>
+        ) : (
+            <div className="rounded-lg border bg-white p-4 shadow-sm">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="md:col-span-2 lg:col-span-4">
+                        <label htmlFor="query-input" className="text-sm font-medium">What are you looking for?</label>
+                        <input type="text" id="query-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="e.g., Leaking pipe, paint house..." className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                    </div>
+                    <div>
+                        <label htmlFor="category-filter" className="text-sm font-medium">Category</label>
+                        <select id="category-filter" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            <option value="">All</option>
+                            {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="province-filter" className="text-sm font-medium">Province</label>
+                        <select id="province-filter" value={selectedProvince} onChange={(e) => { setSelectedProvince(e.target.value); setSelectedCity(''); }} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            <option value="">All Provinces</option>
+                            {provinces.map(prov => <option key={prov} value={prov}>{prov}</option>)}
+                        </select>
+                    </div>
+                    <div>
+                        <label htmlFor="city-filter" className="text-sm font-medium">City</label>
+                        <select id="city-filter" value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)} disabled={!selectedProvince} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm disabled:bg-gray-100">
+                            <option value="">All Cities</option>
+                            {selectedProvince && locationsData[selectedProvince].map(city => <option key={city} value={city}>{city}</option>)}
+                        </select>
+                    </div>
+                    <div className="flex gap-2">
+                        <div>
+                            <label htmlFor="min-price" className="text-sm font-medium">Min Price</label>
+                            <input type="number" id="min-price" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} placeholder="R 0" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                        </div>
+                        <div>
+                            <label htmlFor="max-price" className="text-sm font-medium">Max Price</label>
+                            <input type="number" id="max-price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} placeholder="R 10k" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
+                        </div>
+                    </div>
+                </div>
 
-      <div className="mb-8 rounded-lg border bg-white p-4 shadow-sm">
-        {/* Filter UI remains the same */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
-            <div>
-              <label htmlFor="category-filter" className="text-sm font-medium">Category</label>
-              <select id="category-filter" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                <option value="">All</option>
-                {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-              </select>
+                <div className="mt-4 pt-4 border-t flex flex-col md:flex-row gap-3">
+                    <Button onClick={handleResetFilters} variant="outline" className="w-full md:w-auto">
+                        Reset Filters
+                    </Button>
+                    <div className="flex-grow grid grid-cols-2 gap-3">
+                        <Button onClick={() => setIsFiltersVisible(false)} variant="secondary" className="flex items-center justify-center gap-2">
+                            <X size={18} />
+                            <span>Cancel</span>
+                        </Button>
+                        <Button onClick={handleSearch} className="flex items-center justify-center gap-2">
+                            <SearchIcon size={18} />
+                            <span>Search</span>
+                        </Button>
+                    </div>
+                </div>
             </div>
-            <div>
-              <label htmlFor="province-filter" className="text-sm font-medium">Province</label>
-              <select id="province-filter" value={selectedProvince} onChange={(e) => { setSelectedProvince(e.target.value); setSelectedCity(''); }} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                <option value="">All Provinces</option>
-                {provinces.map(prov => <option key={prov} value={prov}>{prov}</option>)}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="city-filter" className="text-sm font-medium">City</label>
-              <select id="city-filter" value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)} disabled={!selectedProvince} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm disabled:bg-gray-100">
-                <option value="">All Cities</option>
-                {selectedProvince && locationsData[selectedProvince].map(city => <option key={city} value={city}>{city}</option>)}
-              </select>
-            </div>
-            <div className="flex gap-2">
-              <div>
-                <label htmlFor="min-price" className="text-sm font-medium">Min Price</label>
-                <input type="number" id="min-price" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} placeholder="R 0" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
-              </div>
-              <div>
-                <label htmlFor="max-price" className="text-sm font-medium">Max Price</label>
-                <input type="number" id="max-price" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} placeholder="R 10k" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm" />
-              </div>
-            </div>
-            <div className="flex items-end">
-              <Button onClick={handleResetFilters} variant="outline" className="w-full">Reset</Button>
-            </div>
-          </div>
-      </div>
+        )}
+    </div>
 
       {services.length > 0 ? (
         <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
@@ -239,7 +269,6 @@ const Search = () => {
         <p>No services found matching your criteria.</p>
       )}
 
-      {/* --- NEW --- Loading spinner and Load More button UI */}
       <div className="mt-12 text-center">
         {loading && <Spinner />}
         {!loading && hasMore && (
@@ -256,7 +285,7 @@ const Search = () => {
 const SearchPage = () => {
   return (
     <Suspense fallback={<Spinner />}>
-      <Search />
+      <SearchComponent />
     </Suspense>
   )
 }

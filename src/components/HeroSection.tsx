@@ -2,7 +2,7 @@
 'use client'; 
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation'; // <-- Import usePathname
 import { categories } from '@/lib/categories';
 import { ShieldCheck, CalendarCheck, MessageSquare, BadgeDollarSign } from 'lucide-react';
 import TypingEffect from './TypingEffect';
@@ -13,6 +13,7 @@ const HeroSection = () => {
   const [isSuggestionsVisible, setIsSuggestionsVisible] = useState(false);
   const router = useRouter();
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname(); // <-- Get the current path
 
   const servicesToDisplay = [
     "Plumbing", 
@@ -80,7 +81,7 @@ const HeroSection = () => {
             Find Verified Pros for Your 
             <br />
             <span className="text-brand-teal">
-                <TypingEffect words={servicesToDisplay} />
+                <TypingEffect key={pathname} words={servicesToDisplay} /> {/* <-- Add key={pathname} */}
             </span>
           </h1>
           <p className="mt-6 mb-8 max-w-2xl mx-auto text-base sm:text-lg text-gray-300">

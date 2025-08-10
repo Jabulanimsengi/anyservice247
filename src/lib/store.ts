@@ -14,6 +14,10 @@ type Chat = {
 }
 
 type StoreState = {
+  isNavigating: boolean; // New state for global loading
+  startNavigating: () => void; // Action to show spinner
+  stopNavigating: () => void; // Action to hide spinner
+
   likedServiceIds: Set<number>;
   setLikedIds: (ids: number[]) => void;
   addLike: (id: number) => void;
@@ -30,6 +34,11 @@ type StoreState = {
 };
 
 export const useStore = create<StoreState>((set) => ({
+  // Navigation State
+  isNavigating: false,
+  startNavigating: () => set({ isNavigating: true }),
+  stopNavigating: () => set({ isNavigating: false }),
+
   // Likes State
   likedServiceIds: new Set(),
   setLikedIds: (ids) => set({ likedServiceIds: new Set(ids) }),
@@ -54,7 +63,6 @@ export const useStore = create<StoreState>((set) => ({
   // Chat State
   activeChats: [],
   openChat: (providerId, providerName) => set((state) => {
-    // If chat is already open, don't add it again. Just ensure it's not minimized.
     const existingChat = state.activeChats.find(c => c.providerId === providerId);
     if (existingChat) {
       return {
@@ -63,7 +71,6 @@ export const useStore = create<StoreState>((set) => ({
         )
       };
     }
-    // Limit to 3 active chats
     const newChats = [...state.activeChats, { providerId, providerName, isMinimized: false }].slice(-3);
     return { activeChats: newChats };
   }),

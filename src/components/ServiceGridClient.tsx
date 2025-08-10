@@ -44,13 +44,13 @@ const ServiceGridClient: React.FC<ServiceGridClientProps> = ({ initialServices, 
     const from = nextPage * POSTS_PER_PAGE - POSTS_PER_PAGE;
     const to = nextPage * POSTS_PER_PAGE - 1;
 
+    // CORRECTED QUERY: This now uses the correct .contains() method for jsonb arrays
     const { data, error } = await supabase
-        .rpc('get_services_by_location_paginated', {
-            p_city: city,
-            p_province: province,
-            p_limit: POSTS_PER_PAGE,
-            p_offset: from
-        });
+        .from('service_with_ratings')
+        .select('*, profiles(business_name)')
+        .eq('status', 'approved')
+        .contains('locations', `[{"city":"${city}","province":"${province}"}]`)
+        .range(from, to);
 
     if (error) {
       console.error("Error fetching more services:", error);
@@ -69,7 +69,6 @@ const ServiceGridClient: React.FC<ServiceGridClientProps> = ({ initialServices, 
   return (
     <>
       {services.length > 0 ? (
-        // --- THIS LINE IS UPDATED ---
         <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {services.map((service: Service) => (
             <ServiceCard

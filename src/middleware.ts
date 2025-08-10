@@ -1,3 +1,4 @@
+// src/middleware.ts
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/utils/supabase/middleware'
 
@@ -7,7 +8,8 @@ export async function middleware(request: NextRequest) {
     const { supabase, response } = createClient(request)
 
     // Refresh session if expired - required for Server Components
-    await supabase.auth.getSession()
+    // Using `getUser()` is preferred in middleware and server components
+    await supabase.auth.getUser()
 
     return response
   } catch (e) {

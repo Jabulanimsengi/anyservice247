@@ -154,9 +154,8 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
               sizes="(max-width: 768px) 33vw, 12vw"
               className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
-            {/* --- HOVER OVERLAY UPDATED HERE --- */}
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                <div className="flex items-center gap-2 rounded-md bg-brand-teal px-3 py-1.5 text-xs font-semibold text-white">
+                <div className="flex items-center gap-2 rounded-md bg-brand-teal px-2 py-1 text-xs font-semibold text-white md:px-3 md:py-1.5 md:text-sm">
                     <Eye size={16} />
                     <span>View Details</span>
                 </div>
@@ -188,9 +187,8 @@ const ServiceCard: React.FC<ServiceCardProps> = ({
             sizes="100vw"
             className="object-cover"
           />
-           {/* --- HOVER OVERLAY UPDATED HERE --- */}
            <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                <div className="flex items-center gap-2 rounded-md bg-brand-teal px-4 py-2 text-sm font-semibold text-white">
+                <div className="flex items-center gap-2 rounded-md bg-brand-teal px-3 py-1.5 text-sm font-semibold text-white md:px-4 md:py-2">
                     <Eye size={18} />
                     <span>View Details</span>
                 </div>

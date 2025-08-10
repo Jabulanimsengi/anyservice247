@@ -1,3 +1,4 @@
+// src/lib/utils/supabase/middleware.ts
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
@@ -24,11 +25,7 @@ export const createClient = (request: NextRequest) => {
             value,
             ...options,
           })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
+          // The response is already created, just modify its cookies
           response.cookies.set({
             name,
             value,
@@ -42,11 +39,7 @@ export const createClient = (request: NextRequest) => {
             value: '',
             ...options,
           })
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          })
+          // The response is already created, just modify its cookies
           response.cookies.set({
             name,
             value: '',

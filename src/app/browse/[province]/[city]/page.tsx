@@ -2,7 +2,8 @@
 import { createClient } from '@/lib/utils/supabase/server';
 import { Metadata } from 'next';
 import BackButton from '@/components/BackButton';
-import ServiceGridClient from '@/components/ServiceGridClient'; // <-- Import the new component
+import ServiceGridClient from '@/components/ServiceGridClient';
+import PageLoader from '@/components/PageLoader'; // Import the new component
 
 interface LocationPageProps {
   params: { province: string; city: string };
@@ -27,27 +28,25 @@ const LocationServicesPage = async ({ params }: LocationPageProps) => {
     
     const supabase = await createClient();
 
-    // Fetch only the FIRST page of services on the server
     const { data: initialServices, error } = await supabase
-        .rpc('get_services_by_location_paginated', {
-            p_city: capitalize(cityParam),
-            p_province: capitalize(provinceParam),
-            p_limit: 20, // Fetch the first 20
-            p_offset: 0
-        });
+        .from('service_with_ratings')
+        .select('*, profiles(business_name)')
+        .eq('status', 'approved')
+        .contains('locations', `[{"city":"${capitalize(cityParam)}","province":"${capitalize(provinceParam)}"}]`)
+        .range(0, 19);
     
     if (error) {
-        console.error("Error calling RPC function:", error.message);
-        return <div className="text-center py-10">Error fetching services. Please check the function name and permissions in Supabase.</div>
+        console.error("Error fetching location services:", error.message);
+        return <div className="text-center py-10">Error fetching services. Please try again later.</div>
     }
     
     return (
         <div className="container mx-auto px-4 py-8">
+            <PageLoader /> {/* Add the page loader here */}
             <BackButton />
             <h1 className="text-3xl font-bold mb-2 capitalize">{cityParam}</h1>
             <p className="mb-6 text-gray-600">Browse all available professionals in your area.</p>
             
-            {/* Render the client component with the initial data */}
             <ServiceGridClient 
                 initialServices={initialServices || []} 
                 city={capitalize(cityParam)} 
