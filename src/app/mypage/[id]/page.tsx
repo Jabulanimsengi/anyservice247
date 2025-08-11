@@ -3,9 +3,9 @@ import { createClient } from '@/lib/utils/supabase/server';
 import { notFound } from 'next/navigation';
 import BackButton from '@/components/BackButton';
 import Image from 'next/image';
-import { Heart, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
+import MyPageFeed from '@/components/MyPageFeed';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +15,6 @@ const MyPage = async ({ params }: { params: { id: string } }) => {
 
     const supabase = await createClient();
 
-    // Fetch provider profile and their status updates in parallel
     const profilePromise = supabase
         .from('profiles')
         .select('full_name, business_name, cover_image_url')
@@ -38,6 +37,41 @@ const MyPage = async ({ params }: { params: { id: string } }) => {
     }
 
     const { data: { user } } = await supabase.auth.getUser();
+
+    const statusIds = statuses?.map(s => s.id) || [];
+    let initialLikes: Record<number, { likeCount: number; isLiked: boolean; }> = {};
+
+    if (statusIds.length > 0) {
+        // CORRECTED: Fetch all likes and then reduce them to get counts.
+        const { data: allLikesData } = await supabase
+            .from('status_likes')
+            .select('status_id')
+            .in('status_id', statusIds);
+
+        // This function now correctly counts the likes for each status ID.
+        const likeCounts = (allLikesData || []).reduce((acc: Record<number, number>, { status_id }) => {
+            acc[status_id] = (acc[status_id] || 0) + 1;
+            return acc;
+        }, {});
+
+        let userLikes: number[] = [];
+        if (user) {
+            const { data: userLikesData } = await supabase
+                .from('status_likes')
+                .select('status_id')
+                .in('status_id', statusIds)
+                .eq('user_id', user.id);
+            userLikes = userLikesData?.map(l => l.status_id) || [];
+        }
+
+        initialLikes = statusIds.reduce((acc: Record<number, { likeCount: number; isLiked: boolean; }>, statusId) => {
+            acc[statusId] = {
+                likeCount: likeCounts[statusId] || 0,
+                isLiked: userLikes.includes(statusId)
+            };
+            return acc;
+        }, {});
+    }
 
     return (
         <div className="bg-gray-100 min-h-screen">
@@ -75,49 +109,11 @@ const MyPage = async ({ params }: { params: { id: string } }) => {
                 {/* Feed Section */}
                 <div className="mt-8 px-4 md:px-0">
                     <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Recent Work</h2>
-                    <div className="max-w-xl mx-auto space-y-6">
-                        {statuses && statuses.length > 0 ? (
-                            statuses.map(status => (
-                                <div key={status.id} className="bg-white rounded-lg shadow-md border border-gray-200">
-                                    <div className="p-4 border-b">
-                                        <div className="flex items-center">
-                                            {/* Placeholder for avatar */}
-                                            <div className="h-10 w-10 bg-gray-300 rounded-full mr-3"></div>
-                                            <div>
-                                                <p className="font-bold text-gray-900">{profile.business_name || profile.full_name}</p>
-                                                <p className="text-xs text-gray-500">{new Date(status.created_at).toLocaleString()}</p>
-                                            </div>
-                                        </div>
-                                        {status.caption && <p className="mt-3 text-gray-700">{status.caption}</p>}
-                                    </div>
-                                    {status.image_urls && status.image_urls.length > 0 && (
-                                        <div className="relative w-full aspect-video bg-gray-100">
-                                            <Image 
-                                                src={status.image_urls[0]}
-                                                alt={status.caption || 'Status update image'}
-                                                fill
-                                                className="object-cover"
-                                            />
-                                        </div>
-                                    )}
-                                    <div className="flex justify-around p-2 border-t text-gray-600">
-                                        <button className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors">
-                                            <Heart size={20} />
-                                            <span className="text-sm">Like</span>
-                                        </button>
-                                        <button className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors">
-                                            <MessageSquare size={20} />
-                                            <span className="text-sm">Comment</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            ))
-                        ) : (
-                            <div className="text-center py-10 bg-white rounded-lg shadow-md border">
-                                <p className="text-gray-500">This provider hasn't posted any work yet.</p>
-                            </div>
-                        )}
-                    </div>
+                    <MyPageFeed 
+                        statuses={statuses || []}
+                        profile={profile}
+                        initialLikes={initialLikes}
+                    />
                 </div>
             </div>
         </div>

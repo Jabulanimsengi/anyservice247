@@ -1,160 +1,140 @@
 // src/components/HeroSection.tsx
 'use client'; 
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter, usePathname } from 'next/navigation'; // <-- Import usePathname
-import { categories } from '@/lib/categories';
-import { ShieldCheck, CalendarCheck, MessageSquare, BadgeDollarSign } from 'lucide-react';
+import { useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { provinces, locationsData } from '@/lib/locations';
 import TypingEffect from './TypingEffect';
+import { Button } from './ui/Button';
+import { Input } from './ui/Input';
+import dynamic from 'next/dynamic';
+import { createLead } from '@/app/actions';
+import { useStore } from '@/lib/store';
+
+const GetStartedModal = dynamic(() => import('./GetStartedModal'), { ssr: false });
+const AuthModal = dynamic(() => import('./AuthModal'), { ssr: false });
 
 const HeroSection = () => {
-  const [query, setQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [isSuggestionsVisible, setIsSuggestionsVisible] = useState(false);
-  const router = useRouter();
-  const searchContainerRef = useRef<HTMLDivElement>(null);
-  const pathname = usePathname(); // <-- Get the current path
+  const pathname = usePathname();
+  const { addToast } = useStore();
+  
+  // Form State
+  const [service, setService] = useState('');
+  const [contactNumber, setContactNumber] = useState('');
+  const [selectedProvince, setSelectedProvince] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
 
+  // Modal State
+  const [isGetStartedModalOpen, setIsGetStartedModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  
   const servicesToDisplay = [
-    "Plumbing", 
-    "Painting", 
-    "Window Cleaning", 
-    "Electrical", 
-    "Gardening", 
-    "Welding",
-    "Gate Repair",
-    "Ceiling Installation",
-    "Door Installation",
-    "Tile Installation",
-    "Kitchen Installation",
-    "TV Stand Installation",
-    "Paving",
-    "Waterproofing",
-    "Built-in Cupboards"
+    "Plumbing", "Verified Professionals", "Painting", "Easy Scheduling",
+    "Electrical", "Transparent Pricing", "Gardening", "Direct Communication",
+    "Welding", "Gate Repair", "Ceiling Installation", "Paving", "Waterproofing",
   ];
 
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!query.trim()) return;
-    setIsSuggestionsVisible(false);
-    router.push(`/search?q=${encodeURIComponent(query)}`);
-  };
+  const handleGetStarted = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!service || !contactNumber) {
+        addToast('Please fill in all the required fields.', 'error');
+        return;
+    }
+    const formData = new FormData(event.currentTarget);
+    const result = await createLead(formData);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setQuery(value);
-    if (value.length > 0) {
-      const filteredSuggestions = categories.filter(cat =>
-        cat.toLowerCase().includes(value.toLowerCase())
-      );
-      setSuggestions(filteredSuggestions);
-      setIsSuggestionsVisible(true);
+    if (result.error) {
+        addToast(result.error, 'error');
     } else {
-      setSuggestions([]);
-      setIsSuggestionsVisible(false);
+        setIsGetStartedModalOpen(true);
     }
   };
-  
-  const handleSuggestionClick = (suggestion: string) => {
-    setQuery(suggestion);
-    setIsSuggestionsVisible(false);
-    router.push(`/search?q=${encodeURIComponent(suggestion)}`);
+
+  const handleSignUpClick = () => {
+    setIsGetStartedModalOpen(false);
+    setIsAuthModalOpen(true);
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-        if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
-            setIsSuggestionsVisible(false);
-        }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
   return (
-    <section className="bg-gray-100">
-      <div className="container mx-auto px-4 pt-16 pb-4">
-        <div className="rounded-lg bg-brand-dark p-6 text-center text-white md:p-12">
-          <h1 className="text-3xl sm:text-5xl font-bold leading-tight h-28 sm:h-auto">
-            Find Verified Pros for Your 
-            <br />
-            <span className="text-brand-teal">
-                <TypingEffect key={pathname} words={servicesToDisplay} /> {/* <-- Add key={pathname} */}
-            </span>
-          </h1>
-          <p className="mt-6 mb-8 max-w-2xl mx-auto text-base sm:text-lg text-gray-300">
-            HomeServices24/7 is reinventing how South Africans find home services. We meticulously verify every provider, connecting you with trusted, top-tier professionals for any job, big or small.
-          </p>
-          <div ref={searchContainerRef} className="relative w-full max-w-lg mx-auto">
-            <form onSubmit={handleSearch} className="flex items-center">
-              <label htmlFor="search" className="sr-only">Search</label>
-              <div className="relative w-full">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                  <svg aria-hidden="true" className="h-5 w-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"></path>
-                  </svg>
+    <>
+      <section className="bg-gray-100">
+        <div className="container mx-auto px-4 pt-16 pb-12">
+          <div className="rounded-lg bg-brand-dark p-6 text-center text-white md:p-12">
+            <h1 className="text-3xl sm:text-5xl font-bold leading-tight h-28 sm:h-auto">
+              Find Top-Tier Pros for
+              <br />
+              <span className="text-brand-teal">
+                  <TypingEffect key={pathname} words={servicesToDisplay} />
+              </span>
+            </h1>
+            <p className="mt-6 mb-8 max-w-2xl mx-auto text-base sm:text-lg text-gray-300">
+              HomeServices24/7 is reinventing how South Africans find home services. We meticulously verify every provider, connecting you with trusted, top-tier professionals for any job, big or small.
+            </p>
+            
+            <form onSubmit={handleGetStarted} className="w-full max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-2 items-end">
+                <div className="md:col-span-2 lg:col-span-1">
+                    <label htmlFor="service" className="sr-only">Service</label>
+                    <Input id="service" name="service" type="text" placeholder="What service do you need?" value={service} onChange={(e) => setService(e.target.value)} required className="bg-gray-700 border-gray-600 text-white h-12" />
                 </div>
-                <input
-                  type="text"
-                  id="search"
-                  value={query}
-                  onChange={handleInputChange}
-                  onFocus={() => setIsSuggestionsVisible(query.length > 0 && suggestions.length > 0)}
-                  autoComplete="off"
-                  className="block w-full rounded-lg border border-gray-600 bg-gray-700 p-4 pl-10 text-sm text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
-                  placeholder="Search for a service..."
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                className="ml-2 rounded-lg border border-brand-teal bg-brand-teal p-2.5 text-sm font-medium text-white hover:bg-opacity-90 focus:outline-none focus:ring-4 focus:ring-teal-500/50"
-              >
-                Search
-              </button>
+                 <div className="md:col-span-2 lg:col-span-1">
+                    <label htmlFor="contact_number" className="sr-only">Contact Number</label>
+                    <Input id="contact_number" name="contact_number" type="tel" placeholder="Your Contact Number" value={contactNumber} onChange={(e) => setContactNumber(e.target.value)} required className="bg-gray-700 border-gray-600 text-white h-12" />
+                </div>
+                <div className="grid grid-cols-2 gap-2 md:col-span-2 lg:col-span-1">
+                    <div>
+                        <label htmlFor="province" className="sr-only">Province</label>
+                        <select 
+                            id="province" 
+                            name="province" 
+                            value={selectedProvince} 
+                            onChange={(e) => setSelectedProvince(e.target.value)} 
+                            className={`w-full h-12 rounded-md border-gray-600 bg-gray-700 px-3 transition-colors ${selectedProvince ? 'text-white' : 'text-gray-400'}`}
+                        >
+                            <option value="" disabled>Select Province</option>
+                            {provinces.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                    </div>
+                     <div>
+                        <label htmlFor="city" className="sr-only">City</label>
+                        <select 
+                            id="city" 
+                            name="city" 
+                            value={selectedCity} 
+                            onChange={(e) => setSelectedCity(e.target.value)} 
+                            disabled={!selectedProvince} 
+                            className={`w-full h-12 rounded-md border-gray-600 bg-gray-700 px-3 transition-colors disabled:opacity-50 ${selectedCity ? 'text-white' : 'text-gray-400'}`}
+                        >
+                            <option value="" disabled>Select City</option>
+                            {selectedProvince && locationsData[selectedProvince].map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                    </div>
+                </div>
+                <div className="md:col-span-4 lg:col-span-1">
+                    <Button type="submit" size="lg" className="w-full h-12">
+                        Get Started
+                    </Button>
+                </div>
             </form>
-            {isSuggestionsVisible && suggestions.length > 0 && (
-              <ul className="absolute z-50 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-lg text-left">
-                {suggestions.map((suggestion, index) => (
-                  <li 
-                      key={index} 
-                      onClick={() => handleSuggestionClick(suggestion)}
-                      className="px-4 py-2 cursor-pointer hover:bg-gray-100 text-gray-800"
-                  >
-                      {suggestion}
-                  </li>
-                ))}
-              </ul>
-            )}
+
           </div>
         </div>
-        
-        <div className="mt-8 flex gap-4 overflow-x-auto pb-4 md:grid md:grid-cols-4 md:gap-8 scrollbar-hide">
-            <div className="flex-shrink-0 w-64 md:w-auto p-6 bg-white rounded-lg shadow-md border text-center">
-                <ShieldCheck className="mx-auto h-10 w-10 text-brand-teal" />
-                <h3 className="mt-4 text-lg font-semibold text-brand-dark">Verified Professionals</h3>
-                <p className="mt-2 text-sm text-gray-600">Every service provider is vetted for quality and reliability.</p>
-            </div>
-            <div className="flex-shrink-0 w-64 md:w-auto p-6 bg-white rounded-lg shadow-md border text-center">
-                <CalendarCheck className="mx-auto h-10 w-10 text-brand-teal" />
-                <h3 className="mt-4 text-lg font-semibold text-brand-dark">Easy Scheduling</h3>
-                <p className="mt-2 text-sm text-gray-600">Book and manage appointments directly on our platform.</p>
-            </div>
-            <div className="flex-shrink-0 w-64 md:w-auto p-6 bg-white rounded-lg shadow-md border text-center">
-                <MessageSquare className="mx-auto h-10 w-10 text-brand-teal" />
-                <h3 className="mt-4 text-lg font-semibold text-brand-dark">Direct Communication</h3>
-                <p className="mt-2 text-sm text-gray-600">Chat with providers to get quotes and discuss your needs.</p>
-            </div>
-            <div className="flex-shrink-0 w-64 md:w-auto p-6 bg-white rounded-lg shadow-md border text-center">
-                <BadgeDollarSign className="mx-auto h-10 w-10 text-brand-teal" />
-                <h3 className="mt-4 text-lg font-semibold text-brand-dark">Transparent Pricing</h3>
-                <p className="mt-2 text-sm text-gray-600">No hidden fees. See rates upfront and get clear quotes.</p>
-            </div>
-        </div>
-      </div>
-    </section>
+      </section>
+
+      {isGetStartedModalOpen && (
+          <GetStartedModal 
+            isOpen={isGetStartedModalOpen}
+            onClose={() => setIsGetStartedModalOpen(false)}
+            onSignUpClick={handleSignUpClick}
+          />
+      )}
+      {isAuthModalOpen && (
+        <AuthModal 
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          initialView="signUp"
+        />
+      )}
+    </>
   );
 };
 

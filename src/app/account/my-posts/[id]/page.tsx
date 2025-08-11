@@ -5,6 +5,7 @@ import BackButton from '@/components/BackButton';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { revalidatePath } from 'next/cache';
+import DeleteJobButton from '@/components/DeleteJobButton'; 
 
 export const dynamic = 'force-dynamic';
 
@@ -89,9 +90,14 @@ const MyPostDetailsPage = async ({ params }: { params: { id: string } }) => {
             <div className="bg-white p-6 rounded-lg border shadow-sm mt-4">
                 <div className="flex justify-between items-start">
                     <h1 className="text-3xl font-bold">{job.title}</h1>
-                    <span className={`capitalize px-3 py-1 text-sm font-semibold rounded-full ${
-                        job.status === 'open' ? 'bg-blue-100 text-blue-800' : 'bg-gray-200 text-gray-800'
-                    }`}>{job.status}</span>
+                    <div className="flex items-center gap-4">
+                        <span className={`capitalize px-3 py-1 text-sm font-semibold rounded-full ${
+                            job.status === 'open' ? 'bg-blue-100 text-blue-800' : 'bg-gray-200 text-gray-800'
+                        }`}>{job.status}</span>
+                         {job.status === 'open' && (
+                            <DeleteJobButton postId={job.id} postTitle={job.title} />
+                        )}
+                    </div>
                 </div>
                 <p className="text-gray-600 mt-2">{job.description}</p>
             </div>

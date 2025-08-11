@@ -1,7 +1,7 @@
 // src/app/account/provider/edit-profile/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -9,6 +9,7 @@ import BackButton from '@/components/BackButton';
 import Spinner from '@/components/ui/Spinner';
 import { User } from '@supabase/supabase-js';
 import { useStore } from '@/lib/store';
+import { updateCoverImage } from '@/app/actions';
 
 type UpdateRequest = {
   id: string;
@@ -22,7 +23,10 @@ const EditProfilePage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [savingCover, setSavingCover] = useState(false);
   const [updateRequests, setUpdateRequests] = useState<UpdateRequest[]>([]);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Form state
   const [businessName, setBusinessName] = useState('');
@@ -31,42 +35,49 @@ const EditProfilePage = () => {
   const [whatsapp, setWhatsapp] = useState('');
   const [location, setLocation] = useState('');
 
+  const fetchProfileAndRequests = useCallback(async (userId: string) => {
+    // Fetch current profile data
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (profile) {
+      setBusinessName(profile.business_name || '');
+      setRegNo(profile.registration_number || '');
+      setOfficeEmail(profile.office_email || '');
+      setWhatsapp(profile.whatsapp || '');
+      setLocation(profile.location || '');
+      setImagePreview(profile.cover_image_url);
+    }
+
+    // Fetch past and pending update requests
+    const { data: requests } = await supabase
+      .from('profile_update_requests')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (requests) {
+      setUpdateRequests(requests);
+    }
+    setLoading(false);
+  }, []);
+
   useEffect(() => {
-    const fetchProfileAndRequests = async () => {
+    const getUserAndData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUser(user);
-        
-        // Fetch current profile data
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (profile) {
-          setBusinessName(profile.business_name || '');
-          setRegNo(profile.registration_number || '');
-          setOfficeEmail(profile.office_email || '');
-          setWhatsapp(profile.whatsapp || '');
-          setLocation(profile.location || '');
-        }
-
-        // Fetch past and pending update requests
-        const { data: requests } = await supabase
-          .from('profile_update_requests')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (requests) {
-          setUpdateRequests(requests);
-        }
+        fetchProfileAndRequests(user.id);
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     };
-    fetchProfileAndRequests();
-  }, []);
+    getUserAndData();
+  }, [fetchProfileAndRequests]);
+
 
   const getStatusBadge = (status: string) => {
     switch(status) {
@@ -76,8 +87,9 @@ const EditProfilePage = () => {
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleDetailsSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!user) return;
     setIsSubmitting(true);
 
     const new_data = {
@@ -90,30 +102,58 @@ const EditProfilePage = () => {
 
     const { data: requestData, error } = await supabase
       .from('profile_update_requests')
-      .insert({ user_id: user?.id, new_data, status: 'pending' })
+      .insert({ user_id: user.id, new_data, status: 'pending' })
       .select()
       .single();
 
     if (error) {
       addToast('Error submitting changes. Please try again.', 'error');
     } else {
-      // Add the new request to the top of the list for immediate feedback
       setUpdateRequests(prev => [requestData as UpdateRequest, ...prev]);
 
-      // Notify Admins
       const { data: admins } = await supabase.from('profiles').select('id').eq('role', 'admin');
       if (admins) {
           const notifications = admins.map(admin => ({
               user_id: admin.id,
-              message: `A profile update from ${user?.user_metadata.full_name} is awaiting approval.`,
+              message: `A profile update from ${user.user_metadata.full_name} is awaiting approval.`,
               link: '/admin/profile-edits'
           }));
           await supabase.from('notifications').insert(notifications);
       }
       addToast('Changes submitted for admin approval.', 'success');
     }
-
     setIsSubmitting(false);
+  };
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+        setCoverImageFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setImagePreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+    }
+  };
+  
+  const handleCoverImageSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (!coverImageFile) {
+          addToast('Please select an image first.', 'error');
+          return;
+      }
+      setSavingCover(true);
+      const formData = new FormData();
+      formData.append('cover_image', coverImageFile);
+      
+      const result = await updateCoverImage(formData);
+      if (result.error) {
+          addToast(result.error, 'error');
+      } else {
+          addToast(result.success!, 'success');
+      }
+      setSavingCover(false);
   };
 
   if (loading) {
@@ -123,32 +163,67 @@ const EditProfilePage = () => {
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
       <BackButton />
-      <h1 className="mb-6 text-3xl font-bold">Edit Business Information</h1>
-      <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border bg-white p-8 shadow-sm">
-        <div>
-          <label htmlFor="business-name" className="mb-2 block text-sm font-medium text-gray-700">Business Name</label>
-          <Input id="business-name" type="text" value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
+      <h1 className="mb-6 text-3xl font-bold">Edit Your Profile</h1>
+
+        {/* Cover Photo Section */}
+        <div className="bg-white p-6 rounded-lg border shadow-sm mb-8">
+            <h2 className="text-xl font-semibold border-b pb-3 mb-4">My Page Cover Photo</h2>
+            <form onSubmit={handleCoverImageSubmit}>
+                <div className="mb-4">
+                    <label htmlFor="cover_image" className="block text-sm font-medium text-gray-700 mb-2">
+                        Upload a new cover photo
+                    </label>
+                    {imagePreview && (
+                        <div className="mb-4">
+                            <img src={imagePreview} alt="Cover preview" className="w-full h-48 object-cover rounded-md" />
+                        </div>
+                    )}
+                    <Input
+                        id="cover_image"
+                        name="cover_image"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Recommended size: 1200x400 pixels.</p>
+                </div>
+                <Button type="submit" disabled={savingCover || !coverImageFile}>
+                    {savingCover ? <Spinner /> : 'Save Cover Photo'}
+                </Button>
+            </form>
         </div>
-        <div>
-          <label htmlFor="reg-no" className="mb-2 block text-sm font-medium text-gray-700">Registration Number</label>
-          <Input id="reg-no" type="text" value={regNo} onChange={(e) => setRegNo(e.target.value)} />
+
+        {/* Business Details Section */}
+        <div className="bg-white p-6 rounded-lg border shadow-sm">
+            <h2 className="text-xl font-semibold border-b pb-3 mb-4">Request Business Info Change</h2>
+            <p className="text-sm text-gray-600 mb-4">Submit changes for admin approval. Your current information remains live until the update is approved.</p>
+            <form onSubmit={handleDetailsSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="business-name" className="mb-2 block text-sm font-medium text-gray-700">Business Name</label>
+                <Input id="business-name" type="text" value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
+              </div>
+              <div>
+                <label htmlFor="reg-no" className="mb-2 block text-sm font-medium text-gray-700">Registration Number</label>
+                <Input id="reg-no" type="text" value={regNo} onChange={(e) => setRegNo(e.target.value)} />
+              </div>
+              <div>
+                <label htmlFor="office-email" className="mb-2 block text-sm font-medium text-gray-700">Office Email</label>
+                <Input id="office-email" type="email" value={officeEmail} onChange={(e) => setOfficeEmail(e.target.value)} />
+              </div>
+              <div>
+                <label htmlFor="whatsapp" className="mb-2 block text-sm font-medium text-gray-700">WhatsApp Number</label>
+                <Input id="whatsapp" type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
+              </div>
+              <div>
+                <label htmlFor="location" className="mb-2 block text-sm font-medium text-gray-700">Business Location</label>
+                <Input id="location" type="text" value={location} onChange={(e) => setLocation(e.target.value)} />
+              </div>
+              <Button type="submit" disabled={isSubmitting} className="w-full">
+                {isSubmitting ? <Spinner /> : 'Submit for Approval'}
+              </Button>
+            </form>
         </div>
-        <div>
-          <label htmlFor="office-email" className="mb-2 block text-sm font-medium text-gray-700">Office Email</label>
-          <Input id="office-email" type="email" value={officeEmail} onChange={(e) => setOfficeEmail(e.target.value)} />
-        </div>
-        <div>
-          <label htmlFor="whatsapp" className="mb-2 block text-sm font-medium text-gray-700">WhatsApp Number</label>
-          <Input id="whatsapp" type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
-        </div>
-        <div>
-          <label htmlFor="location" className="mb-2 block text-sm font-medium text-gray-700">Business Location</label>
-          <Input id="location" type="text" value={location} onChange={(e) => setLocation(e.target.value)} />
-        </div>
-        <Button type="submit" disabled={isSubmitting} className="w-full">
-          {isSubmitting ? <Spinner /> : 'Submit for Approval'}
-        </Button>
-      </form>
+
 
       <div className="mt-8">
         <h2 className="text-2xl font-bold mb-4">Update History</h2>

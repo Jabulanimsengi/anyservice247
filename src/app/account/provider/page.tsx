@@ -22,8 +22,6 @@ const ProviderDashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // State for the delete modal
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
 
@@ -84,7 +82,6 @@ const ProviderDashboard = () => {
     <>
       <div className="container mx-auto px-4 py-8">
         <h1 className="mb-6 text-3xl font-bold">Provider Dashboard</h1>
-        {/* --- Grid updated to 3 columns to fit the new card --- */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           <div className="rounded-lg border bg-white p-6 shadow-sm">
               <h2 className="text-xl font-semibold">Incoming Bookings</h2>
@@ -93,7 +90,6 @@ const ProviderDashboard = () => {
               <Button>Manage Bookings</Button>
               </Link>
           </div>
-          {/* --- NEW MESSAGES CARD ADDED HERE --- */}
           <div className="rounded-lg border bg-white p-6 shadow-sm">
               <h2 className="text-xl font-semibold">Messages</h2>
               <p className="mt-2 text-gray-600">View and manage your conversations with clients.</p>
@@ -103,10 +99,15 @@ const ProviderDashboard = () => {
           </div>
           <div className="rounded-lg border bg-white p-6 shadow-sm">
               <h2 className="text-xl font-semibold">Share Your Work</h2>
-              <p className="mt-2 text-gray-600">Post a status update to show customers your latest projects.</p>
-              <Link href="/account/provider/add-status" className="mt-4 inline-block">
-              <Button variant="outline">+ Post a Status</Button>
-              </Link>
+              <p className="mt-2 text-gray-600">Post updates to show customers your latest projects.</p>
+              <div className="flex gap-2 mt-4">
+                  <Link href="/account/provider/add-status">
+                      <Button variant="outline">+ Post a Status</Button>
+                  </Link>
+                  <Link href="/account/provider/statuses">
+                      <Button variant="secondary">Manage Statuses</Button>
+                  </Link>
+              </div>
           </div>
         </div>
 

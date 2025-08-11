@@ -4,6 +4,7 @@
 import { createClient as createServerClientUtil } from '@/lib/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { createClient as createAdminClient } from '@supabase/supabase-js';
+import { redirect } from 'next/navigation';
 
 type ProfileUpdateRequest = {
   id: string;
@@ -77,18 +78,19 @@ export async function handleProfileUpdateApproval(request: ProfileUpdateRequest,
 
 export async function deleteStatus(statusId: number, imageUrls: string[]) {
     const supabase = await createServerClientUtil();
-
     const { data: { user } } = await supabase.auth.getUser();
+
     if (!user) {
         return { error: 'You must be logged in to perform this action.' };
     }
-    const { data: adminProfile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
     
-    if (adminProfile?.role !== 'admin') {
+    const { data: adminProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    const { data: status } = await supabase.from('status_updates').select('provider_id').eq('id', statusId).single();
+
+    const isOwner = status?.provider_id === user.id;
+    const isAdmin = adminProfile?.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
         return { error: 'Forbidden: You do not have permission.' };
     }
 
@@ -122,6 +124,7 @@ export async function deleteStatus(statusId: number, imageUrls: string[]) {
     }
 
     revalidatePath('/admin/statuses');
+    revalidatePath('/account/provider/statuses');
     return { success: 'Status deleted successfully!' };
 }
 
@@ -177,7 +180,39 @@ export async function deleteService(serviceId: number, imageUrls: string[] | nul
     return { success: 'Service deleted successfully!' };
 }
 
-// --- NEW ROBUST ACTION FOR HANDLING QUOTE DECISIONS ---
+export async function deleteJobPost(postId: string) {
+    const supabase = await createServerClientUtil();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: 'You must be logged in to delete a job post.' };
+    }
+
+    const { error: proposalError } = await supabase
+        .from('job_proposals')
+        .delete()
+        .eq('post_id', postId);
+
+    if (proposalError) {
+        console.error('Error deleting proposals:', proposalError);
+        return { error: `Failed to clean up job proposals: ${proposalError.message}` };
+    }
+
+    const { error: postError } = await supabase
+        .from('job_posts')
+        .delete()
+        .eq('id', postId)
+        .eq('user_id', user.id);
+
+    if (postError) {
+        console.error('Error deleting job post:', postError);
+        return { error: `Failed to delete job post: ${postError.message}` };
+    }
+    
+    revalidatePath('/account/my-posts');
+    redirect('/account/my-posts');
+}
+
 export async function handleQuoteDecisionAction(formData: FormData) {
     'use server';
     const proposalId = formData.get('proposalId') as string;
@@ -193,7 +228,6 @@ export async function handleQuoteDecisionAction(formData: FormData) {
         throw new Error('You must be logged in.');
     }
 
-    // 1. Update the status of the specific proposal
     const { error: updateError } = await supabase
         .from('job_proposals')
         .update({ status: decision })
@@ -205,24 +239,27 @@ export async function handleQuoteDecisionAction(formData: FormData) {
         return { error: 'Failed to update proposal status.' };
     }
 
-    // 2. If approved, update the main job post and reject others
     if (decision === 'approved') {
-        // Mark the winning proposal on the job post
         await supabase
             .from('job_posts')
             .update({ winning_proposal_id: proposalId, status: 'closed' })
             .eq('id', postId);
 
-        // Reject all other pending proposals for this job
         await supabase
             .from('job_proposals')
             .update({ status: 'rejected' })
             .eq('post_id', postId)
             .neq('id', proposalId)
             .eq('status', 'pending');
+
+        await supabase.from('bookings').insert({
+            user_id: user.id,
+            provider_id: providerId,
+            status: 'confirmed',
+            quote_description: `Job from post: "${jobTitle}"`,
+        });
     }
 
-    // 3. Send a notification to the provider
     let notificationMessage = `Your quote for "${jobTitle}" has been ${decision}.`;
     if (decision === 'approved') {
         notificationMessage += ' Please contact the user via Messages to arrange a final assessment.';
@@ -236,4 +273,110 @@ export async function handleQuoteDecisionAction(formData: FormData) {
     
     revalidatePath(`/account/my-posts/${postId}`);
     return { success: `Proposal has been ${decision}.` };
+}
+
+export async function toggleStatusLike(statusId: number) {
+    const supabase = await createServerClientUtil();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: 'You must be logged in to like a post.' };
+    }
+
+    const { data: existingLike, error: fetchError } = await supabase
+        .from('status_likes')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('status_id', statusId)
+        .maybeSingle();
+
+    if (fetchError) {
+        return { error: 'Database error.' };
+    }
+
+    if (existingLike) {
+        const { error: deleteError } = await supabase.from('status_likes').delete().eq('id', existingLike.id);
+        if (deleteError) return { error: 'Failed to unlike post.' };
+        return { success: true, liked: false };
+    } else {
+        const { error: insertError } = await supabase.from('status_likes').insert({ user_id: user.id, status_id: statusId });
+        if (insertError) return { error: 'Failed to like post.' };
+        return { success: true, liked: true };
+    }
+}
+
+export async function updateCoverImage(formData: FormData) {
+    const supabase = await createServerClientUtil();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { error: 'You must be logged in to update your cover image.' };
+    }
+
+    const coverImageFile = formData.get('cover_image') as File;
+
+    if (!coverImageFile || coverImageFile.size === 0) {
+        return { error: 'No file selected.' };
+    }
+
+    const filePath = `${user.id}/cover-${Date.now()}`;
+
+    const { error: uploadError } = await supabase.storage
+        .from('cover-images')
+        .upload(filePath, coverImageFile);
+
+    if (uploadError) {
+        console.error('Cover image upload error:', uploadError);
+        return { error: 'Failed to upload image.' };
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+        .from('cover-images')
+        .getPublicUrl(filePath);
+
+    if (!publicUrl) {
+        return { error: 'Failed to get public URL for the image.' };
+    }
+
+    const { error: dbError } = await supabase
+        .from('profiles')
+        .update({ cover_image_url: publicUrl })
+        .eq('id', user.id);
+
+    if (dbError) {
+        console.error('Database update error:', dbError);
+        return { error: 'Failed to update profile with new cover image.' };
+    }
+
+    revalidatePath(`/mypage/${user.id}`);
+    revalidatePath(`/account/provider/edit-profile`);
+    return { success: 'Cover image updated successfully!' };
+}
+
+export async function createLead(formData: FormData) {
+    const supabase = await createServerClientUtil();
+
+    const leadData = {
+        service_query: formData.get('service') as string,
+        location_province: formData.get('province') as string,
+        location_city: formData.get('city') as string,
+        contact_number: formData.get('contact_number') as string,
+    };
+
+    if (!leadData.service_query) {
+        return { error: 'Service query is missing.' };
+    }
+    
+    if (!leadData.contact_number) {
+        return { error: 'Contact number is required.' };
+    }
+
+    const { error } = await supabase.from('leads').insert(leadData);
+
+    if (error) {
+        console.error('Error creating lead:', error);
+        return { error: 'Could not save your request. Please try again.' };
+    }
+
+    return { success: true };
 }

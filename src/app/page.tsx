@@ -4,7 +4,7 @@ import HeroSection from '@/components/HeroSection';
 import ServiceGrid from '@/components/ServiceGrid';
 import ServiceCardSkeleton from '@/components/ServiceCardSkeleton';
 import SearchFilters from '@/components/SearchFilters';
-import StatusFeed from '@/components/StatusFeed'; // Import the new component
+import StatusFeed from '@/components/StatusFeed';
 import EmergencyServices from '@/components/EmergencyServices';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
@@ -23,9 +23,11 @@ export default function Home() {
   return (
     <div>
       <HeroSection />
+
       <Suspense fallback={null}>
         <StatusFeed />
       </Suspense>
+
       <div className="sticky top-0 z-40 bg-gray-100/95 backdrop-blur-sm py-2">
         <div className="container mx-auto px-4">
           <SearchFilters />
@@ -36,6 +38,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+
       <section className="bg-gray-50 py-12">
         <div className="container mx-auto px-4">
           <Suspense fallback={<LoadingSkeleton />}>
