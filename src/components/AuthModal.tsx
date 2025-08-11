@@ -26,12 +26,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
   const [loading, setLoading] = useState(false);
   const [userType, setUserType] = useState('user');
   const [showPassword, setShowPassword] = useState(false);
-  
+
   // State for provider fields
   const [businessName, setBusinessName] = useState('');
   const [regNo, setRegNo] = useState('');
   const [officeEmail, setOfficeEmail] = useState('');
-  
+
   // State for both user and provider
   const [whatsapp, setWhatsapp] = useState('');
   const [phone, setPhone] = useState('');
@@ -189,7 +189,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div className="fixed inset-0 bg-black bg-opacity-60" />
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" />
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">
@@ -203,45 +203,23 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                <Dialog.Title
-                  as="h3"
-                  className="text-lg font-medium leading-6 text-gray-900"
-                >
-                  {isSigningIn ? 'Sign In to Your Account' : 'Create a New Account'}
-                </Dialog.Title>
+              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-lg border border-gray-200 bg-white p-8 text-left align-middle shadow-md transition-all">
                 <button
                   onClick={handleClose}
-                  className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
+                  className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   <X size={24} />
                 </button>
 
-                <div className="mt-4">
-                  {isSigningIn ? (
-                    <form onSubmit={handleSignIn} className="space-y-4">
-                      <Input id="email-in" type="email" placeholder="Email Address" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                      <div className="relative">
-                        <Input id="password-in" type={showPassword ? 'text' : 'password'} placeholder="Password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3">
-                          {showPassword ? <EyeOff size={18} className="text-gray-500" /> : <Eye size={18} className="text-gray-500" />}
-                        </button>
-                      </div>
-                      
-                      <div className="text-center">
-                        <Link href="/forgot-password" onClick={handleClose} className="text-sm font-medium text-blue-600 hover:underline">
-                            Forgot Password?
-                        </Link>
-                      </div>
-                      
-                      <Button type="submit" className="w-full" disabled={loading}>
-                        {loading ? 'Signing In...' : 'Sign In'}
-                      </Button>
-                    </form>
-                  ) : (
-                    <form onSubmit={handleSignUp} className="space-y-4">
+                <Dialog.Title as="h3" className="text-2xl font-bold text-center leading-6 text-gray-900 mb-6">
+                  {isSigningIn ? 'Sign In to Your Account' : 'Create an Account'}
+                </Dialog.Title>
+
+                <form onSubmit={isSigningIn ? handleSignIn : handleSignUp} className="space-y-4">
+                  {!isSigningIn && (
+                    <>
                       <div className="flex items-center space-x-4">
-                        <label className="text-sm font-medium text-gray-700">Sign up as:</label>
+                        <label className="text-sm font-medium text-gray-700">I am a:</label>
                         <div className="flex items-center">
                           <input type="radio" id="user" name="userType" value="user" checked={userType === 'user'} onChange={() => setUserType('user')} className="h-4 w-4 text-brand-teal border-gray-300 focus:ring-brand-teal"/>
                           <label htmlFor="user" className="ml-2 block text-sm text-gray-900">User</label>
@@ -251,50 +229,61 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialView = 's
                           <label htmlFor="provider" className="ml-2 block text-sm text-gray-900">Service Provider</label>
                         </div>
                       </div>
-                      <Input id="name-up" type="text" placeholder="Full Name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
-                      <Input id="email-up" type="email" placeholder="Email Address" required value={email} onChange={(e) => setEmail(e.target.value)} />
-                      <div className="relative">
-                        <Input id="password-up" type={showPassword ? 'text' : 'password'} placeholder="Password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3">
-                          {showPassword ? <EyeOff size={18} className="text-gray-500" /> : <Eye size={18} className="text-gray-500" />}
-                        </button>
-                      </div>
-
-                      {/* --- THIS IS THE NEW HELPER TEXT SECTION --- */}
-                      {passwordError ? (
-                          <p className="text-xs text-red-600">{passwordError}</p>
-                      ) : (
-                          <p className="text-xs text-gray-500">
-                              Requires 8+ characters, including an uppercase letter, a number, and a special character.
-                          </p>
-                      )}
-                      
-                      <Input id="whatsapp-up" type="tel" placeholder="WhatsApp Number" required value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} />
-                      <Input id="phone-up" type="tel" placeholder="Cellphone Number" required value={phone} onChange={(e) => setPhone(e.target.value)} />
-                      
-                      {userType === 'provider' && (
-                        <>
-                          <Input id="business-name" type="text" placeholder="Business Name" required value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
-                          <Input id="reg-no" type="text" placeholder="Registration Number" value={regNo} onChange={(e) => setRegNo(e.target.value)} />
-                          <Input id="office-email" type="email" placeholder="Office Email" value={officeEmail} onChange={(e) => setOfficeEmail(e.target.value)} />
-                        </>
-                      )}
-                      <Button type="submit" className="w-full" disabled={loading}>
-                        {loading ? 'Signing Up...' : 'Sign Up'}
-                      </Button>
-                    </form>
+                      <Input id="name-up" type="text" placeholder="Full Name" required value={fullName} onChange={(e) => setFullName(e.target.value)} className="bg-gray-100 border-gray-200 focus:bg-white focus:border-brand-teal" />
+                    </>
                   )}
-                </div>
+                  <Input id="email" type="email" placeholder="Email Address" required value={email} onChange={(e) => setEmail(e.target.value)} className="bg-gray-100 border-gray-200 focus:bg-white focus:border-brand-teal" />
+                  <div className="relative">
+                    <Input id="password" type={showPassword ? 'text' : 'password'} placeholder="Password" required value={password} onChange={(e) => setPassword(e.target.value)} className="bg-gray-100 border-gray-200 focus:bg-white focus:border-brand-teal" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-800">
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
 
-                {error && <p className="mt-2 text-sm text-center text-red-600">{error}</p>}
-                {message && <p className="mt-2 text-sm text-center text-green-600">{message}</p>}
+                  {!isSigningIn && (
+                    <>
+                      {passwordError ? (
+                        <p className="text-xs text-red-600">{passwordError}</p>
+                      ) : (
+                        <p className="text-xs text-gray-500">
+                          Requires 8+ characters, including uppercase, number, and special character.
+                        </p>
+                      )}
+                      <Input id="whatsapp-up" type="tel" placeholder="WhatsApp Number" required value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className="bg-gray-100 border-gray-200 focus:bg-white focus:border-brand-teal" />
+                      <Input id="phone-up" type="tel" placeholder="Cellphone Number" required value={phone} onChange={(e) => setPhone(e.target.value)} className="bg-gray-100 border-gray-200 focus:bg-white focus:border-brand-teal" />
+                    </>
+                  )}
+                  
+                  {!isSigningIn && userType === 'provider' && (
+                    <>
+                      <Input id="business-name" type="text" placeholder="Business Name" required value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="bg-gray-100 border-gray-200 focus:bg-white focus:border-brand-teal" />
+                      <Input id="reg-no" type="text" placeholder="Registration Number (Optional)" value={regNo} onChange={(e) => setRegNo(e.target.value)} className="bg-gray-100 border-gray-200 focus:bg-white focus:border-brand-teal" />
+                      <Input id="office-email" type="email" placeholder="Office Email (Optional)" value={officeEmail} onChange={(e) => setOfficeEmail(e.target.value)} className="bg-gray-100 border-gray-200 focus:bg-white focus:border-brand-teal" />
+                    </>
+                  )}
+                  
+                  {isSigningIn && (
+                    <div className="text-right">
+                      <Link href="/forgot-password" onClick={handleClose} className="text-sm font-medium text-brand-blue hover:underline">
+                        Forgot Password?
+                      </Link>
+                    </div>
+                  )}
+                  
+                  <Button type="submit" className="w-full !mt-6" size="lg" disabled={loading}>
+                    {loading ? 'Processing...' : (isSigningIn ? 'Sign In' : 'Create Account')}
+                  </Button>
+                </form>
 
+                {error && <p className="mt-4 text-sm text-center text-red-600">{error}</p>}
+                {message && <p className="mt-4 text-sm text-center text-green-600">{message}</p>}
 
-                <div className="mt-4 text-center text-sm">
-                  <button onClick={toggleForm} className="font-medium text-blue-600 hover:underline">
-                    {isSigningIn
-                      ? "Don't have an account? Sign Up"
-                      : 'Already have an account? Sign In'}
+                <div className="mt-6 text-center text-sm">
+                  <span className="text-gray-600">
+                    {isSigningIn ? "Don't have an account? " : 'Already have an account? '}
+                  </span>
+                  <button onClick={toggleForm} className="font-semibold text-brand-teal hover:underline">
+                    {isSigningIn ? "Sign Up" : 'Sign In'}
                   </button>
                 </div>
               </Dialog.Panel>

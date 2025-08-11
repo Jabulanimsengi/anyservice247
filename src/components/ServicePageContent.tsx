@@ -11,6 +11,7 @@ import ReportButton from './ReportButton';
 import CategoryRow from './CategoryRow';
 import { notFound } from 'next/navigation';
 import ExpandableSection from './ExpandableSection';
+import { Button } from '@/components/ui/Button';
 
 type ServiceSchema = {
     '@context': string;
@@ -208,6 +209,11 @@ const ServicePageContent = async ({ params }: { params: { id: string } }) => {
 
                       <div className="flex flex-wrap gap-2 mt-8">
                           <MessageProviderButton providerId={service.user_id} providerName={service.provider_name ?? 'Anonymous'} user={user ?? null} />
+                          <Link href={`/mypage/${service.user_id}`}>
+                            <Button variant="default" size="lg" className="h-11 px-8">
+                                My Page
+                            </Button>
+                          </Link>
                           <ReportButton serviceId={parseInt(id)} isLoggedIn={isLoggedIn} />
                       </div>
                   </div>

@@ -22,7 +22,7 @@ const Header = () => {
   const { startNavigating } = useStore();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Manages the loading state for user and profile
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -57,16 +57,29 @@ const Header = () => {
   }, [leaveTimeout]);
 
   useEffect(() => {
-    const getCurrentUser = async () => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-      setLoading(false);
-    };
-    getCurrentUser();
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      if (currentUser) {
+        const { data: userProfile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', currentUser.id)
+          .single();
+        setProfile(userProfile as Profile | null);
+
+        const { count } = await supabase
+          .from('notifications')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', currentUser.id)
+          .eq('is_read', false);
+        setUnreadNotifications(count || 0);
+      } else {
+        setProfile(null);
+        setUnreadNotifications(0);
+      }
       setLoading(false);
     });
 
@@ -74,30 +87,6 @@ const Header = () => {
       authListener.subscription.unsubscribe();
     };
   }, []);
-
-  useEffect(() => {
-    if (user) {
-      const fetchProfileAndNotifications = async () => {
-        const { data: userProfile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-        setProfile(userProfile as Profile | null);
-
-        const { count } = await supabase
-          .from('notifications')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('is_read', false);
-        setUnreadNotifications(count || 0);
-      };
-      fetchProfileAndNotifications();
-    } else {
-      setProfile(null);
-      setUnreadNotifications(0);
-    }
-  }, [user]);
 
   const handleSignOut = () => {
     setIsLogoutModalOpen(true);
@@ -118,35 +107,13 @@ const Header = () => {
   };
 
   const slugify = (text: string) => text.toLowerCase().replace(/\s+/g, '-');
+  const handleProvinceToggle = (province: string) => setOpenProvince(openProvince === province ? null : province);
+  const handleLocationClick = () => { startNavigating(); setIsLocationDropdownOpen(false); };
+  const handleMobileLocationClick = () => { startNavigating(); setIsMobileMenuOpen(false); };
+  const handleMouseEnter = () => { if (leaveTimeout) { clearTimeout(leaveTimeout); } setIsLocationDropdownOpen(true); };
+  const handleMouseLeave = () => { const timeout = setTimeout(() => { setIsLocationDropdownOpen(false); setActiveProvince(null); }, 200); setLeaveTimeout(timeout); };
 
-  const handleProvinceToggle = (province: string) => {
-    setOpenProvince(openProvince === province ? null : province);
-  };
-
-  const handleLocationClick = () => {
-    startNavigating();
-    setIsLocationDropdownOpen(false);
-  };
-  
-  const handleMobileLocationClick = () => {
-      startNavigating();
-      setIsMobileMenuOpen(false);
-  };
-
-  const handleMouseEnter = () => {
-    if (leaveTimeout) {
-        clearTimeout(leaveTimeout);
-    }
-    setIsLocationDropdownOpen(true);
-  };
-
-  const handleMouseLeave = () => {
-    const timeout = setTimeout(() => {
-        setIsLocationDropdownOpen(false);
-        setActiveProvince(null);
-    }, 200);
-    setLeaveTimeout(timeout);
-  };
+  const canPostJob = !user || (profile && profile.role !== 'provider');
 
   return (
     <>
@@ -163,23 +130,14 @@ const Header = () => {
           <div className="hidden md:flex items-center gap-x-6">
             <Link href="/explore" className={getLinkClass("/explore")} onClick={startNavigating}>Explore</Link>
             
-            <div 
-              className="relative"
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-            >
+            <div className="relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
               <button className={`${getLinkClass("/browse")} flex items-center gap-1`}>
-                Browse 
-                <ChevronDown size={16} />
+                Browse <ChevronDown size={16} />
               </button>
               {isLocationDropdownOpen && (
                 <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-50">
                   {Object.entries(locationsData).map(([province, cities]) => (
-                    <div 
-                      key={province} 
-                      className="relative" 
-                      onMouseEnter={() => setActiveProvince(province)}
-                    >
+                    <div key={province} className="relative" onMouseEnter={() => setActiveProvince(province)}>
                        <div className="px-4 py-2 text-sm text-gray-700 flex justify-between items-center">
                           <span>{province}</span>
                           <ChevronRight size={16} />
@@ -187,12 +145,7 @@ const Header = () => {
                        {activeProvince === province && (
                          <div className="absolute top-0 left-full ml-1 w-56 bg-white rounded-md shadow-lg py-1">
                             {cities.map(city => (
-                              <Link 
-                                key={city} 
-                                href={`/browse/${slugify(province)}/${slugify(city)}`}
-                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                onClick={handleLocationClick}
-                              >
+                              <Link key={city} href={`/browse/${slugify(province)}/${slugify(city)}`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={handleLocationClick}>
                                 {city}
                               </Link>
                             ))}
@@ -203,13 +156,15 @@ const Header = () => {
                 </div>
               )}
             </div>
-
+            
+            <Link href="/jobs" className={getLinkClass("/jobs")}>Browse Jobs</Link>
+            {!loading && canPostJob && (
+              <Link href="/post-a-job" className={getLinkClass("/post-a-job")}>Post a Job</Link>
+            )}
             <Link href="/blog" className={getLinkClass("/blog")}>Blog</Link>
             <Link href="/academy" className={getLinkClass("/academy")}>Academy</Link>
-            <Link href="/products" className={getLinkClass("/products")}>Products</Link>
-            <Link href="/likes" className={getLinkClass("/likes")}>
-                <Heart size={20} />
-            </Link>
+
+            <Link href="/likes" className={getLinkClass("/likes")}><Heart size={20} /></Link>
             <Link href="/account/notifications" className={`${getLinkClass("/account/notifications")} relative`}>
               <Bell size={20} />
               {unreadNotifications > 0 && (
@@ -232,10 +187,7 @@ const Header = () => {
                       <Link href="/account" className="whitespace-nowrap rounded-md bg-gray-600 px-4 py-2 text-sm text-white hover:bg-gray-700 transition-colors">
                       Account
                       </Link>
-                      <button
-                      onClick={handleSignOut}
-                      className="whitespace-nowrap rounded-md bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600 transition-colors"
-                      >
+                      <button onClick={handleSignOut} className="whitespace-nowrap rounded-md bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600 transition-colors">
                       Sign Out
                       </button>
                   </div>
@@ -276,12 +228,7 @@ const Header = () => {
                                {openProvince === province && (
                                  <div className="flex flex-col gap-y-2 mt-2 pl-4">
                                     {cities.map(city => (
-                                      <Link 
-                                        key={city} 
-                                        href={`/browse/${slugify(province)}/${slugify(city)}`}
-                                        className="text-gray-400 hover:text-white"
-                                        onClick={handleMobileLocationClick}
-                                      >
+                                      <Link key={city} href={`/browse/${slugify(province)}/${slugify(city)}`} className="text-gray-400 hover:text-white" onClick={handleMobileLocationClick}>
                                         {city}
                                       </Link>
                                     ))}
@@ -292,10 +239,13 @@ const Header = () => {
                         </div>
                       )}
                     </div>
-
+                    
+                    <Link href="/jobs" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Browse Jobs</Link>
+                    {!loading && canPostJob && (
+                      <Link href="/post-a-job" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Post a Job</Link>
+                    )}
                     <Link href="/blog" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Blog</Link>
                     <Link href="/academy" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Academy</Link>
-                    <Link href="/products" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Products</Link>
                     <Link href="/likes" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Liked Services</Link>
                     <Link href="/account/notifications" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Notifications</Link>
 

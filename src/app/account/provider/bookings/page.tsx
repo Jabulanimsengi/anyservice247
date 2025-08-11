@@ -6,24 +6,25 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { User } from '@supabase/supabase-js';
 import BackButton from '@/components/BackButton';
-import { Input } from '@/components/ui/Input';
 import Spinner from '@/components/ui/Spinner';
 import { useStore } from '@/lib/store';
-import { MessageSquare, X } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import Image from 'next/image';
+import QuotationBuilder, { LineItem } from '@/components/QuotationBuilder'; // Import the new builder
 
 type Quotation = {
   id: number;
   amount: number;
   status: string;
   attachment_urls: string[] | null;
+  line_items: LineItem[] | null;
 };
 
 type Booking = {
   id: number;
   created_at: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'quote-provided';
-  services: { id: number; title: string; } | null; // Corrected: Was an array type
+  services: { id: number; title: string; } | null;
   client: { id: string; full_name: string; } | null;
   quote_description: string;
   quote_attachments: string[];
@@ -35,12 +36,7 @@ const ManageBookingsPage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // State for the active quote form
   const [quoteFormFor, setQuoteFormFor] = useState<number | null>(null);
-  const [quoteAmount, setQuoteAmount] = useState<number | ''>('');
-  const [quoteAttachments, setQuoteAttachments] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [submittingQuoteFor, setSubmittingQuoteFor] = useState<number | null>(null);
 
   const fetchBookings = useCallback(async (providerId: string) => {
@@ -51,7 +47,7 @@ const ManageBookingsPage = () => {
         id, created_at, status, service_id, user_id, quote_description, quote_attachments,
         services ( id, title ),
         client:profiles!user_id ( id, full_name ),
-        quotations ( id, amount, status, attachment_urls )
+        quotations ( id, amount, status, attachment_urls, line_items )
       `)
       .eq('provider_id', providerId)
       .order('created_at', { ascending: false });
@@ -97,52 +93,16 @@ const ManageBookingsPage = () => {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-        const files = Array.from(e.target.files);
-        if (quoteAttachments.length + files.length > 5) {
-            addToast('You can upload a maximum of 5 images.', 'error');
-            return;
-        }
-        setQuoteAttachments(prev => [...prev, ...files]);
-        const newPreviews = files.map(file => URL.createObjectURL(file));
-        setImagePreviews(prev => [...prev, ...newPreviews]);
-    }
-  };
-
-  const handleRemoveImage = (indexToRemove: number) => {
-      setQuoteAttachments(quoteAttachments.filter((_, index) => index !== indexToRemove));
-      setImagePreviews(imagePreviews.filter((_, index) => index !== indexToRemove));
-  };
-
-  const handleProvideQuote = async (booking: Booking) => {
-    if (!quoteAmount) {
-      addToast('Please enter a quote amount.', 'error');
-      return;
-    }
+  const handleProvideQuote = async (booking: Booking, lineItems: LineItem[], total: number) => {
     if (!user) return;
 
     setSubmittingQuoteFor(booking.id);
-    const attachmentUrls: string[] = [];
-    if (quoteAttachments.length > 0) {
-        for (const file of quoteAttachments) {
-            const fileName = `${user.id}/${booking.id}/${Date.now()}_${file.name}`;
-            const { data: uploadData, error: uploadError } = await supabase.storage.from('quotations').upload(fileName, file);
-            if (uploadError) {
-                addToast(`Quotation upload failed: ${uploadError.message}`, 'error');
-                setSubmittingQuoteFor(null);
-                return;
-            }
-            const { data: { publicUrl } } = supabase.storage.from('quotations').getPublicUrl(uploadData.path);
-            attachmentUrls.push(publicUrl);
-        }
-    }
 
     const { error: quoteError } = await supabase.from('quotations').insert({
       booking_id: booking.id,
       provider_id: user.id,
-      amount: quoteAmount,
-      attachment_urls: attachmentUrls,
+      amount: total,
+      line_items: lineItems,
     });
 
     if (quoteError) {
@@ -164,9 +124,6 @@ const ManageBookingsPage = () => {
 
   const openQuoteForm = (bookingId: number) => {
     setQuoteFormFor(bookingId);
-    setQuoteAmount('');
-    setQuoteAttachments([]);
-    setImagePreviews([]);
   };
 
   const handleStartChat = (booking: Booking) => {
@@ -229,29 +186,14 @@ const ManageBookingsPage = () => {
               {booking.status === 'confirmed' && booking.quotations.length === 0 && (
                 <div className="mt-4 border-t pt-4">
                   {quoteFormFor === booking.id ? (
-                    <>
-                      <p className="text-sm font-semibold">Provide a Quote:</p>
-                      <div className="mt-2 space-y-2">
-                        <Input type="number" placeholder="Quote Amount (R)" onChange={(e) => setQuoteAmount(Number(e.target.value))} />
-                        <Input type="file" multiple onChange={handleFileChange} accept="image/*" className="pt-2" />
-                        {imagePreviews.length > 0 && (
-                            <div className="mt-2 grid grid-cols-5 gap-2">
-                                {imagePreviews.map((preview, index) => (
-                                    <div key={index} className="relative">
-                                        <Image src={preview} alt="Preview" width={80} height={80} className="h-20 w-20 object-cover rounded-md"/>
-                                        <button onClick={() => handleRemoveImage(index)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 leading-none"><X size={12} /></button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                        <div className="flex gap-2">
-                            <Button size="sm" onClick={() => handleProvideQuote(booking)} disabled={submittingQuoteFor === booking.id}>
-                                {submittingQuoteFor === booking.id ? <Spinner /> : 'Submit Quote'}
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => setQuoteFormFor(null)}>Cancel</Button>
-                        </div>
-                      </div>
-                    </>
+                    <div>
+                      <p className="text-sm font-semibold mb-4">Provide a Quote:</p>
+                      <QuotationBuilder 
+                        onSubmit={(lineItems, total) => handleProvideQuote(booking, lineItems, total)}
+                        isLoading={submittingQuoteFor === booking.id}
+                      />
+                       <Button size="sm" variant="outline" onClick={() => setQuoteFormFor(null)} className="mt-2">Cancel</Button>
+                    </div>
                   ) : (
                     <Button size="sm" onClick={() => openQuoteForm(booking.id)}>Provide Quote</Button>
                   )}
@@ -260,11 +202,32 @@ const ManageBookingsPage = () => {
 
               {booking.quotations.length > 0 && (
                 <div className="mt-4 border-t pt-4">
-                    <h4 className="text-sm font-semibold">Quote Details:</h4>
+                    <h4 className="text-sm font-semibold mb-2">Quote Details:</h4>
                     {booking.quotations.map(q => (
-                        <div key={q.id} className="text-sm text-gray-700">
-                            <p>Amount: R{Number(q.amount).toFixed(2)}</p>
-                            <p>Status: <span className="font-medium capitalize">{q.status}</span></p>
+                        <div key={q.id}>
+                            <p className="text-sm">Status: <span className="font-medium capitalize">{q.status}</span></p>
+                            <table className="w-full text-sm mt-2 border">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="p-2 text-left font-semibold text-gray-600">Item</th>
+                                        <th className="p-2 text-right font-semibold text-gray-600">Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {q.line_items?.map((item, idx) => (
+                                        <tr key={idx} className="border-t">
+                                            <td className="p-2">{item.description}</td>
+                                            <td className="p-2 text-right">R{item.price.toFixed(2)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tfoot>
+                                    <tr className="border-t bg-gray-50">
+                                        <td className="p-2 text-right font-bold">Total:</td>
+                                        <td className="p-2 text-right font-bold">R{q.amount.toFixed(2)}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
                         </div>
                     ))}
                 </div>

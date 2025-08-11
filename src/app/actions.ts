@@ -125,11 +125,9 @@ export async function deleteStatus(statusId: number, imageUrls: string[]) {
     return { success: 'Status deleted successfully!' };
 }
 
-// --- NEW FUNCTION TO DELETE A SERVICE ---
 export async function deleteService(serviceId: number, imageUrls: string[] | null) {
     const supabase = await createServerClientUtil();
 
-    // 1. Check if the current user is an admin
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
         return { error: 'You must be logged in to perform this action.' };
@@ -144,14 +142,12 @@ export async function deleteService(serviceId: number, imageUrls: string[] | nul
         return { error: 'Forbidden: You do not have permission.' };
     }
 
-    // 2. Delete the images from storage if they exist
     if (imageUrls && imageUrls.length > 0) {
         const supabaseAdmin = createAdminClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
         
-        // Extract file paths from the full URLs
         const filePaths = imageUrls.map(url => {
             const parts = url.split('/service-images/');
             return parts.length > 1 ? parts[1] : '';
@@ -164,12 +160,10 @@ export async function deleteService(serviceId: number, imageUrls: string[] | nul
 
             if (storageError) {
                 console.error('Storage Error:', storageError.message);
-                // Non-fatal error: Log it but proceed with deleting the database record
             }
         }
     }
     
-    // 3. Delete the service record from the database
     const { error: dbError } = await supabase
         .from('services')
         .delete()
@@ -179,7 +173,67 @@ export async function deleteService(serviceId: number, imageUrls: string[] | nul
         return { error: `Failed to delete service: ${dbError.message}` };
     }
 
-    // 4. Revalidate the path to update the UI
     revalidatePath('/admin/services');
     return { success: 'Service deleted successfully!' };
+}
+
+// --- NEW ROBUST ACTION FOR HANDLING QUOTE DECISIONS ---
+export async function handleQuoteDecisionAction(formData: FormData) {
+    'use server';
+    const proposalId = formData.get('proposalId') as string;
+    const decision = formData.get('decision') as 'approved' | 'rejected';
+    const providerId = formData.get('providerId') as string;
+    const postId = formData.get('postId') as string;
+    const jobTitle = formData.get('jobTitle') as string;
+
+    const supabase = await createServerClientUtil();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        throw new Error('You must be logged in.');
+    }
+
+    // 1. Update the status of the specific proposal
+    const { error: updateError } = await supabase
+        .from('job_proposals')
+        .update({ status: decision })
+        .eq('id', proposalId)
+        .eq('post_id', postId);
+
+    if (updateError) {
+        console.error('Proposal update error:', updateError);
+        return { error: 'Failed to update proposal status.' };
+    }
+
+    // 2. If approved, update the main job post and reject others
+    if (decision === 'approved') {
+        // Mark the winning proposal on the job post
+        await supabase
+            .from('job_posts')
+            .update({ winning_proposal_id: proposalId, status: 'closed' })
+            .eq('id', postId);
+
+        // Reject all other pending proposals for this job
+        await supabase
+            .from('job_proposals')
+            .update({ status: 'rejected' })
+            .eq('post_id', postId)
+            .neq('id', proposalId)
+            .eq('status', 'pending');
+    }
+
+    // 3. Send a notification to the provider
+    let notificationMessage = `Your quote for "${jobTitle}" has been ${decision}.`;
+    if (decision === 'approved') {
+        notificationMessage += ' Please contact the user via Messages to arrange a final assessment.';
+    }
+
+    await supabase.from('notifications').insert({
+        user_id: providerId,
+        message: notificationMessage,
+        link: `/jobs/${postId}`
+    });
+    
+    revalidatePath(`/account/my-posts/${postId}`);
+    return { success: `Proposal has been ${decision}.` };
 }
