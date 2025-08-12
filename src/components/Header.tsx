@@ -22,7 +22,7 @@ const Header = () => {
   const { startNavigating } = useStore();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true); // Manages the loading state for user and profile
+  const [loading, setLoading] = useState(true);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -138,19 +138,19 @@ const Header = () => {
                 <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-50">
                   {Object.entries(locationsData).map(([province, cities]) => (
                     <div key={province} className="relative" onMouseEnter={() => setActiveProvince(province)}>
-                       <div className="px-4 py-2 text-sm text-gray-700 flex justify-between items-center">
+                        <div className="px-4 py-2 text-sm text-gray-700 flex justify-between items-center">
                           <span>{province}</span>
                           <ChevronRight size={16} />
-                       </div>
-                       {activeProvince === province && (
-                         <div className="absolute top-0 left-full ml-1 w-56 bg-white rounded-md shadow-lg py-1">
+                        </div>
+                        {activeProvince === province && (
+                          <div className="absolute top-0 left-full ml-1 w-56 bg-white rounded-md shadow-lg py-1">
                             {cities.map(city => (
                               <Link key={city} href={`/browse/${slugify(province)}/${slugify(city)}`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={handleLocationClick}>
                                 {city}
                               </Link>
                             ))}
-                         </div>
-                       )}
+                          </div>
+                        )}
                     </div>
                   ))}
                 </div>
@@ -161,8 +161,9 @@ const Header = () => {
             {!loading && canPostJob && (
               <Link href="/post-a-job" className={getLinkClass("/post-a-job")}>Post a Job</Link>
             )}
-            <Link href="/blog" className={getLinkClass("/blog")}>Blog</Link>
-            <Link href="/academy" className={getLinkClass("/academy")}>Academy</Link>
+            {/* ADDED LINKS */}
+            <Link href="/about" className={getLinkClass("/about")}>About Us</Link>
+            <Link href="/for-providers" className="text-teal-400 hover:bg-gray-700 hover:text-white rounded-md px-3 py-2 text-sm font-medium transition-colors">For Providers</Link>
 
             <Link href="/likes" className={getLinkClass("/likes")}><Heart size={20} /></Link>
             <Link href="/account/notifications" className={`${getLinkClass("/account/notifications")} relative`}>
@@ -221,19 +222,19 @@ const Header = () => {
                         <div className="mt-2 pl-4 border-l-2 border-gray-700">
                           {Object.entries(locationsData).map(([province, cities]) => (
                             <div key={province} className="py-1">
-                               <button onClick={() => handleProvinceToggle(province)} className="w-full text-left text-gray-300 hover:text-white flex justify-between items-center">
-                                   <span className="font-semibold">{province}</span>
-                                   <ChevronDown size={16} className={`transition-transform ${openProvince === province ? 'rotate-180' : ''}`} />
-                               </button>
-                               {openProvince === province && (
-                                 <div className="flex flex-col gap-y-2 mt-2 pl-4">
+                                <button onClick={() => handleProvinceToggle(province)} className="w-full text-left text-gray-300 hover:text-white flex justify-between items-center">
+                                    <span className="font-semibold">{province}</span>
+                                    <ChevronDown size={16} className={`transition-transform ${openProvince === province ? 'rotate-180' : ''}`} />
+                                </button>
+                                {openProvince === province && (
+                                  <div className="flex flex-col gap-y-2 mt-2 pl-4">
                                     {cities.map(city => (
                                       <Link key={city} href={`/browse/${slugify(province)}/${slugify(city)}`} className="text-gray-400 hover:text-white" onClick={handleMobileLocationClick}>
                                         {city}
                                       </Link>
                                     ))}
-                                 </div>
-                               )}
+                                  </div>
+                                )}
                             </div>
                           ))}
                         </div>
@@ -244,14 +245,16 @@ const Header = () => {
                     {!loading && canPostJob && (
                       <Link href="/post-a-job" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Post a Job</Link>
                     )}
-                    <Link href="/blog" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Blog</Link>
-                    <Link href="/academy" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Academy</Link>
+                    {/* ADDED LINKS */}
+                    <Link href="/about" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>About Us</Link>
+                    <Link href="/for-providers" className="text-teal-400 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>For Providers</Link>
+
                     <Link href="/likes" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Liked Services</Link>
                     <Link href="/account/notifications" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>Notifications</Link>
 
                     <div className="border-t border-gray-700 pt-4 mt-2">
                         {user ? (
-                             <div className="flex flex-col gap-y-4">
+                            <div className="flex flex-col gap-y-4">
                                 {profile?.role === 'admin' && (
                                 <Link href="/admin" className="text-yellow-400 hover:text-yellow-300" onClick={() => setIsMobileMenuOpen(false)}>
                                     Admin Panel

@@ -380,3 +380,27 @@ export async function createLead(formData: FormData) {
 
     return { success: true };
 }
+
+export async function createProviderLead(formData: FormData) {
+    const supabase = await createServerClientUtil();
+
+    const leadData = {
+        full_name: formData.get('full_name') as string,
+        email: formData.get('email') as string,
+        contact_number: formData.get('contact_number') as string,
+        chosen_package: formData.get('package') as string,
+    };
+
+    if (!leadData.full_name || !leadData.email || !leadData.contact_number || !leadData.chosen_package) {
+        return { error: 'Please fill out all fields.' };
+    }
+
+    const { error } = await supabase.from('provider_leads').insert(leadData);
+
+    if (error) {
+        console.error('Error creating provider lead:', error);
+        return { error: 'Could not save your request. Please try again.' };
+    }
+
+    return { success: true };
+}

@@ -1,54 +1,100 @@
 // src/app/for-providers/page.tsx
+'use client';
+
+import { useState } from 'react';
 import BackButton from '@/components/BackButton';
 import { Button } from '@/components/ui/Button';
-import Link from 'next/link';
+import { Check, XCircle } from 'lucide-react';
+import ProviderLeadModal from '@/components/ProviderLeadModal';
 
 const ForProvidersPage = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<'Starter' | 'Pro'>('Starter');
+
+  const handlePackageClick = (packageName: 'Starter' | 'Pro') => {
+    setSelectedPackage(packageName);
+    setIsModalOpen(true);
+  };
+
   return (
-    <div className="bg-gray-50 py-12">
-      <div className="container mx-auto max-w-4xl px-4">
-        <BackButton />
-        <h1 className="mb-4 text-4xl font-bold text-brand-dark text-center">Partner with HomeService24/7</h1>
-        <p className="text-lg text-gray-600 text-center mb-10">Grow your business and connect with clients who need your skills.</p>
-        
-        <div className="bg-white p-8 rounded-lg shadow-md border">
-            <h2 className="text-2xl font-semibold text-brand-dark mb-6">Our Partnership Model</h2>
-            
-            <div className="prose max-w-none text-gray-700">
-                <p>
-                    We believe in a simple, transparent, and mutually beneficial partnership. Our platform is designed to bring you genuine, high-quality leads, allowing you to focus on what you do best: delivering exceptional service. To ensure our platform is sustainable and effectively marketed, we've developed flexible options that work for your business.
-                </p>
+    <>
+      <div className="bg-gray-50 py-12">
+        <div className="container mx-auto max-w-5xl px-4">
+          <BackButton />
+          <div className="text-center">
+              <h1 className="mb-4 text-4xl font-bold text-brand-dark">Partner with HomeService24/7</h1>
+              <p className="text-lg text-gray-600 mb-12 max-w-3xl mx-auto">
+                  Stop buying credits that don't guarantee work. Join a platform that invests in your success and connects you with a steady stream of genuine clients.
+              </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+              <div className="bg-red-50 border-l-4 border-red-500 p-6 rounded-r-lg">
+                  <h3 className="flex items-center text-xl font-bold text-red-800">
+                      <XCircle className="h-6 w-6 mr-3" /> The Flawed Credit System
+                  </h3>
+                  <p className="mt-4 text-gray-700">
+                      Many platforms force you to buy "credits" just for a chance to bid on a job. You spend money upfront, competing with countless others, with no guarantee of winning the work or even getting a response. This model benefits the platform, not the provider.
+                  </p>
+              </div>
+              <div className="bg-green-50 border-l-4 border-green-500 p-6 rounded-r-lg">
+                  <h3 className="flex items-center text-xl font-bold text-green-800">
+                      <Check className="h-6 w-6 mr-3" /> The Fair Subscription Model
+                  </h3>
+                  <p className="mt-4 text-gray-700">
+                      We believe in partnership. Your monthly subscription allows us to run extensive marketing campaigns across South Africa, bringing a consistent flow of high-quality job requests directly to you. We only succeed when you do. No credits, no bidding wars—just genuine opportunities.
+                  </p>
+              </div>
+          </div>
 
-                <h3 className="text-xl font-semibold text-brand-dark mt-8">Flexible Partnership Tiers</h3>
-                <p>
-                    Choose the plan that best suits your business goals. Our tiers are designed to reward our most active and committed partners.
-                </p>
-                <ul>
-                    <li>
-                        <strong>Basic Tier:</strong> Perfect for getting started. For a lower monthly fee of <strong>R99</strong>, you get full access to the platform with a standard commission of <strong>18%</strong> on successfully completed jobs.
-                    </li>
-                    <li>
-                        <strong>Premium Tier:</strong> Designed for established businesses. For a monthly fee of <strong>R249</strong>, you benefit from a significantly reduced commission of just <strong>10%</strong> on successfully completed jobs, maximizing your earnings.
-                    </li>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="border rounded-lg p-8 flex flex-col bg-white shadow-lg">
+                <h3 className="text-2xl font-bold text-brand-teal">Starter</h3>
+                <p className="text-gray-500 mt-1">Perfect for getting started and building your reputation.</p>
+                <div className="my-8">
+                    <span className="text-5xl font-extrabold text-brand-dark">R199</span>
+                    <span className="text-xl text-gray-500">/month</span>
+                </div>
+                <p className="text-lg font-semibold text-center bg-gray-100 p-3 rounded-md">15% Commission</p>
+                <ul className="mt-8 space-y-4 text-gray-600 flex-grow">
+                    <li className="flex items-start"><Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" /> Full Platform Access</li>
+                    <li className="flex items-start"><Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" /> Receive Unlimited Job Leads</li>
+                    <li className="flex items-start"><Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" /> Direct Client Messaging</li>
+                    <li className="flex items-start"><Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" /> Create Your "My Page" Profile</li>
                 </ul>
-                <p>
-                    These contributions are vital for the platform's health. They allow us to pay our dedicated software engineers, maintain our technology, and run extensive marketing campaigns across South Africa to bring you a steady stream of job requests.
-                </p>
+                <Button size="lg" variant="outline" className="w-full mt-8" onClick={() => handlePackageClick('Starter')}>Choose Starter</Button>
+              </div>
 
-                <h3 className="text-xl font-semibold text-brand-dark mt-6">Getting Started</h3>
-                <p>
-                    As we are in our early stages, our payment process is direct and personal. Once your account has been created and your services are ready to be listed, we will send our banking details for you to make the initial payment for your chosen tier. We accept various payment methods and will work with you to make the process as smooth as possible.
-                </p>
-            </div>
-
-            <div className="text-center mt-8">
-                <Link href="/#">
-                    <Button size="lg">Become a Partner Today</Button>
-                </Link>
-            </div>
+              <div className="border-2 border-brand-teal rounded-lg p-8 flex flex-col bg-white shadow-2xl relative">
+                <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">
+                    <span className="bg-brand-teal text-white text-xs font-bold uppercase px-3 py-1 rounded-full">Most Popular</span>
+                </div>
+                <h3 className="text-2xl font-bold text-brand-teal">Pro</h3>
+                <p className="text-gray-500 mt-1">For established businesses looking to maximize earnings.</p>
+                <div className="my-8">
+                    <span className="text-5xl font-extrabold text-brand-dark">R299</span>
+                    <span className="text-xl text-gray-500">/month</span>
+                </div>
+                <p className="text-lg font-semibold text-center bg-teal-50 text-brand-dark p-3 rounded-md">8.5% Commission</p>
+                <ul className="mt-8 space-y-4 text-gray-600 flex-grow">
+                    <li className="flex items-start"><Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" /> Full Platform Access</li>
+                    <li className="flex items-start"><Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" /> Receive Unlimited Job Leads</li>
+                    <li className="flex items-start"><Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" /> Direct Client Messaging</li>
+                    <li className="flex items-start"><Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" /> Create Your "My Page" Profile</li>
+                    <li className="flex items-start"><Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" /> <span className="font-bold">Lowest Commission</span> - save money on every job!</li>
+                </ul>
+                <p className="text-xs text-center text-gray-500 mt-4">This plan pays for itself if you bill more than ~R1,500 per month.</p>
+                <Button size="lg" className="w-full mt-8" onClick={() => handlePackageClick('Pro')}>Choose Pro</Button>
+              </div>
+          </div>
         </div>
       </div>
-    </div>
+      <ProviderLeadModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        packageName={selectedPackage}
+      />
+    </>
   );
 };
 
