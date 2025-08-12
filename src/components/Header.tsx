@@ -58,6 +58,7 @@ const Header = () => {
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setLoading(true);
       const currentUser = session?.user ?? null;
       setUser(currentUser);
 
@@ -184,7 +185,7 @@ const Header = () => {
                           Admin Panel
                       </Link>
                       )}
-                      <Link href="/account" className="whitespace-nowrap rounded-md bg-gray-600 px-4 py-2 text-sm text-white hover:bg-gray-700 transition-colors">
+                      <Link href="/account" className="whitespace-nowrap rounded-md bg-gray-600 px-4 py-2 text-sm text-white hover:bg-gray-700 transition-colors" onClick={startNavigating}>
                       Account
                       </Link>
                       <button onClick={handleSignOut} className="whitespace-nowrap rounded-md bg-red-500 px-4 py-2 text-sm text-white hover:bg-red-600 transition-colors">
@@ -259,7 +260,7 @@ const Header = () => {
                                     Admin Panel
                                 </Link>
                                 )}
-                                <Link href="/account" className="text-gray-300 hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>
+                                <Link href="/account" className="text-gray-300 hover:text-white" onClick={() => { startNavigating(); setIsMobileMenuOpen(false); }}>
                                     Account
                                 </Link>
                                 <button onClick={() => { handleSignOut(); setIsMobileMenuOpen(false); }} className="text-left text-red-500 hover:text-red-400">
